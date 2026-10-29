@@ -200,7 +200,12 @@
 
   // Upcoming and live broadcasts from the NOW sport feed (api/live.js), like a fixtures list. Rows open the match's
   // NOW page (time slot + subscribe), not /play: that gate's checkout is the entertainment package.
-  const wkfmt = new Intl.DateTimeFormat('th-TH', { weekday: 'short', day: 'numeric', month: 'short' });
+  const wkfmt = new Intl.DateTimeFormat('th-TH', { weekday: 'narrow', day: 'numeric', month: 'short' });
+  const dayLabel = ms => {
+    const d = new Date(ms), t = new Date(); t.setHours(0, 0, 0, 0);
+    const diff = Math.floor((d - t) / 864e5);
+    return diff === 0 ? 'วันนี้' : diff === 1 ? 'พรุ่งนี้' : wkfmt.format(d);
+  };
   async function liveRow(sub) {
     try {
       const now = Date.now();
@@ -208,8 +213,8 @@
       if (!all.length) return '';
       return `<section class="fixtures">${hhead('ถ่ายทอดสดบน TrueVisions NOW', `${NOW_APP}/browse/sports`, 'โปรแกรมที่กำลังจะมาถึง')}<div class="fx-list">${all.slice(0, 6).map(e => {
         const live = e.start <= now;
-        return `<a class="fx" href="${NOW_APP}/watch/tvs-live/${e.id}" ${ext}>
-          <span class="fx-when">${live ? '<b class="fx-live">LIVE</b>' : `<b>${tfmt.format(new Date(e.start))}</b><span>${wkfmt.format(new Date(e.start))}</span>`}</span>
+        return `<a class="fx${live ? ' on' : ''}" href="${NOW_APP}/watch/tvs-live/${e.id}" ${ext}>
+          <span class="fx-when">${live ? `<b class="fx-live"><i></i>LIVE</b><span>ถึง ${tfmt.format(new Date(e.end))}</span>` : `<b>${tfmt.format(new Date(e.start))}</b><span>${dayLabel(e.start)}</span>`}</span>
           <span class="fx-txt"><span class="fx-league">${esc(e.league)}</span><b class="clamp2">${esc(e.t)}</b></span>
           ${e.img ? `<img src="${esc(e.img)}" alt="" loading="lazy" onerror="this.remove()">` : ''}</a>`;
       }).join('')}</div></section>`;
