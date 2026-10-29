@@ -290,7 +290,12 @@ a:hover .thumb img{transform:scale(1.03)}
   .brand-by{font-size:10px}
   .mast-logo{gap:10px}
   .brand-by img{height:19px}
-  .mast-link,.mast-tag,.mast-date{display:none}
+  .mast-tag,.mast-date{display:none}
+  .mast-row{gap:10px}
+  .mast-link{margin-left:auto;padding:6px 12px;font-size:11px;gap:6px;flex-shrink:0}
+  .mast-link svg{width:10px;height:10px}
+  .mast-link-full{display:none}
+  .burger{margin-left:0;margin-right:-8px;flex-shrink:0}
   .subnav-tabs a{gap:12px;border-radius:8px}
   .subnav-tabs a::before{display:none}
   .subnav-tabs a.on{background:linear-gradient(100deg,#FFF0F7 0%,#F5EEFB 100%)}
