@@ -490,6 +490,7 @@
     return sec ? `/${sec}${h.length > sec.length ? '/' + h.slice(sec.length + 1) : ''}` : null;
   }
   function go(url) {
+    restoreY = null; // only Back/Forward restore a position; a stale one would land a new page mid-way
     history.replaceState({ y: scrollY }, '');
     history.pushState({}, '', url);
     route();
