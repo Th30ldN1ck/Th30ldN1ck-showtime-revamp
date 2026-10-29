@@ -210,7 +210,9 @@ a:hover .thumb img{transform:scale(1.03)}
 .art-body p{margin:0 0 1.15em}
 .art-body img{margin:24px auto;border-radius:6px;height:auto}
 .art-body iframe{width:100%;aspect-ratio:16/9;border:0;border-radius:6px;margin:24px 0}
-.art-body a{color:#C2187A;text-decoration:underline;text-underline-offset:3px}
+.art-body a{color:#C2187A;text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}
+.art-body{overflow-wrap:break-word}
+.art-body table{display:block;max-width:100%;overflow-x:auto}
 .art-body .art-inline{display:grid;grid-template-columns:200px minmax(0,1fr);gap:20px;align-items:center;margin:32px 0;padding:12px 20px 12px 12px;background:#F5F4F7;border-radius:12px;color:var(--ink);text-decoration:none;line-height:1.45;transition:background .2s,box-shadow .2s}
 .art-body .art-inline:hover{background:#fff;box-shadow:0 8px 28px rgba(0,0,0,.1)}
 .art-inline .thumb{aspect-ratio:4/3;border-radius:8px;overflow:hidden}
