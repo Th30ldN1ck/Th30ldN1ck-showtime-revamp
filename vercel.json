@@ -1,5 +1,15 @@
 {
   "framework": null,
-  "buildCommand": null,
-  "outputDirectory": "site"
+  "installCommand": "",
+  "buildCommand": "node scripts/build_pages.mjs",
+  "outputDirectory": "site",
+  "rewrites": [
+    { "source": "/((?!api/|data/|img/|_vercel/).*)", "destination": "/index.html" }
+  ],
+  "images": {
+    "sizes": [320, 640, 1080],
+    "formats": ["image/webp"],
+    "minimumCacheTTL": 604800,
+    "remotePatterns": [{ "protocol": "https", "hostname": "www.truevisions.co.th", "pathname": "/static/**" }]
+  }
 }

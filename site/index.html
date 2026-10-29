@@ -3,25 +3,35 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Showtime Revamp Demo</title>
+<!-- page-meta -->
+<title>Showtime | TrueVisions NOW</title>
+<meta name="description" content="ข่าวกีฬา หนัง ซีรีส์ และรายการโชว์ จาก TrueVisions">
+<meta property="og:site_name" content="Showtime · TrueVisions NOW">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Showtime | TrueVisions NOW">
+<meta property="og:description" content="ข่าวกีฬา หนัง ซีรีส์ และรายการโชว์ จาก TrueVisions">
+<meta name="twitter:card" content="summary">
+<!-- /page-meta -->
+<link rel="preload" href="/data/list.json" as="fetch" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=51">
+<link rel="stylesheet" href="/styles.css?v=53">
 </head>
 <body>
 <div class="demo-ribbon">DEMO · Showtime revamp prototype · built from the CMS export (1 Jan – 27 Oct 2026) · not the live site</div>
 <header class="mast" id="mast">
   <div class="mast-top"><div class="wrap mast-row">
-    <a class="mast-logo" href="#home" aria-label="Showtime by TrueVisions NOW"><span class="brand-word">SH<span class="brand-o"><svg viewBox="0 0 24 24"><path d="M8.5 6.5l9 5.5-9 5.5z" fill="#fff"/></svg></span>WTIME</span><span class="brand-by">by <img src="img/tvs-logo.png" alt="TrueVisions NOW"></span></a>
+    <a class="mast-logo" href="/" aria-label="Showtime by TrueVisions NOW"><span class="brand-word">SH<span class="brand-o"><svg viewBox="0 0 24 24"><path d="M8.5 6.5l9 5.5-9 5.5z" fill="#fff"/></svg></span>WTIME</span><span class="brand-by">by <img src="/img/tvs-logo.png" alt="TrueVisions NOW"></span></a>
     <span class="mast-tag">ข่าวกีฬา หนัง ซีรีส์ และรายการโชว์<br>จาก TrueVisions</span>
     <span class="mast-date" id="mast-date"></span>
     <a class="mast-link" id="now-link" href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l13 8-13 8z"/></svg><span>ดูบน <span class="mast-link-full">TrueVisions </span>NOW</span></a>
     <button class="burger" aria-label="Menu" aria-expanded="false" id="burger"><span></span><span></span><span></span></button>
   </div></div>
   <nav class="subnav"><div class="wrap subnav-in">
-    <a class="mast-mini" href="#home" aria-label="Showtime home"><span class="brand-word">SH<span class="brand-o"><svg viewBox="0 0 24 24"><path d="M8.5 6.5l9 5.5-9 5.5z" fill="#fff"/></svg></span>WTIME</span></a>
+    <a class="mast-mini" href="/" aria-label="Showtime home"><span class="brand-word">SH<span class="brand-o"><svg viewBox="0 0 24 24"><path d="M8.5 6.5l9 5.5-9 5.5z" fill="#fff"/></svg></span>WTIME</span></a>
     <div class="subnav-tabs" id="subnav-in"></div>
+    <form class="msearch" id="msearch" action="/search" role="search"><input name="q" type="search" placeholder="ค้นหา" aria-label="ค้นหาบน Showtime" autocomplete="off"><button aria-label="ค้นหา"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button></form>
   </div></nav>
 </header>
 <main id="app" class="wrap"><div class="loading">กำลังโหลด…</div></main>
@@ -31,6 +41,6 @@
     <div class="muted">Prototype for internal review. Content from the CMS export; images load from truevisions.co.th.</div>
   </div>
 </footer>
-<script src="app.js?v=51"></script>
+<script src="/app.js?v=53"></script>
 </body>
 </html>

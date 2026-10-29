@@ -7,17 +7,20 @@ Prototype of the revamped Showtime section (truevisions.co.th/magazine). Vanilla
 - `site/data/index.json` (~2 MB) and `site/data/articles/*.json` (~18 MB) are generated. Don't read them; query them with a short script if needed.
 
 ## Layout
-- `site/index.html` – page shell (header, footer). Bump the `?v=` on styles.css/app.js after edits: the dev server sends no cache headers, so open tabs keep stale files
+- `site/index.html` – page shell (header, footer) and the template for every pre-rendered page; its `<!-- page-meta -->` block holds the site-wide title/share tags. Bump the `?v=` on styles.css/app.js after edits so deployed browsers fetch the new files
 - `site/styles.css` – all styling; colour tokens at the top in `:root`
-- `site/app.js` – hash router + page renderers: `home()`, `section()`, `show()`, `article()`
+- `site/app.js` – path router (`/`, `/search?q=`, `/<section>`, `/<section>/<sub>`, `/shows/<hub>`, `/<section>/<article id>` like the old site; old `#a-…` links redirect) + page renderers: `home()`, `section()`, `hubPage()`, `article()`, `search()`
   - `SECTIONS` = the five sections and their tabs; `SHOWS` = show hubs; `WATCH_URL` = target of every "Watch on NOW" button
 - `scripts/build_data.py` – CSV → `site/data/` (category mapping lives in `map_row()` and `SHOWS`)
 - `scripts/build_titles.py` – TVS NOW catalog feeds → `site/data/titles.json` (article → real title for the article page's title card; stdlib only). Card links go to the peacock-clone app at `NOW_APP` in app.js (https://tvs-newhomepage.vercel.app; point it at http://localhost:5173 to test unpushed clone changes): "ดูเลย" → `/play/<type>/<id>` (the clone's subscription gate: player or package checkout), more info → `/watch/<type>/<id>`
 - Article → NOW title, in priority order: `scripts/title_links.csv` (editor corrections; `none` = no title) → a NOW title link pasted in the article body (`…/watch/tvs-series/<id>`) → the title's name in the headline → `scripts/title_aliases.csv` (franchise keywords, e.g. โคนัน → the Conan series). No confident link → the page shows a generic "browse this section on NOW" card (`BROWSE` in app.js), never a guessed title. Each build writes `reports/title_review.csv` (last 60 days) for editors to check. Show hubs use their `now` id in `SHOWS`.
-- `site/artifact.html` – copy of index.html without html/head/body tags, used only for the claude.ai demo link
+- `scripts/build_pages.mjs` – runs on every Vercel deploy (and in serve.js): writes the slim `site/data/list.json` the browser loads, `site/data/meta/<c>.json` (full summaries) and a pre-rendered `index.html` per section/hub/article with its share-preview tags. All git-ignored.
+- `api/live.js` – Vercel function: upcoming/live broadcasts from the NOW sport feed for the Sports pages' fixtures list
+- `vercel.json` – build command, SPA rewrite, and Vercel image resizing for truevisions.co.th covers (`sized()` in app.js, Vercel hosts only)
+- `site/artifact.html` – old claude.ai demo copy; still hash-based and out of date
 
 ## Run
-`cd site && python3 -m http.server 8000` → http://localhost:8000
+`node scripts/serve.js` → http://localhost:8000 (builds the generated files, serves real paths and `api/`)
 
 ## Rebuild data after changing the mapping
 `python3 scripts/build_data.py data/truevisions_content_categories_2026.csv site/data`

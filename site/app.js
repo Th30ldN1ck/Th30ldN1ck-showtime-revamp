@@ -1,4 +1,4 @@
-/* Showtime revamp demo – vanilla JS, hash router, data from data/index.json + data/articles/<n>.json */
+/* Showtime revamp demo – vanilla JS, path router, data from /data/list.json + /data/articles|meta/<n>.json */
 (() => {
   'use strict';
 
@@ -49,7 +49,16 @@
 
   const app = document.getElementById('app');
   let DATA = [], BYID = {};
-  const chunkCache = {};
+  const chunkCache = {}, metaCache = {};
+  const IMG = 'https://www.truevisions.co.th/static/';
+  // Article covers are 1402px wide; on Vercel they go through its image resizer at the size the slot needs.
+  // A failed resize (e.g. quota) falls back to the original, then to a placeholder.
+  const RESIZE = location.hostname.endsWith('.vercel.app');
+  const sized = (src, w) => RESIZE && src.startsWith(IMG) ? `/_vercel/image?url=${encodeURIComponent(src)}&w=${w}&q=75` : src;
+  window.__imgFail = (img, name) => {
+    if (img.dataset.src) { img.src = img.dataset.src; delete img.dataset.src; return; }
+    img.replaceWith(Object.assign(document.createElement('div'), { className: 'ph', textContent: name }));
+  };
 
   // ---------- helpers ----------
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -58,14 +67,15 @@
   const fmtDate = ms => { const d = new Date(ms); return `${dfmt.format(d)} ${tfmt.format(d)} น.`; };
   const fmtLong = ms => new Intl.DateTimeFormat('th-TH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(ms));
   const label = a => a.sec === 'shows' && SHOWS[a.sub] ? SHOWS[a.sub].name : (SUBNAME[a.sec + '/' + a.sub] || SEC[a.sec].name);
-  const href = a => `#a-${a.id}`;
+  const href = a => `/${a.sec}/${a.id}`;
 
-  function thumb(a, extra = '') {
+  function thumb(a, extra = '', w = 640) {
     const name = esc(label(a)).replace(/'/g, '');
-    const ph = `<div class="ph">${name}</div>`;
-    const img = a.img ? `<img src="${esc(a.img)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'ph',textContent:'${name}'}))">` : ph;
+    const src = a.img && sized(a.img, w);
+    const img = a.img ? `<img src="${esc(src)}"${src !== a.img ? ` data-src="${esc(a.img)}"` : ''} alt="${esc(a.t)}" loading="lazy" onerror="__imgFail(this,'${name}')">` : `<div class="ph">${name}</div>`;
     return `<div class="thumb">${img}${extra}</div>`;
   }
+  const setTitle = t => { document.title = t ? `${t} | Showtime` : 'Showtime | TrueVisions NOW'; };
 
   const of = (sec, sub) => DATA.filter(a => a.sec === sec && (!sub || a.sub === sub));
 
@@ -76,7 +86,7 @@
       if (!items.length) return;
       const age = (today - items[0].d) / day;
       const t = titles[cfg.now];
-      HUBS[key] = { ...cfg, key, items, href: '#show-' + key, art: t?.img, watch: t && `${NOW_APP}/watch/${t.type}/${cfg.now}`, status: age < 14 ? 'live' : age < 90 ? 'ended' : 'archive' };
+      HUBS[key] = { ...cfg, key, items, href: '/shows/' + key, art: t?.img, watch: t && `${NOW_APP}/watch/${t.type}/${cfg.now}`, status: age < 14 ? 'live' : age < 90 ? 'ended' : 'archive' };
     });
   }
   const STATUS_ORDER = { live: 0, ended: 1, archive: 2 };
@@ -96,34 +106,34 @@
   function setSubnav(active) {
     const items = [['', 'หน้าแรก', 'home'], ...SECTIONS.map(s => [s.key, s.name, s.icon, s.isNew])];
     document.getElementById('subnav-in').innerHTML = items.map(([k, n, icon, isNew]) =>
-      `<a href="${k ? '#' + k : '#home'}" class="${k === active ? 'on' : ''} ${isNew ? 'new' : ''}">${ICONS[icon]}<span>${esc(n)}</span></a>`).join('');
+      `<a href="${k ? '/' + k : '/'}" class="${k === active ? 'on' : ''} ${isNew ? 'new' : ''}">${ICONS[icon]}<span>${esc(n)}</span></a>`).join('');
   }
 
   // ---------- pages ----------
   // Home: fixed top stories, then rows. Every story appears once (picked in order, newest first), and
   // everything is chosen from date/section/cover, so no editorial flags are needed.
   const hhead = (title, more = '', sub = '') => `<div class="hhead"><h2>${esc(title)}</h2>${sub ? `<span>${esc(sub)}</span>` : ''}${more ? `<a href="${more}"${more.startsWith('http') ? ' ' + ext : ''}>ดูทั้งหมด <i>→</i></a>` : ''}</div>`;
-  const story = (a, cls = '') => `<a class="story ${cls}" href="${href(a)}">${thumb(a)}<span class="rcard-k">${esc(label(a))}</span><b class="clamp${cls ? 3 : 2}">${esc(a.t)}</b>${cls && a.s ? `<p class="clamp2">${esc(a.s)}</p>` : ''}<span class="rcard-d">${dfmt.format(new Date(a.d))}</span></a>`;
+  const story = (a, cls = '') => `<a class="story ${cls}" href="${href(a)}">${thumb(a, '', cls ? 1080 : 640)}<span class="rcard-k">${esc(label(a))}</span><b class="clamp${cls ? 3 : 2}">${esc(a.t)}</b>${cls && a.s ? `<p class="clamp2">${esc(a.s)}</p>` : ''}<span class="rcard-d">${dfmt.format(new Date(a.d))}</span></a>`;
 
   const citem = a => `<a class="citem" href="${href(a)}">${thumb(a)}<span><span class="rcard-k">${esc(label(a))}</span><b class="clamp2">${esc(a.t)}</b><span class="rcard-d">${dfmt.format(new Date(a.d))}</span></span></a>`;
 
   function home() {
-    setSubnav('');
+    setSubnav(''); setTitle('');
     const used = new Set();
     const take = (list, n) => { const out = list.filter(x => x.img && !used.has(x)).slice(0, n); out.forEach(x => used.add(x)); return out; };
     const [lead, ...top] = take(DATA.filter(a => a.sec !== 'sports'), 5);
     const hubs = hubsOf(h => h.status !== 'archive').slice(0, 3).map(hubTile).join('');
     const latest = take(DATA, 8);
     const feat = (k, n) => [SEC[k], take(of(k), n)];
-    const block = ([s, [first, ...rest]], flip) => first ? `${hhead(s.name, '#' + s.key)}<div class="feat${flip ? ' flip' : ''}">${story(first, 'mid')}<div class="clist">${rest.map(citem).join('')}</div></div>` : '';
-    const half = ([s, [first, ...rest]]) => first ? `<div>${hhead(s.name, '#' + s.key)}${story(first, 'mid')}<div class="clist">${rest.map(citem).join('')}</div></div>` : '';
+    const block = ([s, [first, ...rest]], flip) => first ? `${hhead(s.name, '/' + s.key)}<div class="feat${flip ? ' flip' : ''}">${story(first, 'mid')}<div class="clist">${rest.map(citem).join('')}</div></div>` : '';
+    const half = ([s, [first, ...rest]]) => first ? `<div>${hhead(s.name, '/' + s.key)}${story(first, 'mid')}<div class="clist">${rest.map(citem).join('')}</div></div>` : '';
 
     app.innerHTML = `
       <section class="top">
         ${story(lead, 'lead')}
         <div class="top-side">${top.map(a => story(a)).join('')}</div>
       </section>
-      ${hhead('Shows', '#shows', 'รายการโชว์ที่คุณติดตาม')}
+      ${hhead('Shows', '/shows', 'รายการโชว์ที่คุณติดตาม')}
       <div class="hubs even">${hubs}</div>
       ${hhead('ล่าสุด')}
       <div class="grid g4 cards">${latest.map(rcard).join('')}</div>
@@ -138,7 +148,7 @@
   // titles Showtime wrote about most recently, linking to their NOW detail pages
   async function nowRow() {
     try {
-      titlesPromise ||= fetch('data/titles.json').then(r => r.json());
+      titlesPromise ||= fetch('/data/titles.json').then(r => r.json());
       const { titles, art } = await titlesPromise;
       const ids = [...new Set(DATA.map(a => art[a.id]).filter(id => id && titles[id]?.img))].slice(0, 8);
       if (!ids.length) return '';
@@ -173,8 +183,9 @@
     setSubnav(secKey);
     const all = of(secKey), items = sub ? of(secKey, sub) : all;
     const subName = sub && (SUBNAME[secKey + '/' + sub] || sub);
-    const tabs = s.subs.length ? `<nav class="ptabs"><a class="${sub ? '' : 'on'}" href="#${secKey}">ทั้งหมด <span>${all.length}</span></a>${s.subs.map(([k, n]) => `<a class="${k === sub ? 'on' : ''}" href="${secKey === 'shows' && SHOWS[k] ? '#show-' + k : `#${secKey}-${k}`}">${esc(n)} <span>${of(secKey, k).length}</span></a>`).join('')}</nav>` : '';
-    const kicker = sub ? `<nav class="art-kicker"><a href="#${secKey}">${esc(s.name)}</a></nav>` : '';
+    setTitle(sub ? `${subName} · ${s.name}` : s.name);
+    const tabs = s.subs.length ? `<nav class="ptabs"><a class="${sub ? '' : 'on'}" href="/${secKey}">ทั้งหมด <span>${all.length}</span></a>${s.subs.map(([k, n]) => `<a class="${k === sub ? 'on' : ''}" href="/${secKey}/${k}">${esc(n)} <span>${of(secKey, k).length}</span></a>`).join('')}</nav>` : '';
+    const kicker = sub ? `<nav class="art-kicker"><a href="/${secKey}">${esc(s.name)}</a></nav>` : '';
     let body;
     if (secKey === 'shows' && !sub) {
       const ent = of('shows', 'entertainment').filter(a => a.img);
@@ -183,19 +194,64 @@
       const withImg = items.filter(a => a.img), top = withImg.slice(0, 4);
       body = items.length > 8 ? `${featBlock(top)}${hhead('ล่าสุด')}${pagedGrid(items.filter(a => !top.includes(a)))}` : pagedGrid(items);
     }
-    app.innerHTML = `${pageHead(sub ? subName : s.name, s.th, items.length, kicker)}${tabs}${body}`;
+    app.innerHTML = `${pageHead(sub ? subName : s.name, s.th, items.length, kicker)}${tabs}${secKey === 'sports' ? '<div id="live-row"></div>' : ''}${body}`;
+    if (secKey === 'sports') liveRow(sub).then(html => { const el = document.getElementById('live-row'); if (el) el.outerHTML = html; });
+  }
+
+  // Upcoming and live broadcasts from the NOW sport feed (api/live.js), like a fixtures list. Rows open the match's
+  // NOW page (time slot + subscribe), not /play: that gate's checkout is the entertainment package.
+  const wkfmt = new Intl.DateTimeFormat('th-TH', { weekday: 'short', day: 'numeric', month: 'short' });
+  async function liveRow(sub) {
+    try {
+      const now = Date.now();
+      const all = (await (await fetch('/api/live')).json()).filter(e => e.end > now && (!sub || e.sub === sub));
+      if (!all.length) return '';
+      return `<section class="fixtures">${hhead('ถ่ายทอดสดบน TrueVisions NOW', `${NOW_APP}/browse/sports`, 'โปรแกรมที่กำลังจะมาถึง')}<div class="fx-list">${all.slice(0, 6).map(e => {
+        const live = e.start <= now;
+        return `<a class="fx" href="${NOW_APP}/watch/tvs-live/${e.id}" ${ext}>
+          <span class="fx-when">${live ? '<b class="fx-live">LIVE</b>' : `<b>${tfmt.format(new Date(e.start))}</b><span>${wkfmt.format(new Date(e.start))}</span>`}</span>
+          <span class="fx-txt"><span class="fx-league">${esc(e.league)}</span><b class="clamp2">${esc(e.t)}</b></span>
+          ${e.img ? `<img src="${esc(e.img)}" alt="" loading="lazy" onerror="this.remove()">` : ''}</a>`;
+      }).join('')}</div></section>`;
+    } catch (e) {
+      return '';
+    }
+  }
+
+  // Search over headlines (and summaries where loaded); all words must match, newest first
+  const norm = s => String(s || '').toLowerCase().replace(/\s+/g, ' ');
+  function search(q) {
+    setSubnav('search'); setTitle(q ? `ค้นหา “${q}”` : 'ค้นหา');
+    app.innerHTML = `<header class="phead"><h1>ค้นหา</h1></header>
+      <form class="sbox" id="sbox" role="search"><input type="search" name="q" value="${esc(q)}" placeholder="ค้นหาข่าว ซีรีส์ รายการ หรือนักกีฬา" aria-label="คำค้นหา" autocomplete="off"><button class="tbtn primary">ค้นหา</button></form>
+      <div id="sres"></div>`;
+    const form = document.getElementById('sbox'), input = form.q;
+    const show = v => {
+      const words = norm(v).trim().split(' ').filter(Boolean), res = document.getElementById('sres');
+      if (!words.length) {
+        res.innerHTML = `<div class="ssugg"><span>ลองค้นหา</span>${['The Voice', 'F1', 'โคนัน', 'บาร์เซโลน่า', 'ซีรีส์เกาหลี', 'Doraemon'].map(w => `<a href="/search?q=${encodeURIComponent(w)}">${esc(w)}</a>`).join('')}</div>`;
+        return;
+      }
+      const found = DATA.filter(a => { a._n ||= norm(`${a.t} ${label(a)} ${a.s || ''}`); return words.every(w => a._n.includes(w)); });
+      res.innerHTML = `<p class="scount">${found.length ? `พบ ${found.length.toLocaleString()} เรื่อง` : `ไม่พบเรื่องที่ตรงกับ “${esc(v.trim())}”`}</p>${found.length ? pagedGrid(found) : ''}`;
+    };
+    let t;
+    input.oninput = () => { clearTimeout(t); t = setTimeout(() => { history.replaceState(history.state, '', input.value.trim() ? `/search?q=${encodeURIComponent(input.value.trim())}` : '/search'); setTitle(input.value.trim() ? `ค้นหา “${input.value.trim()}”` : 'ค้นหา'); show(input.value); }, 200); };
+    form.onsubmit = e => { e.preventDefault(); input.blur(); show(input.value); };
+    show(q);
+    if (!q) input.focus();
   }
 
   function hubPage(key) {
     const h = HUBS[key];
     if (!h) return notFound();
-    setSubnav('shows');
+    setSubnav('shows'); setTitle(h.name);
     const items = h.items, withImg = items.filter(a => a.img), top = withImg.slice(0, 4);
     // without catalog art, take a photo from further down so the header doesn't repeat the first story
     const art = h.art || (withImg[4] || withImg[0])?.img;
     const cta = h.status === 'live' ? 'ดูตอนล่าสุดบน TrueVisions NOW' : 'ดูย้อนหลังบน TrueVisions NOW';
     app.innerHTML = `<section class="page-hero">${art ? `<img src="${esc(art)}" alt="" onerror="this.remove()">` : ''}
-        <nav class="art-kicker"><a href="#shows">Shows</a><i>/</i><span>${hubLabel(h)}</span></nav>
+        <nav class="art-kicker"><a href="/shows">Shows</a><i>/</i><span>${hubLabel(h)}</span></nav>
         <h1>${esc(h.name)}</h1><p>${esc(h.blurb)}</p>
         <div class="row-cta"><a class="tbtn primary" href="${h.watch || NOW_APP}" ${ext}>${ICONS.play}<span>${cta}</span></a><span>${items.length} เรื่อง · ล่าสุด ${dfmt.format(new Date(items[0].d))}</span></div>
       </section>
@@ -218,8 +274,9 @@
     line: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.5 3 2 6.6 2 11c0 3.9 3.5 7.2 8.3 7.9.3.1.8.2.9.5.1.3.1.7 0 1l-.1.9c0 .3-.2 1 .9.5s6-3.5 8.2-6.1c1.5-1.6 2.2-3.2 2.2-4.7C22 6.6 17.5 3 12 3z"/></svg>',
     link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></svg>',
   };
+  const pageUrl = a => location.origin + href(a);
   const shareBar = a => {
-    const u = encodeURIComponent(a.old);
+    const u = encodeURIComponent(pageUrl(a));
     return `<div class="share">
       ${navigator.share ? `<button class="sh native" type="button" aria-label="แชร์">${SHARE_ICONS.share}<span>แชร์</span></button>` : ''}
       <a class="sh" href="https://www.facebook.com/sharer/sharer.php?u=${u}" target="_blank" rel="noopener" aria-label="แชร์ไปที่ Facebook">${SHARE_ICONS.fb}</a>
@@ -262,7 +319,7 @@
   // name in the headline); a null entry means an editor ruled out every title.
   async function titleFor(a) {
     try {
-      titlesPromise ||= fetch('data/titles.json').then(r => r.json());
+      titlesPromise ||= fetch('/data/titles.json').then(r => r.json());
       const { titles, art, shelf } = await titlesPromise;
       const tid = a.id in art ? art[a.id] : HUBS[a.sub]?.now;
       if (tid && titles[tid]) return titleLinks(tid, titles[tid]);
@@ -330,53 +387,58 @@
   async function article(id) {
     const a = BYID[id];
     if (!a) return notFound();
-    setSubnav(a.sec);
-    const s = SEC[a.sec];
-    const subHref = a.sec === 'shows' && SHOWS[a.sub] ? `#show-${a.sub}` : `#${a.sec}-${a.sub}`;
-    const sameSub = DATA.filter(x => x.sec === a.sec && x.sub === a.sub && x.id !== a.id);
+    setSubnav(a.sec); setTitle(a.t);
+    const s = SEC[a.sec], my = navId;
+    const subHref = `/${a.sec}/${a.sub}`;
+    // next story = the next older one in the same subcategory (the newer one for the oldest), as on Tudum/EW
+    const subAll = DATA.filter(x => x.sec === a.sec && x.sub === a.sub && x.img), pos = subAll.indexOf(a);
+    const next = subAll.slice(pos + 1)[0] || subAll.filter(x => x !== a)[0];
+    const sameSub = DATA.filter(x => x.sec === a.sec && x.sub === a.sub && x !== a && x !== next);
     const inline = sameSub.find(x => x.img) || sameSub[0];
     const readNext = [...sameSub.filter(x => x !== inline), ...DATA.filter(x => x.sec === a.sec && x.sub !== a.sub)].filter(x => x.img).slice(0, 8);
-    const topics = [[s.name, `#${a.sec}`], [label(a), subHref], ['TrueVisions NOW', WATCH_URL]]
+    const topics = [[s.name, `/${a.sec}`], [label(a), subHref], ['TrueVisions NOW', WATCH_URL]]
       .filter(([t], i, arr) => arr.findIndex(([u]) => u === t) === i);
 
     app.innerHTML = `<div class="art">
         <article class="art-main">
           <header class="art-head">
-            <nav class="art-kicker" aria-label="หมวด"><a href="#${a.sec}">${esc(s.name)}</a>${label(a) !== s.name ? `<i>/</i><a href="${subHref}">${esc(label(a))}</a>` : ''}</nav>
+            <nav class="art-kicker" aria-label="หมวด"><a href="/${a.sec}">${esc(s.name)}</a>${label(a) !== s.name ? `<i>/</i><a href="${subHref}">${esc(label(a))}</a>` : ''}</nav>
             <h1 class="art-title">${esc(a.t)}</h1>
-            ${a.s ? `<p class="art-lead" id="lead">${esc(a.s)}</p>` : ''}
+            <p class="art-lead" id="lead"${a.s ? '' : ' hidden'}>${esc(a.s || '')}</p>
             <div class="art-meta">
               <span>${fmtDate(a.d)}</span><span id="readtime"></span>
               ${shareBar(a)}
             </div>
           </header>
-          ${a.img ? `<figure class="art-cover">${thumb(a)}</figure>` : ''}
+          ${a.img ? `<figure class="art-cover">${thumb(a, '', 1080)}</figure>` : ''}
           <div class="art-body" id="body"><p class="muted">กำลังโหลดเนื้อหา…</p></div>
           <div id="title-card"></div>
           <div class="art-topics"><span>หัวข้อ</span>${topics.map(([t, h]) => `<a href="${h}"${h.startsWith('http') ? ' target="_blank" rel="noopener"' : ''}>${esc(t)}</a>`).join('')}</div>
           <div class="follow"><span>ติดตาม TrueVisions</span><div>${SOCIAL.map(([n, u]) => `<a href="${u}" target="_blank" rel="noopener">${n}</a>`).join('')}</div></div>
         </article>
       </div>
+      ${next ? `<section class="art-next"><h2 class="art-h2">เรื่องถัดไป</h2>${story(next, 'lead')}</section>` : ''}
       ${readNext.length ? `<section class="art-more"><h2 class="art-h2">อ่านต่อ</h2><div class="grid g4">${readNext.map(rcard).join('')}</div></section>` : ''}`;
 
     const copy = app.querySelector('.sh.copy');
-    copy.onclick = () => navigator.clipboard?.writeText(a.old).then(() => { copy.classList.add('done'); setTimeout(() => copy.classList.remove('done'), 1500); });
+    copy.onclick = () => navigator.clipboard?.writeText(pageUrl(a)).then(() => { copy.classList.add('done'); setTimeout(() => copy.classList.remove('done'), 1500); });
     const native = app.querySelector('.sh.native');
-    if (native) native.onclick = () => navigator.share({ title: a.t, url: a.old }).catch(() => {});
+    if (native) native.onclick = () => navigator.share({ title: a.t, url: pageUrl(a) }).catch(() => {});
 
-    window.scrollTo(0, 0);
     titleFor(a).then(t => {
       const el = document.getElementById('title-card');
-      if (!t || !el || location.hash !== `#a-${id}`) return;
+      if (!t || !el || my !== navId) return;
       if (t.generic) { el.outerHTML = genericCard(t); return; }
       el.outerHTML = titleCard(t);
       app.insertAdjacentHTML('beforeend', titleBar(t));
     });
     try {
-      if (!chunkCache[a.c]) chunkCache[a.c] = fetch(`data/articles/${a.c}.json`).then(r => r.json());
-      const html = (await chunkCache[a.c])[a.id];
+      chunkCache[a.c] ||= fetch(`/data/articles/${a.c}.json`).then(r => r.json());
+      metaCache[a.c] ||= fetch(`/data/meta/${a.c}.json`).then(r => r.json()).catch(() => ({}));
+      const [bodies, meta] = await Promise.all([chunkCache[a.c], metaCache[a.c]]);
+      const html = bodies[a.id], summary = meta[a.id]?.s || a.s || '';
       const el = document.getElementById('body');
-      if (el && location.hash === `#a-${id}`) {
+      if (el && my === navId) {
         el.innerHTML = html || '<p class="muted">ไม่มีเนื้อหา</p>';
         // the old CMS saved spacer paragraphs (76% of articles); drop them here rather than in the data
         el.querySelectorAll('p').forEach(p => { if (!p.textContent.trim() && !p.querySelector('img,iframe,video')) p.remove(); });
@@ -385,10 +447,12 @@
         const paras = [...el.children].filter(p => p.tagName === 'P' && p.textContent.trim().length > 40);
         // ~10% of summaries are just the opening paragraph; don't show it twice
         const lead = document.getElementById('lead');
-        if (lead && paras[0] && plain(paras[0].textContent).includes(plain(a.s).slice(0, 40))) lead.remove();
+        if (lead && (!summary || (paras[0] && plain(paras[0].textContent).includes(plain(summary).slice(0, 40))))) lead.remove();
+        else if (lead) { lead.textContent = summary; lead.hidden = false; }
         if (inline && paras.length >= 4) paras[Math.floor(paras.length / 2)].insertAdjacentHTML('afterend',
           `<a class="art-inline" href="${href(inline)}">${inline.img ? thumb(inline) : ''}<span class="art-inline-txt"><span class="art-inline-k">อ่านต่อ <i>→</i></span><b class="clamp2">${esc(inline.t)}</b><span class="art-inline-d">${esc(label(inline))} · ${dfmt.format(new Date(inline.d))}</span></span></a>`);
-        el.querySelectorAll('img').forEach(i => i.onerror = () => i.remove());
+        el.querySelectorAll('img').forEach(i => { i.onerror = () => i.remove(); if (!i.alt) i.alt = a.t; });
+        if (restoreY != null) { scrollTo(0, restoreY); restoreY = null; }
         if (window.self !== window.top) el.querySelectorAll('iframe').forEach(f => {
           const a = document.createElement('a'); a.href = f.src.replace('/embed/', '/watch?v='); a.target = '_blank'; a.rel = 'noopener';
           a.className = 'tbtn primary'; a.innerHTML = ICONS.play + '<span>ดูวิดีโอบน YouTube</span>'; f.replaceWith(a);
@@ -400,21 +464,50 @@
     }
   }
 
-  function notFound() { setSubnav(''); app.innerHTML = '<div class="empty">ไม่พบหน้านี้ · <a href="#home" style="color:var(--pink)">กลับหน้าแรก</a></div>'; }
+  function notFound() { setSubnav(''); setTitle('ไม่พบหน้านี้'); app.innerHTML = '<div class="empty">ไม่พบหน้านี้ · <a href="/" style="color:var(--pink)">กลับหน้าแรก</a></div>'; }
 
+  // Paths: / · /search?q= · /<section> · /<section>/<sub> · /shows/<hub> · /<section>/<article id> (as on the old site)
+  let navId = 0, restoreY = null;
   function route() {
-    const h = decodeURIComponent(location.hash.replace(/^#/, ''));
+    navId++;
     closeMenu();
-    if (!h || h === 'home') home();
-    else if (h.startsWith('a-')) article(h.slice(2));
-    else if (h.startsWith('show-')) hubPage(h.slice(5));
-    else {
-      const sec = SECTIONS.map(s => s.key).sort((a, b) => b.length - a.length).find(k => h === k || h.startsWith(k + '-'));
-      if (sec) section(sec, h.length > sec.length ? h.slice(sec.length + 1) : undefined);
-      else notFound();
-    }
-    if (!h.startsWith('a-')) window.scrollTo(0, 0);
+    const [p0, p1] = location.pathname.split('/').filter(Boolean).map(decodeURIComponent);
+    if (!p0) home();
+    else if (p0 === 'search') search(new URLSearchParams(location.search).get('q') || '');
+    else if (!SEC[p0]) notFound();
+    else if (!p1) section(p0);
+    else if (/^\d+$/.test(p1)) BYID[p1]?.sec === p0 ? article(p1) : notFound();
+    else if (p0 === 'shows' && HUBS[p1]) hubPage(p1);
+    else if (SEC[p0].subs.some(([k]) => k === p1)) section(p0, p1);
+    else notFound();
   }
+  // links from before the switch to real paths (#a-123, #sports-football, #show-agt, #home)
+  function fromHash(h) {
+    if (h === 'home') return '/';
+    if (h.startsWith('a-')) return BYID[h.slice(2)] ? href(BYID[h.slice(2)]) : '/';
+    if (h.startsWith('show-')) return `/shows/${h.slice(5)}`;
+    const sec = SECTIONS.map(s => s.key).sort((a, b) => b.length - a.length).find(k => h === k || h.startsWith(k + '-'));
+    return sec ? `/${sec}${h.length > sec.length ? '/' + h.slice(sec.length + 1) : ''}` : null;
+  }
+  function go(url) {
+    history.replaceState({ y: scrollY }, '');
+    history.pushState({}, '', url);
+    route();
+    scrollTo(0, 0);
+  }
+  history.scrollRestoration = 'manual';
+  document.addEventListener('click', e => {
+    const a = e.target.closest('a[href]');
+    if (!a || a.target || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const u = new URL(a.href, location.href);
+    if (u.origin !== location.origin || /^\/(data|api|img|_vercel)\//.test(u.pathname)) return;
+    e.preventDefault();
+    if (u.pathname + u.search === location.pathname + location.search) { scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    go(u.pathname + u.search);
+  });
+  addEventListener('popstate', () => { restoreY = history.state?.y ?? 0; route(); scrollTo(0, restoreY); });
+  const msearch = document.getElementById('msearch');
+  msearch.onsubmit = e => { e.preventDefault(); const q = msearch.q.value.trim(); msearch.q.value = ''; msearch.q.blur(); go(q ? `/search?q=${encodeURIComponent(q)}` : '/search'); };
 
   const mast = document.getElementById('mast'), burger = document.getElementById('burger');
   function closeMenu() { mast.classList.remove('open'); burger.setAttribute('aria-expanded', 'false'); }
@@ -426,12 +519,14 @@
     else if (scrollY < 10) mast.classList.remove('scrolled');
   }, { passive: true });
 
-  titlesPromise = fetch('data/titles.json').then(r => r.json());
-  Promise.all([fetch('data/index.json').then(r => r.json()), titlesPromise.catch(() => ({}))]).then(([d, t]) => {
+  titlesPromise = fetch('/data/titles.json').then(r => r.json());
+  Promise.all([fetch('/data/list.json').then(r => r.json()), titlesPromise.catch(() => ({}))]).then(([d, t]) => {
+    d.forEach(a => { if (a.img && !a.img.includes('://')) a.img = IMG + a.img; });
     DATA = d; BYID = Object.fromEntries(d.map(a => [a.id, a]));
     buildHubs(t.titles);
     document.getElementById('mast-date').textContent = fmtLong(DATA[0].d);
-    window.addEventListener('hashchange', route);
+    const legacy = location.hash.length > 1 && fromHash(decodeURIComponent(location.hash.slice(1)));
+    if (legacy) history.replaceState({}, '', legacy);
     route();
   }).catch(() => { app.innerHTML = '<div class="empty">โหลดข้อมูลไม่สำเร็จ</div>'; });
 })();
