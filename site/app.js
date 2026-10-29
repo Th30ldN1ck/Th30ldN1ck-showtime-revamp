@@ -235,8 +235,7 @@
   // data/titles.json is built from the same catalog feeds by scripts/build_titles.py.
   // /play/ is the app's gate: player for signed-in subscribers (Back lands on the /watch/ more-info page),
   // package checkout for everyone else.
-  // Local peacock-clone dev server until /play is deployed; live: https://tvs-newhomepage.vercel.app
-  const NOW_APP = 'http://localhost:5173';
+  const NOW_APP = 'https://tvs-newhomepage.vercel.app';
   const BADGE = { only: ['ดูได้ที่เดียว', 'TrueVisions NOW'], original: ['Original', 'TrueVisions'] };
   const INFO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg>';
   let titlesPromise;
