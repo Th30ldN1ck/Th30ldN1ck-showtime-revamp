@@ -241,6 +241,8 @@
   let titlesPromise;
 
   // Generic card per section, used when no title is confidently linked: names the section on NOW, never a title.
+  // Its banner is the first title on that section's NOW shelf (optionally the first matching the regex) and opens
+  // that title's page; the button opens the whole section.
   const BROWSE = {
     'movies-series/movies': ['หนังใหม่บน TrueVisions NOW', '/browse/movies'],
     'movies-series/series': ['ซีรีส์ใหม่บน TrueVisions NOW', '/browse/series'],
@@ -249,7 +251,7 @@
     knowledge: ['สารคดีบน TrueVisions NOW', '/what-to-watch'],
     'sports/football': ['ดูฟุตบอลสดบน TrueVisions NOW', '/browse/sports/football'],
     'sports/racing': ['ดู F1 และ MotoGP บน TrueVisions NOW', '/browse/sports/f1-motogp'],
-    'sports/tennis': ['ดูเทนนิสบน TrueVisions NOW', '/browse/sports/tennis'],
+    'sports/tennis': ['ดูเทนนิสบน TrueVisions NOW', '/browse/sports/tennis', /WTA|ATP|tennis|เทนนิส|wimbledon|วิมเบิลดัน/i],
     sports: ['ดูกีฬาสดบน TrueVisions NOW', '/browse/sports'],
   };
   const titleLinks = (tid, t) => ({ ...t, id: tid,
@@ -264,9 +266,9 @@
       const { titles, art, shelf } = await titlesPromise;
       const tid = a.id in art ? art[a.id] : HUBS[a.sub]?.now;
       if (tid && titles[tid]) return titleLinks(tid, titles[tid]);
-      const key = `${a.sec}/${a.sub}`, [heading, path] = BROWSE[key] || BROWSE[a.sec] || ['ดูต่อบน TrueVisions NOW', ''];
-      const picks = (shelf[key] || []).filter(i => titles[i]?.img).slice(0, 3).map(i => titleLinks(i, titles[i]));
-      return { generic: true, heading, href: NOW_APP + path, picks };
+      const key = `${a.sec}/${a.sub}`, [heading, path, only] = BROWSE[key] || BROWSE[a.sec] || ['ดูต่อบน TrueVisions NOW', ''];
+      const bid = (shelf[key] || []).find(i => titles[i]?.img && (!only || only.test(titles[i].t)));
+      return { generic: true, heading, href: NOW_APP + path, banner: bid && titleLinks(bid, titles[bid]) };
     } catch (e) {
       return null;
     }
@@ -299,8 +301,8 @@
     </section>`;
   }
 
-  const genericCard = g => `<section class="tcard tgen">
-      <div class="tgen-shelf">${g.picks.map(t => `<a class="tgen-pick" href="${t.info}" ${ext}><span class="tgen-img"><img src="${esc(t.img)}" alt="" loading="lazy" onerror="this.remove()"></span><b class="clamp1">${esc(t.t)}</b></a>`).join('')}</div>
+  const genericCard = g => `<section class="tcard tgen${g.banner ? '' : ' solo'}">
+      ${g.banner ? `<a class="tcard-img tgen-banner" href="${g.banner.info}" ${ext} aria-label="${esc(g.banner.t)}" title="${esc(g.banner.t)}"><img src="${esc(g.banner.img)}" alt="" loading="lazy" onerror="this.remove()"></a>` : ''}
       <div class="tcard-info">
         <span class="tcard-kicker">ดูต่อบน TrueVisions NOW</span>
         <h3>${esc(g.heading)}</h3>
