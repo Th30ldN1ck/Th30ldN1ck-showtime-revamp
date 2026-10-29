@@ -295,11 +295,9 @@
 
   // Tudum-style title card linking into the TVS NOW app prototype (peacock-clone, deployed on Vercel).
   // data/titles.json is built from the same catalog feeds by scripts/build_titles.py.
-  // /play/ is the app's gate: player for signed-in subscribers (Back lands on the /watch/ more-info page),
-  // package checkout for everyone else.
+  // Every watch link opens the title's /watch/ page, which has its own play/subscribe buttons.
   const NOW_APP = 'https://tvs-newhomepage.vercel.app';
   const BADGE = { only: ['ดูได้ที่เดียว', 'TrueVisions NOW'], original: ['Original', 'TrueVisions'] };
-  const INFO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg>';
   let titlesPromise;
 
   // Generic card per section, used when no title is confidently linked: names the section on NOW, never a title.
@@ -317,7 +315,6 @@
     sports: ['ดูกีฬาสดบน TrueVisions NOW', '/browse/sports'],
   };
   const titleLinks = (tid, t) => ({ ...t, id: tid,
-    play: `${NOW_APP}/play/${t.type}/${tid}?title=${encodeURIComponent(t.t)}&img=${encodeURIComponent(t.img || '')}`,
     info: `${NOW_APP}/watch/${t.type}/${tid}` });
 
   // titles.json `art` holds only confident links (editor correction, NOW link in the body, or the title's
@@ -348,15 +345,14 @@
     const badge = BADGE[t.badge];
     return `<section class="tcard">
       <div class="tcard-bg" style="background-image:url('${esc(t.img)}')"></div>
-      <a class="tcard-img" href="${t.play}" ${ext} aria-label="ดู ${esc(t.t)}"><img src="${esc(t.img)}" alt="" loading="lazy" onerror="this.remove()"><span class="tcard-play">${ICONS.play}</span>${badge ? `<span class="tcard-badge"><b>${badge[0]}</b><span>${badge[1]}</span></span>` : ''}</a>
+      <a class="tcard-img" href="${t.info}" ${ext} aria-label="ดู ${esc(t.t)}"><img src="${esc(t.img)}" alt="" loading="lazy" onerror="this.remove()"><span class="tcard-play">${ICONS.play}</span>${badge ? `<span class="tcard-badge"><b>${badge[0]}</b><span>${badge[1]}</span></span>` : ''}</a>
       <div class="tcard-info">
         <span class="tcard-kicker">ดูเรื่องนี้บน TrueVisions NOW</span>
         <h3 class="clamp2"><a href="${t.info}" ${ext}>${esc(t.t)}</a></h3>
         ${meta.length ? `<div class="tcard-meta">${meta.map(m => `<span>${esc(m)}</span>`).join('')}</div>` : ''}
         <p class="clamp3">${esc(t.syn || `ดู ${t.t} ได้แล้วบน TrueVisions NOW ทั้งไฮไลต์และย้อนหลัง`)}</p>
         <div class="tcard-btns">
-          <a class="tbtn primary" href="${t.play}" ${ext}>${ICONS.play}<span>ดูเลย</span></a>
-          <a class="tbtn" href="${t.info}" ${ext}>${INFO}<span>ข้อมูลเพิ่มเติม</span></a>
+          <a class="tbtn primary" href="${t.info}" ${ext}>${ICONS.play}<span>ดูเลย</span></a>
         </div>
         <p class="tcard-price">เริ่มต้น <b>฿99</b>/เดือน</p>
       </div>
@@ -376,7 +372,7 @@
 
   // phone-only bar between the cover and the full card
   const titleBar = t => `<div class="tbar" id="tbar">
-      <a class="tbar-link" href="${t.play}" ${ext}><img src="${esc(t.img)}" alt="" onerror="this.remove()"><span class="tbar-txt"><span class="tbar-kicker">${t.badge === 'only' ? 'ดูได้ที่เดียวบน NOW' : 'ดูบน TrueVisions NOW'}</span><b>${esc(t.t)}</b></span><span class="tbtn primary">${ICONS.play}<span>ดูเลย</span></span></a>
+      <a class="tbar-link" href="${t.info}" ${ext}><img src="${esc(t.img)}" alt="" onerror="this.remove()"><span class="tbar-txt"><span class="tbar-kicker">${t.badge === 'only' ? 'ดูได้ที่เดียวบน NOW' : 'ดูบน TrueVisions NOW'}</span><b>${esc(t.t)}</b></span><span class="tbtn primary">${ICONS.play}<span>ดูเลย</span></span></a>
       <button class="tbar-x" aria-label="ปิด" onclick="this.parentNode.remove()">×</button>
     </div>`;
 
