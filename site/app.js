@@ -20,14 +20,14 @@
   const SUBNAME = Object.fromEntries(SECTIONS.flatMap(s => s.subs.map(([k, n]) => [s.key + '/' + k, n])));
 
   // Show hubs: one page per show. In production each hub's articles come from its own CMS subcategory
-  // (as True AF2026 already does). `now` is the show's TVS NOW title id, kept on the website side since the
+  // (as True AF2026 already does). `tint` colours the show's dark bands in the new look. `now` is the show's TVS NOW title id, kept on the website side since the
   // CMS has no field for it; its catalog artwork is the hub's image, so no article photo is reused.
   const SHOWS = {
-    'the-voice': { name: 'The Voice Thailand 2026', now: '80vMxY9qaaAE',
+    'the-voice': { name: 'The Voice Thailand 2026', now: '80vMxY9qaaAE', tint: '#8A0F1C',
       blurb: 'ทุกความเคลื่อนไหวจากเวทีเก้าอี้แดง ผู้เข้าแข่งขัน โค้ช และไฮไลต์ประจำสัปดาห์' },
-    'agt': { name: "America's Got Talent", now: '2E9VKzwNPW3Q',
+    'agt': { name: "America's Got Talent", now: '2E9VKzwNPW3Q', tint: '#7A5200',
       blurb: 'ไฮไลต์ ผลการแข่งขัน และเรื่องราวของผู้เข้าแข่งขัน AGT 2026' },
-    'true-af-2026': { name: 'True AF 2026', now: 'ad5yoYRkyK8d',
+    'true-af-2026': { name: 'True AF 2026', now: 'ad5yoYRkyK8d', tint: '#3B1E8F',
       blurb: 'รวมทุกเรื่องราวของนักล่าฝัน True Academy Fantasia 2026 ตั้งแต่ออดิชันจนถึงคอนเสิร์ตสุดท้าย' },
   };
   // status comes from the newest article: on air within 14 days, season over until 90 days, then archive
@@ -294,7 +294,8 @@
       const withImg = items.filter(a => a.img), top = withImg.slice(0, 5);
       body = items.length > 8 ? `${featBlock(top)}${hhead('ล่าสุด')}${pagedGrid(items.filter(a => !top.includes(a)))}` : pagedGrid(items);
     }
-    app.innerHTML = `<div class="pband">${pageHead(sub ? subName : s.name, s.th, items.length, kicker)}${tabs}</div>${secKey === 'sports' ? '<div id="live-row"></div>' : ''}${body}`;
+    const bandImg = (items.find(a => a.img) || {}).img;
+    app.innerHTML = `<div class="pband">${bandImg ? `<div class="pband-bg" style="--bi:url('${esc(sized(bandImg, 640))}')"></div>` : ''}${pageHead(sub ? subName : s.name, s.th, items.length, kicker)}${tabs}</div>${secKey === 'sports' ? '<div id="live-row"></div>' : ''}${body}`;
     if (secKey === 'sports') liveRow(sub).then(html => { const el = document.getElementById('live-row'); if (el) el.outerHTML = html; });
   }
 
@@ -355,7 +356,7 @@
     // without catalog art, take a photo from further down so the header doesn't repeat the first story
     const art = h.art || (withImg[4] || withImg[0])?.img;
     const cta = h.status === 'live' ? 'ดูตอนล่าสุดบน TrueVisions NOW' : 'ดูย้อนหลังบน TrueVisions NOW';
-    app.innerHTML = `<section class="page-hero">${art ? `<img src="${esc(art)}" alt="" onerror="this.remove()">` : ''}
+    app.innerHTML = `<section class="page-hero"${h.tint ? ` style="--tint:${h.tint}"` : ''}>${art ? `<img src="${esc(art)}" alt="" onerror="this.remove()">` : ''}
         <nav class="art-kicker"><a href="/shows">Shows</a><i>/</i><span>${hubLabel(h)}</span></nav>
         <h1>${esc(h.name)}</h1><p>${esc(h.blurb)}</p>
         <div class="row-cta"><a class="tbtn primary" href="${h.watch || NOW_APP}" ${ext}>${ICONS.play}<span>${cta}</span></a><span>${items.length} เรื่อง · ล่าสุด ${dfmt.format(new Date(items[0].d))}</span></div>
@@ -502,7 +503,7 @@
 
     app.innerHTML = `<div class="art">
         <article class="art-main">
-          <div class="art-top"><header class="art-head">
+          <div class="art-top"${SHOWS[a.sub]?.tint ? ` style="--tint:${SHOWS[a.sub].tint}"` : ''}><header class="art-head">
             <nav class="art-kicker" aria-label="หมวด"><a href="/${a.sec}">${esc(s.name)}</a>${label(a) !== s.name ? `<i>/</i><a href="${subHref}">${esc(label(a))}</a>` : ''}</nav>
             <h1 class="art-title">${esc(a.t)}</h1>
             <p class="art-lead" id="lead"${a.s ? '' : ' hidden'}>${esc(a.s || '')}</p>
@@ -512,7 +513,7 @@
             </div>
           </header>
           ${a.img ? `<figure class="art-cover">${thumb(a, '', 1080)}</figure>` : ''}</div>
-          <div class="art-body" id="body"><p class="muted">กำลังโหลดเนื้อหา…</p></div>
+          <div class="art-body" id="body"><div class="skel" aria-label="กำลังโหลดเนื้อหา"><i class="sk sk-l"></i><i class="sk sk-l"></i><i class="sk sk-l short"></i><i class="sk sk-l"></i><i class="sk sk-l"></i><i class="sk sk-l short"></i></div></div>
           <div id="title-card"></div>
           <div class="art-topics"><span>หัวข้อ</span>${topics.map(([t, h]) => `<a href="${h}"${h.startsWith('http') ? ' target="_blank" rel="noopener"' : ''}>${esc(t)}</a>`).join('')}</div>
           <div class="follow"><span>ติดตาม TrueVisions</span><div>${SOCIAL.map(([n, u]) => `<a href="${u}" target="_blank" rel="noopener">${n}</a>`).join('')}</div></div>
@@ -552,7 +553,15 @@
         else if (lead) { lead.textContent = summary; lead.hidden = false; }
         if (inline && paras.length >= 4) paras[Math.floor(paras.length / 2)].insertAdjacentHTML('afterend',
           `<a class="art-inline" href="${href(inline)}">${inline.img ? thumb(inline) : ''}<span class="art-inline-txt"><span class="art-inline-k">อ่านต่อ <i>→</i></span><b class="clamp2">${esc(inline.t)}</b><span class="art-inline-d">${esc(label(inline))} · ${dfmt.format(new Date(inline.d))}</span></span></a>`);
-        el.querySelectorAll('img').forEach(i => { i.onerror = () => i.remove(); if (!i.alt) i.alt = a.t; });
+        el.querySelectorAll('img').forEach(i => {
+          i.onerror = () => i.remove(); if (!i.alt) i.alt = a.t;
+          // large landscape photos run wider than the text column in the new look; small ones keep their size
+          const wide = () => { if (i.naturalWidth >= 900 && i.naturalWidth >= i.naturalHeight) i.classList.add('wide'); };
+          i.complete ? wide() : i.addEventListener('load', wide, { once: true });
+        });
+        // a paragraph that is only a quotation reads as a pull quote; the first paragraph is the lede
+        paras.forEach(p => { if (/^["“].{15,220}["”]$/.test(p.textContent.trim())) p.classList.add('pull'); });
+        el.querySelector(':scope > p:not(.pull)')?.classList.add('lede');
         if (restoreY != null) { scrollTo(0, restoreY); restoreY = null; }
         if (window.self !== window.top) el.querySelectorAll('iframe').forEach(f => {
           const a = document.createElement('a'); a.href = f.src.replace('/embed/', '/watch?v='); a.target = '_blank'; a.rel = 'noopener';
@@ -586,6 +595,9 @@
     navId++;
     closeMenu();
     const [p0, p1] = location.pathname.split('/').filter(Boolean).map(decodeURIComponent);
+    // new look: the header sits see-through over the full-width hero on home and show pages
+    document.body.classList.toggle('overhero', tudum() && (!p0 || (p0 === 'shows' && Boolean(HUBS[p1]))));
+    document.body.classList.toggle('reading', Boolean(p0 && /^\d+$/.test(p1 || '')));
     if (!p0) home();
     else if (p0 === 'search') search(new URLSearchParams(location.search).get('q') || '');
     else if (!SEC[p0]) notFound();
@@ -595,7 +607,10 @@
     else if (SEC[p0].subs.some(([k]) => k === p1)) section(p0, p1);
     else notFound();
     reveal();
+    app.querySelectorAll('img').forEach(i => { if (i.complete) i.classList.add('ok'); });
   }
+  // images fade in once loaded (new look); the listener is on document, so later-inserted images are covered too
+  document.addEventListener('load', e => { if (e.target.tagName === 'IMG') e.target.classList.add('ok'); }, true);
   // cross-fade between pages where the browser supports it
   const swap = fn => (document.startViewTransition && !calm && tudum()) ? document.startViewTransition(fn) : fn();
   // links from before the switch to real paths (#a-123, #sports-football, #show-agt, #home)
@@ -631,10 +646,21 @@
   burger.onclick = () => burger.setAttribute('aria-expanded', mast.classList.toggle('open'));
   document.getElementById('now-link').href = NOW_APP;
   // hysteresis so folding the logo row (which shifts the page) can't flip the state back
-  window.addEventListener('scroll', () => {
+  // the hero is pulled up under the header by its height (measured unfolded, before any scroll)
+  const measure = () => { if (!mast.classList.contains('scrolled')) document.documentElement.style.setProperty('--mast-h', mast.offsetHeight + 'px'); };
+  measure(); addEventListener('resize', measure);
+  if ('ResizeObserver' in window) new ResizeObserver(measure).observe(mast);
+  const readbar = Object.assign(document.createElement('div'), { className: 'readbar' });
+  mast.append(readbar);
+  const onScroll = () => {
     if (scrollY > 80) mast.classList.add('scrolled');
     else if (scrollY < 10) mast.classList.remove('scrolled');
-  }, { passive: true });
+    mast.classList.toggle('solid', scrollY > 40);
+    const art = document.body.classList.contains('reading') && document.querySelector('.art-main');
+    if (art) { const r = art.getBoundingClientRect(); readbar.style.transform = `scaleX(${Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - innerHeight)))})`; }
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  document.querySelectorAll('.now-l').forEach(a => { a.href = NOW_APP + a.dataset.p; a.target = '_blank'; a.rel = 'noopener'; });
 
   titlesPromise = fetch('/data/titles.json').then(r => r.json());
   Promise.all([fetch('/data/list.json').then(r => r.json()), titlesPromise.catch(() => ({}))]).then(([d, t]) => {
