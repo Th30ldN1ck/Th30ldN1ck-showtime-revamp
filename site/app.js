@@ -191,7 +191,7 @@
       const row = document.getElementById('t10');
       row.scrollBy({ left: b.dataset.d * row.clientWidth * 0.8, behavior: calm ? 'auto' : 'smooth' });
     });
-    nowRow().then(html => { const el = document.getElementById('now-row'); if (el && html) { el.outerHTML = html; reveal(); } });
+    nowRow().then(html => { const el = document.getElementById('now-row'); if (el && html) { el.outerHTML = html; revealCheck(); } });
   }
 
   function homeClassic() {
@@ -583,19 +583,33 @@
 
   // Paths: / · /search?q= · /<section> · /<section>/<sub> · /shows/<hub> · /<section>/<article id> (as on the old site)
   let navId = 0, restoreY = null;
-  // scroll-in reveal for page sections; skipped when the reader prefers less motion
+  // scroll-in reveal for page sections; skipped when the reader prefers less motion. A plain scroll check rather
+  // than IntersectionObserver: some in-app browsers (LINE) don't report intersections reliably, which left
+  // sections invisible. Anything already on screen is shown at once.
   const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const seen = 'IntersectionObserver' in window && !calm && new IntersectionObserver(es => es.forEach(e => {
-    if (e.isIntersecting) { e.target.classList.add('in'); seen.unobserve(e.target); }
-  }), { rootMargin: '0px 0px -8% 0px' });
-  function reveal() {
-    if (!seen || !tudum()) return;
-    // the hero and the dark top bands meet the header, so they never slide in
-    app.querySelectorAll(':scope > section, :scope > div, :scope > header').forEach(el => {
-      if (el.classList.contains('rv') || el.matches('.cine, .pband, .page-hero, .art')) return;
-      el.classList.add('rv'); seen.observe(el);
+  let pending = [];
+  function revealCheck() {
+    const edge = innerHeight * 0.95;
+    pending = pending.filter(el => {
+      if (!el.isConnected) return false;
+      if (el.getBoundingClientRect().top < edge) { el.classList.add('in'); return false; }
+      return true;
     });
+    app.querySelectorAll('img:not(.ok)').forEach(i => { if (i.complete && i.naturalWidth) i.classList.add('ok'); });
   }
+  function reveal() {
+    pending = [];
+    if (calm || !tudum()) return;
+    app.querySelectorAll(':scope > section, :scope > div, :scope > header').forEach(el => {
+      // the hero and the dark top bands meet the header, so they never slide in
+      if (el.classList.contains('rv') || el.matches('.cine, .pband, .page-hero, .art')) return;
+      el.classList.add('rv'); pending.push(el);
+    });
+    revealCheck();
+    requestAnimationFrame(revealCheck);
+  }
+  addEventListener('scroll', revealCheck, { passive: true });
+  addEventListener('resize', revealCheck);
 
   function route() {
     navId++;
