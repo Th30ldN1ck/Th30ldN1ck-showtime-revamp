@@ -15,8 +15,8 @@
 <link rel="preload" href="/data/list.json" as="fetch" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/styles.css?v=58">
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@600;700;800&family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css?v=72">
 </head>
 <body>
 <div class="demo-ribbon">DEMO · Showtime revamp prototype · built from the CMS export (1 Jan – 27 Oct 2026) · not the live site</div>
@@ -34,13 +34,20 @@
     <form class="msearch" id="msearch" action="/search" role="search"><input name="q" type="search" placeholder="ค้นหา" aria-label="ค้นหาบน Showtime" autocomplete="off"><button aria-label="ค้นหา"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button></form>
   </div></nav>
 </header>
-<main id="app" class="wrap"><div class="loading">กำลังโหลด…</div></main>
+<main id="app" class="wrap"><div class="skel" aria-label="กำลังโหลด"><div class="sk sk-hero"></div><div class="sk-row"><div class="sk sk-card"></div><div class="sk sk-card"></div><div class="sk sk-card"></div><div class="sk sk-card"></div></div></div></main>
 <footer class="footer">
-  <div class="wrap footer-in">
-    <div><b>Showtime</b> · TrueVisions NOW</div>
-    <div class="muted">Prototype for internal review. Content from the CMS export; images load from truevisions.co.th.</div>
+  <div class="wrap foot">
+    <div class="foot-brand">
+      <a class="mast-logo" href="/" aria-label="Showtime by TrueVisions NOW"><span class="brand-word">SH<span class="brand-o"><svg viewBox="0 0 24 24"><path d="M8.5 6.5l9 5.5-9 5.5z" fill="#fff"/></svg></span>WTIME</span></a>
+      <p>ข่าวกีฬา หนัง ซีรีส์ และรายการโชว์ จาก TrueVisions อ่านเรื่องราว แล้วไปดูต่อบน TrueVisions NOW</p>
+      <div class="foot-apps"><span>ดาวน์โหลดแอป TrueVisions NOW</span><a href="https://truevisions.onelink.me/PsHV/xjyqfwpw" target="_blank" rel="noopener">App Store</a><a href="https://truevisions.onelink.me/PsHV/xjyqfwpw" target="_blank" rel="noopener">Google Play</a></div>
+    </div>
+    <nav class="foot-col" aria-label="Showtime"><b>Showtime</b><a href="/sports">Sports</a><a href="/movies-series">Movies &amp; Series</a><a href="/shows">Shows</a><a href="/kids">Kids</a><a href="/knowledge">Knowledge</a><a href="/search">ค้นหา</a></nav>
+    <nav class="foot-col" aria-label="TrueVisions NOW"><b>TrueVisions NOW</b><a class="now-l" data-p="/" href="#">หน้าแรก</a><a class="now-l" data-p="/browse/movies" href="#">หนัง</a><a class="now-l" data-p="/browse/series" href="#">ซีรีส์</a><a class="now-l" data-p="/browse/sports" href="#">กีฬา</a><a class="now-l" data-p="/channels" href="#">ทีวีสด</a></nav>
+    <nav class="foot-col" aria-label="ติดตาม"><b>ติดตาม TrueVisions</b><a href="https://www.facebook.com/Truevisions" target="_blank" rel="noopener">Facebook</a><a href="https://twitter.com/TrueVisions" target="_blank" rel="noopener">X</a><a href="https://lin.ee/1RdWmS1PZ" target="_blank" rel="noopener">LINE</a><a href="https://www.youtube.com/user/TrueVisionsOfficial" target="_blank" rel="noopener">YouTube</a></nav>
   </div>
+  <div class="wrap foot-base"><span>Showtime · TrueVisions NOW</span><span>Prototype for internal review · content from the CMS export</span></div>
 </footer>
-<script src="/app.js?v=58"></script>
+<script src="/app.js?v=72"></script>
 </body>
 </html>
