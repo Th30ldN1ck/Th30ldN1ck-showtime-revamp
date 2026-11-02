@@ -176,9 +176,9 @@
         <div class="hhead"><h2>Top 10 บน TrueVisions NOW</h2><nav class="t10-tabs" role="tablist"><button class="on" data-k="top_series" role="tab">ซีรีส์</button><button data-k="top_movies" role="tab">หนัง</button></nav></div>
         <div class="t10-row" id="t10">${topTen('top_series')}</div></section>` : ''}
       <section>${hhead('ล่าสุด')}<div class="bento">${latest.map((a, i) => i ? rcard(a) : story(a, 'mid')).join('')}</div></section>
-      ${block(feat('sports', 4))}
+      ${block(feat('sports', 5))}
       <div id="now-row"></div>
-      ${block(feat('movies-series', 4), true)}
+      ${block(feat('movies-series', 5), true)}
       ${(TITLES.lists.soon || []).length ? `<section class="soon-row">${hhead('เร็วๆ นี้บน TrueVisions NOW', `${NOW_APP}/what-to-watch`, 'เรื่องใหม่ที่กำลังจะมา')}<div class="soon-grid">${comingSoon()}</div></section>` : ''}
       <section class="pair">${half(feat('kids', 3))}${half(feat('knowledge', 3))}</section>`;
 
@@ -210,8 +210,8 @@
       ${hhead('ล่าสุด')}
       <div class="grid g4 cards">${latest.map(rcard).join('')}</div>
       <div id="now-row"></div>
-      ${block(feat('sports', 4))}
-      ${block(feat('movies-series', 4), true)}
+      ${block(feat('sports', 5))}
+      ${block(feat('movies-series', 5), true)}
       <div class="pair">${half(feat('kids', 3))}${half(feat('knowledge', 3))}</div>`;
 
     nowRow().then(html => { const el = document.getElementById('now-row'); if (el && html) el.outerHTML = html; });
@@ -289,9 +289,9 @@
     let body;
     if (secKey === 'shows' && !sub) {
       const ent = of('shows', 'entertainment').filter(a => a.img);
-      body = `${hubList(hubsOf(() => true), 'รายการ')}${hhead('ข่าวบันเทิงล่าสุด')}${featBlock(ent.slice(0, 4))}${hhead('ทั้งหมด')}${pagedGrid(ent.slice(4))}`;
+      body = `${hubList(hubsOf(() => true), 'รายการ')}${hhead('ข่าวบันเทิงล่าสุด')}${featBlock(ent.slice(0, 5))}${hhead('ทั้งหมด')}${pagedGrid(ent.slice(5))}`;
     } else {
-      const withImg = items.filter(a => a.img), top = withImg.slice(0, 4);
+      const withImg = items.filter(a => a.img), top = withImg.slice(0, 5);
       body = items.length > 8 ? `${featBlock(top)}${hhead('ล่าสุด')}${pagedGrid(items.filter(a => !top.includes(a)))}` : pagedGrid(items);
     }
     app.innerHTML = `<div class="pband">${pageHead(sub ? subName : s.name, s.th, items.length, kicker)}${tabs}</div>${secKey === 'sports' ? '<div id="live-row"></div>' : ''}${body}`;
@@ -351,7 +351,7 @@
     const h = HUBS[key];
     if (!h) return notFound();
     setSubnav('shows'); setTitle(h.name);
-    const items = h.items, withImg = items.filter(a => a.img), top = withImg.slice(0, 4);
+    const items = h.items, withImg = items.filter(a => a.img), top = withImg.slice(0, 5);
     // without catalog art, take a photo from further down so the header doesn't repeat the first story
     const art = h.art || (withImg[4] || withImg[0])?.img;
     const cta = h.status === 'live' ? 'ดูตอนล่าสุดบน TrueVisions NOW' : 'ดูย้อนหลังบน TrueVisions NOW';
@@ -361,7 +361,7 @@
         <div class="row-cta"><a class="tbtn primary" href="${h.watch || NOW_APP}" ${ext}>${ICONS.play}<span>${cta}</span></a><span>${items.length} เรื่อง · ล่าสุด ${dfmt.format(new Date(items[0].d))}</span></div>
       </section>
       ${featBlock(top)}
-      ${items.length > 4 ? hhead('ทั้งหมด') + pagedGrid(items.filter(a => !top.includes(a))) : ''}`;
+      ${items.length > 5 ? hhead('ทั้งหมด') + pagedGrid(items.filter(a => !top.includes(a))) : ''}`;
   }
 
   // Article page: narrow reading column with wide cover/title card. Everything here is derived from the
