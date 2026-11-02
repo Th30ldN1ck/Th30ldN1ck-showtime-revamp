@@ -10,6 +10,7 @@ site/data/titles.json:
     titles  – id -> card fields (Thai title/synopsis, art, rating, year, episodes, badge, type)
     art     – article id -> title id, only where the link is confident (see below)
     shelf   – "section/sub" -> [title ids], shown as a generic "browse on NOW" row, never as "this title"
+    lists   – NOW's own Top 10 series/movies and Coming Soon shelves, for the home page modules
 
 An article's title comes from, in order:
     1. scripts/title_links.csv – editor corrections (article_id,title_id; title_id "none" = no title)
@@ -59,6 +60,11 @@ FALLBACK = {
     "knowledge/news": ("home", "[Mobile+TV] Documentary  -Adult-Teen"),
 }
 # Show hub titles, the `now` ids in SHOWS in site/app.js; always written so hub pages have their art.
+LISTS = {
+    "top_series": "[Mobile+TV] Top 10 TV Shows - Adult - Teen",
+    "top_movies": "[Mobile+TV] Top 10 Movies - Adult - Teen",
+    "soon": "[Mobile+TV] Coming Shelf - Coming Soon VOD - Adult -Teen",
+}
 SHOW_TITLES = {"80vMxY9qaaAE", "2E9VKzwNPW3Q", "ad5yoYRkyK8d"}
 BODY_LINK = re.compile(r"/(?:watch|play)/(tvs-movie|tvs-series)/([A-Za-z0-9]{8,16})")
 REVIEW_DAYS = 60
@@ -102,6 +108,8 @@ def card(d):
         "type": "tvs-series" if series else "tvs-movie",
         "syn": (d.get("synopsis") or "").strip(),
         "img": tl.get("landscape_image") or tl.get("ott_landscape") or d.get("thumb"),
+        "p": tl.get("portrait_image") or tl.get("ott_portrait") or "",
+        "on": d.get("enable_date") or "",
         "rate": d.get("rate") or "",
         "yr": d.get("release_year") or "",
         "eps": int(d["ep_total"]) if series and str(d.get("ep_total") or "").isdigit() else 0,
@@ -187,9 +195,16 @@ def main(out):
             print(f"warning: no shelf items for {sub} ({shelf_name})")
         shelf[sub] = ids
 
-    used = {i for i in art.values() if i} | {i for ids in shelf.values() for i in ids} | (SHOW_TITLES & set(entries))
+    lists = {}
+    for key, name in LISTS.items():
+        found = next((s for s in feeds["home"] if (s.get("name") or "").strip() == name.strip()), None)
+        lists[key] = [e["data"]["id"] for e in (found or {}).get("items") or [] if (e.get("data") or {}).get("id") in entries]
+        if not lists[key]:
+            print(f"warning: no items for list {key} ({name})")
+
+    used = {i for i in art.values() if i} | {i for ids in lists.values() for i in ids} | {i for ids in shelf.values() for i in ids} | (SHOW_TITLES & set(entries))
     titles = {i: card(entries[i]) for i in used}
-    (out / "titles.json").write_text(json.dumps({"titles": titles, "art": art, "shelf": shelf}, ensure_ascii=False, separators=(",", ":")), "utf-8")
+    (out / "titles.json").write_text(json.dumps({"titles": titles, "art": art, "shelf": shelf, "lists": lists}, ensure_ascii=False, separators=(",", ":")), "utf-8")
 
     newest = max(a["d"] for a in index)
     recent = [a for a in index if newest - a["d"] < REVIEW_DAYS * 864e5]

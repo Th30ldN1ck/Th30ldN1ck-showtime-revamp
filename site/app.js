@@ -117,32 +117,76 @@
 
   const citem = a => `<a class="citem" href="${href(a)}">${thumb(a)}<span><span class="rcard-k">${esc(label(a))}</span><b class="clamp2">${esc(a.t)}</b><span class="rcard-d">${dfmt.format(new Date(a.d))}</span></span></a>`;
 
+  // NOW catalog snapshot (scripts/build_titles.py): titles, article links, shelves and NOW's own lists
+  let TITLES = { titles: {}, art: {}, lists: {} };
+  const linkedTitle = a => { const id = a.id in TITLES.art ? TITLES.art[a.id] : HUBS[a.sub]?.now; return id && TITLES.titles[id] ? { id, ...TITLES.titles[id] } : null; };
+  const nowInfo = t => `${NOW_APP}/watch/${t.type}/${t.id}`;
+
+  // Cinematic lead: NOW's clean key art full-bleed when the story links to a title; otherwise the article
+  // cover shown whole on a blurred copy of itself (covers carry baked-in text, so nothing is laid over them).
+  function hero(a) {
+    const t = linkedTitle(a), art = t?.img;
+    const img = art || a.img, full = Boolean(art);
+    return `<section class="cine${full ? ' full' : ''}">
+      <div class="cine-bg" style="background-image:url('${esc(full ? img : sized(img, 640))}')"></div>
+      ${full ? `<img class="cine-img" src="${esc(img)}" alt="">` : ''}
+      <div class="wrap cine-in">
+        <div class="cine-txt">
+          <span class="rcard-k">${esc(label(a))}</span>
+          <h1><a href="${href(a)}">${esc(a.t)}</a></h1>
+          ${a.s ? `<p class="clamp3">${esc(a.s)}</p>` : ''}
+          <div class="cine-btns"><a class="tbtn primary" href="${href(a)}"><span>อ่านเรื่องนี้</span></a>${t ? `<a class="tbtn ghost" href="${nowInfo(t)}" ${ext}>${ICONS.play}<span>ดู<span class="wide-only"> ${esc(t.t)}</span>บน NOW</span></a>` : ''}</div>
+        </div>
+        ${full ? '' : `<a class="cine-frame" href="${href(a)}">${thumb(a, '', 1080)}</a>`}
+      </div>
+    </section>`;
+  }
+
+  // NOW's own Top 10 shelves, Netflix-style ranks over portrait posters
+  const topTen = kind => (TITLES.lists[kind] || []).slice(0, 10).map((id, i) => {
+    const t = { id, ...TITLES.titles[id] };
+    return `<a class="t10" href="${nowInfo(t)}" ${ext} title="${esc(t.t)}"><span class="t10-n">${i + 1}</span><span class="t10-p"><img src="${esc(t.p || t.img)}" alt="${esc(t.t)}" loading="lazy" onerror="this.remove()"></span></a>`;
+  }).join('');
+  const dayMonth = new Intl.DateTimeFormat('th-TH', { day: 'numeric', month: 'short' });
+  const comingSoon = () => (TITLES.lists.soon || []).slice(0, 8).map(id => {
+    const t = { id, ...TITLES.titles[id] }, on = Date.parse(t.on);
+    return `<a class="soon" href="${nowInfo(t)}" ${ext}><span class="soon-img"><img src="${esc(t.img)}" alt="" loading="lazy" onerror="this.remove()"><em>${on > Date.now() ? `พร้อมดู ${dayMonth.format(on)}` : 'ดูได้แล้ว'}</em></span><b class="clamp1">${esc(t.t)}</b><span class="rcard-d">${esc([t.g, t.eps ? `${t.eps} ตอน` : ''].filter(Boolean).join(' · '))}</span></a>`;
+  }).join('');
+
   function home() {
     setSubnav(''); setTitle('');
     const used = new Set();
     const take = (list, n) => { const out = list.filter(x => x.img && !used.has(x)).slice(0, n); out.forEach(x => used.add(x)); return out; };
-    const [lead, ...top] = take(DATA.filter(a => a.sec !== 'sports'), 5);
+    const recent = DATA.filter(a => a.sec !== 'sports' && a.img).slice(0, 8);
+    const lead = recent.find(a => linkedTitle(a)?.img) || recent[0];
+    used.add(lead);
+    const top = take(DATA.filter(a => a.sec !== 'sports'), 4);
     const hubs = hubsOf(h => h.status !== 'archive').slice(0, 3).map(hubTile).join('');
-    const latest = take(DATA, 8);
+    const latest = take(DATA, 5);
     const feat = (k, n) => [SEC[k], take(of(k), n)];
-    const block = ([s, [first, ...rest]], flip) => first ? `${hhead(s.name, '/' + s.key)}<div class="feat${flip ? ' flip' : ''}">${story(first, 'mid')}<div class="clist">${rest.map(citem).join('')}</div></div>` : '';
+    const block = ([s, [first, ...rest]], flip) => first ? `<section>${hhead(s.name, '/' + s.key)}<div class="feat${flip ? ' flip' : ''}">${story(first, 'mid')}<div class="clist">${rest.map(citem).join('')}</div></div></section>` : '';
     const half = ([s, [first, ...rest]]) => first ? `<div>${hhead(s.name, '/' + s.key)}${story(first, 'mid')}<div class="clist">${rest.map(citem).join('')}</div></div>` : '';
+    const hasTop = (TITLES.lists.top_series || []).length;
 
     app.innerHTML = `
-      <section class="top">
-        ${story(lead, 'lead')}
-        <div class="top-side">${top.map(a => story(a)).join('')}</div>
-      </section>
-      ${hhead('Shows', '/shows', 'รายการโชว์ที่คุณติดตาม')}
-      <div class="hubs even">${hubs}</div>
-      ${hhead('ล่าสุด')}
-      <div class="grid g4 cards">${latest.map(rcard).join('')}</div>
-      <div id="now-row"></div>
+      ${hero(lead)}
+      <section class="top4">${top.map(a => story(a)).join('')}</section>
+      <section>${hhead('Shows', '/shows', 'รายการโชว์ที่คุณติดตาม')}<div class="hubs even">${hubs}</div></section>
+      ${hasTop ? `<section class="top10">
+        <div class="hhead"><h2>Top 10 บน TrueVisions NOW</h2><nav class="t10-tabs" role="tablist"><button class="on" data-k="top_series" role="tab">ซีรีส์</button><button data-k="top_movies" role="tab">หนัง</button></nav></div>
+        <div class="t10-row" id="t10">${topTen('top_series')}</div></section>` : ''}
+      <section>${hhead('ล่าสุด')}<div class="bento">${latest.map((a, i) => i ? rcard(a) : story(a, 'mid')).join('')}</div></section>
       ${block(feat('sports', 4))}
+      <div id="now-row"></div>
       ${block(feat('movies-series', 4), true)}
-      <div class="pair">${half(feat('kids', 3))}${half(feat('knowledge', 3))}</div>`;
+      ${(TITLES.lists.soon || []).length ? `<section class="soon-row">${hhead('เร็วๆ นี้บน TrueVisions NOW', `${NOW_APP}/what-to-watch`, 'เรื่องใหม่ที่กำลังจะมา')}<div class="soon-grid">${comingSoon()}</div></section>` : ''}
+      <section class="pair">${half(feat('kids', 3))}${half(feat('knowledge', 3))}</section>`;
 
-    nowRow().then(html => { const el = document.getElementById('now-row'); if (el && html) el.outerHTML = html; });
+    app.querySelectorAll('.t10-tabs button').forEach(b => b.onclick = () => {
+      app.querySelectorAll('.t10-tabs button').forEach(x => x.classList.toggle('on', x === b));
+      document.getElementById('t10').innerHTML = topTen(b.dataset.k);
+    });
+    nowRow().then(html => { const el = document.getElementById('now-row'); if (el && html) { el.outerHTML = html; reveal(); } });
   }
 
   // titles Showtime wrote about most recently, linking to their NOW detail pages
@@ -150,11 +194,11 @@
     try {
       titlesPromise ||= fetch('/data/titles.json').then(r => r.json());
       const { titles, art } = await titlesPromise;
-      const ids = [...new Set(DATA.map(a => art[a.id]).filter(id => id && titles[id]?.img))].slice(0, 8);
+      const ids = [...new Set(DATA.map(a => art[a.id]).filter(id => id && titles[id]?.img))].slice(0, 12);
       if (!ids.length) return '';
       return `<section class="now-row">${hhead('ดูบน TrueVisions NOW', NOW_APP, 'เรื่องที่เพิ่งพูดถึงใน Showtime')}<div class="row now">${ids.map(id => {
         const t = titles[id];
-        return `<a class="ntile" href="${NOW_APP}/watch/${t.type}/${id}" ${ext}><span class="ntile-img"><img src="${esc(t.img)}" alt="" loading="lazy" onerror="this.remove()">${t.badge === 'only' ? '<em>ดูได้ที่เดียว</em>' : ''}</span><b class="clamp1">${esc(t.t)}</b><span class="rcard-d">${esc(titleMeta(t).join(' · '))}</span></a>`;
+        return `<a class="ntile" href="${NOW_APP}/watch/${t.type}/${id}" ${ext}><span class="ntile-img"><img src="${esc(t.p || t.img)}" alt="" loading="lazy" onerror="this.remove()">${t.badge === 'only' ? '<em>ดูได้ที่เดียว</em>' : ''}</span><b class="clamp1">${esc(t.t)}</b><span class="rcard-d">${esc(titleMeta(t).join(' · '))}</span></a>`;
       }).join('')}</div></section>`;
     } catch (e) {
       return '';
@@ -469,10 +513,25 @@
 
   // Paths: / · /search?q= · /<section> · /<section>/<sub> · /shows/<hub> · /<section>/<article id> (as on the old site)
   let navId = 0, restoreY = null;
+  // scroll-in reveal for page sections; skipped when the reader prefers less motion
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const seen = 'IntersectionObserver' in window && !calm && new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('in'); seen.unobserve(e.target); }
+  }), { rootMargin: '0px 0px -8% 0px' });
+  function reveal() {
+    if (!seen) return;
+    app.querySelectorAll(':scope > section, :scope > div, :scope > header').forEach(el => {
+      if (el.classList.contains('rv')) return;
+      el.classList.add('rv'); seen.observe(el);
+    });
+  }
+
   function route() {
     navId++;
     closeMenu();
     const [p0, p1] = location.pathname.split('/').filter(Boolean).map(decodeURIComponent);
+    // dark, Tudum-style frame for browsing pages; articles stay light for reading
+    document.body.classList.toggle('dark', !(p0 && /^\d+$/.test(p1 || '')));
     if (!p0) home();
     else if (p0 === 'search') search(new URLSearchParams(location.search).get('q') || '');
     else if (!SEC[p0]) notFound();
@@ -481,7 +540,10 @@
     else if (p0 === 'shows' && HUBS[p1]) hubPage(p1);
     else if (SEC[p0].subs.some(([k]) => k === p1)) section(p0, p1);
     else notFound();
+    reveal();
   }
+  // cross-fade between pages where the browser supports it
+  const swap = fn => (document.startViewTransition && !calm) ? document.startViewTransition(fn) : fn();
   // links from before the switch to real paths (#a-123, #sports-football, #show-agt, #home)
   function fromHash(h) {
     if (h === 'home') return '/';
@@ -494,8 +556,7 @@
     restoreY = null; // only Back/Forward restore a position; a stale one would land a new page mid-way
     history.replaceState({ y: scrollY }, '');
     history.pushState({}, '', url);
-    route();
-    scrollTo(0, 0);
+    swap(() => { route(); scrollTo(0, 0); });
   }
   history.scrollRestoration = 'manual';
   document.addEventListener('click', e => {
@@ -507,7 +568,7 @@
     if (u.pathname + u.search === location.pathname + location.search) { scrollTo({ top: 0, behavior: 'smooth' }); return; }
     go(u.pathname + u.search);
   });
-  addEventListener('popstate', () => { restoreY = history.state?.y ?? 0; route(); scrollTo(0, restoreY); });
+  addEventListener('popstate', () => { restoreY = history.state?.y ?? 0; swap(() => { route(); scrollTo(0, restoreY); }); });
   const msearch = document.getElementById('msearch');
   msearch.onsubmit = e => { e.preventDefault(); const q = msearch.q.value.trim(); msearch.q.value = ''; msearch.q.blur(); go(q ? `/search?q=${encodeURIComponent(q)}` : '/search'); };
 
@@ -525,6 +586,7 @@
   Promise.all([fetch('/data/list.json').then(r => r.json()), titlesPromise.catch(() => ({}))]).then(([d, t]) => {
     d.forEach(a => { if (a.img && !a.img.includes('://')) a.img = IMG + a.img; });
     DATA = d; BYID = Object.fromEntries(d.map(a => [a.id, a]));
+    TITLES = { titles: t.titles || {}, art: t.art || {}, lists: t.lists || {} };
     buildHubs(t.titles);
     document.getElementById('mast-date').textContent = fmtLong(DATA[0].d);
     const legacy = location.hash.length > 1 && fromHash(decodeURIComponent(location.hash.slice(1)));
