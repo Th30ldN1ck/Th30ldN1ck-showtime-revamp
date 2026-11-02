@@ -590,8 +590,9 @@
   }), { rootMargin: '0px 0px -8% 0px' });
   function reveal() {
     if (!seen || !tudum()) return;
+    // the hero and the dark top bands meet the header, so they never slide in
     app.querySelectorAll(':scope > section, :scope > div, :scope > header').forEach(el => {
-      if (el.classList.contains('rv')) return;
+      if (el.classList.contains('rv') || el.matches('.cine, .pband, .page-hero, .art')) return;
       el.classList.add('rv'); seen.observe(el);
     });
   }
