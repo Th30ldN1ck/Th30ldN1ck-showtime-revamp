@@ -135,7 +135,7 @@
           <span class="rcard-k">${esc(label(a))}</span>
           <h1><a href="${href(a)}">${esc(a.t)}</a></h1>
           ${a.s ? `<p class="clamp3">${esc(a.s)}</p>` : ''}
-          <div class="cine-btns"><a class="tbtn primary" href="${href(a)}"><span>อ่านเรื่องนี้</span></a>${t ? `<a class="tbtn ghost" href="${nowInfo(t)}" ${ext}>${ICONS.play}<span>ดู<span class="wide-only"> ${esc(t.t)}</span>บน NOW</span></a>` : ''}</div>
+          <div class="cine-btns"><a class="tbtn primary" href="${href(a)}"><span>อ่านเรื่องนี้</span></a>${t ? `<a class="tbtn ghost" href="${nowInfo(t)}" ${ext}>${ICONS.play}<span>ดู<span class="wide-only"> ${esc(t.t)}</span> บน NOW</span></a>` : ''}</div>
         </div>
         ${full ? '' : `<a class="cine-frame" href="${href(a)}">${thumb(a, '', 1080)}</a>`}
       </div>
@@ -294,7 +294,7 @@
       const withImg = items.filter(a => a.img), top = withImg.slice(0, 4);
       body = items.length > 8 ? `${featBlock(top)}${hhead('ล่าสุด')}${pagedGrid(items.filter(a => !top.includes(a)))}` : pagedGrid(items);
     }
-    app.innerHTML = `${pageHead(sub ? subName : s.name, s.th, items.length, kicker)}${tabs}${secKey === 'sports' ? '<div id="live-row"></div>' : ''}${body}`;
+    app.innerHTML = `<div class="pband">${pageHead(sub ? subName : s.name, s.th, items.length, kicker)}${tabs}</div>${secKey === 'sports' ? '<div id="live-row"></div>' : ''}${body}`;
     if (secKey === 'sports') liveRow(sub).then(html => { const el = document.getElementById('live-row'); if (el) el.outerHTML = html; });
   }
 
@@ -327,8 +327,8 @@
   const norm = s => String(s || '').toLowerCase().replace(/\s+/g, ' ');
   function search(q) {
     setSubnav('search'); setTitle(q ? `ค้นหา “${q}”` : 'ค้นหา');
-    app.innerHTML = `<header class="phead"><h1>ค้นหา</h1></header>
-      <form class="sbox" id="sbox" role="search"><input type="search" name="q" value="${esc(q)}" placeholder="ค้นหาข่าว ซีรีส์ รายการ หรือนักกีฬา" aria-label="คำค้นหา" autocomplete="off"><button class="tbtn primary">ค้นหา</button></form>
+    app.innerHTML = `<div class="pband"><header class="phead"><h1>ค้นหา</h1></header>
+      <form class="sbox" id="sbox" role="search"><input type="search" name="q" value="${esc(q)}" placeholder="ค้นหาข่าว ซีรีส์ รายการ หรือนักกีฬา" aria-label="คำค้นหา" autocomplete="off"><button class="tbtn primary">ค้นหา</button></form></div>
       <div id="sres"></div>`;
     const form = document.getElementById('sbox'), input = form.q;
     const show = v => {
@@ -502,7 +502,7 @@
 
     app.innerHTML = `<div class="art">
         <article class="art-main">
-          <header class="art-head">
+          <div class="art-top"><header class="art-head">
             <nav class="art-kicker" aria-label="หมวด"><a href="/${a.sec}">${esc(s.name)}</a>${label(a) !== s.name ? `<i>/</i><a href="${subHref}">${esc(label(a))}</a>` : ''}</nav>
             <h1 class="art-title">${esc(a.t)}</h1>
             <p class="art-lead" id="lead"${a.s ? '' : ' hidden'}>${esc(a.s || '')}</p>
@@ -511,7 +511,7 @@
               ${shareBar(a)}
             </div>
           </header>
-          ${a.img ? `<figure class="art-cover">${thumb(a, '', 1080)}</figure>` : ''}
+          ${a.img ? `<figure class="art-cover">${thumb(a, '', 1080)}</figure>` : ''}</div>
           <div class="art-body" id="body"><p class="muted">กำลังโหลดเนื้อหา…</p></div>
           <div id="title-card"></div>
           <div class="art-topics"><span>หัวข้อ</span>${topics.map(([t, h]) => `<a href="${h}"${h.startsWith('http') ? ' target="_blank" rel="noopener"' : ''}>${esc(t)}</a>`).join('')}</div>
@@ -586,8 +586,6 @@
     navId++;
     closeMenu();
     const [p0, p1] = location.pathname.split('/').filter(Boolean).map(decodeURIComponent);
-    // dark, Tudum-style frame for browsing pages; articles stay light for reading
-    document.body.classList.toggle('dark', tudum() && !(p0 && /^\d+$/.test(p1 || '')));
     if (!p0) home();
     else if (p0 === 'search') search(new URLSearchParams(location.search).get('q') || '');
     else if (!SEC[p0]) notFound();

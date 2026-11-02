@@ -326,40 +326,59 @@ body.tudum :is(.cine h1,.hhead h2,.phead h1,.page-hero h1,.story.lead b,.story.m
 body.tudum .hhead h2{font-size:32px;font-weight:700;letter-spacing:-.01em}
 body.tudum .phead h1{font-weight:800}
 
-/* dark frame: everything but article pages */
-body.dark{--bg:#0A0A0D;--card:#15151B;--ink:#F4F4F6;--body:#C7C7CF;--muted:#8D8D98;--line:rgba(255,255,255,.12);background:var(--bg);color:var(--ink)}
-body.dark .mast{background:rgba(10,10,13,.88);backdrop-filter:blur(14px);border-bottom-color:rgba(255,255,255,.08);box-shadow:none}
-body.dark .mast-top{background:transparent}
-body.dark .mast-logo,body.dark .mast-mini{color:#fff}
-body.dark .brand-by,body.dark .mast-tag,body.dark .mast-date{color:rgba(255,255,255,.6)}
-body.dark .brand-by img{filter:none;opacity:.9}
-body.dark .mast-tag{border-left-color:rgba(255,255,255,.15)}
-body.dark .mast-link{background:#fff;color:#0D0D0D;border-color:#fff}
-body.dark .mast-link:hover{background:transparent;color:#fff}
-body.dark .burger span{background:#fff}
-body.dark .subnav{border-top-color:rgba(255,255,255,.08)}
-body.dark .subnav-tabs a{color:rgba(255,255,255,.62)}
-body.dark .subnav-tabs a:hover{color:#fff}
-body.dark .subnav-tabs a.on{color:#FF5CB4}
-body.dark .msearch{background:rgba(255,255,255,.08);border-color:transparent}
-body.dark .msearch:focus-within{border-color:rgba(255,255,255,.4)}
-body.dark .msearch button{color:rgba(255,255,255,.7)}
-body.dark .mast-mini::after{background:rgba(255,255,255,.2)}
-body.dark .rcard-k,body.dark .art-kicker,body.dark .art-kicker a,body.dark .hhead a,body.dark .fx-league{color:#FF5CB4}
-body.dark .story.lead p,body.dark .story.mid p,body.dark .phead p{color:var(--body)}
-body.dark .ptabs a,body.dark .ssugg a,body.dark .more-btn{background:transparent;border-color:rgba(255,255,255,.2);color:#fff}
-body.dark .ptabs a.on{background:#fff;color:#0D0D0D;border-color:#fff}
-body.dark .ptabs a.on span{color:rgba(13,13,13,.55)}
-body.dark .more-btn:hover{background:#fff;color:#0D0D0D}
-body.dark .thumb{background:#1C1C24}
-body.dark .now-row{background:linear-gradient(120deg,#2A0F22 0%,#1D1230 100%)}
-body.dark .ntile-img{box-shadow:0 10px 26px rgba(0,0,0,.5)}
-body.dark .fx{background:var(--card);box-shadow:0 0 0 1px rgba(255,255,255,.07)}
-body.dark .fx-when{background:rgba(255,255,255,.07)}
-body.dark .fx-when span{color:rgba(255,255,255,.6)}
-body.dark .sbox input{background:var(--card);border-color:rgba(255,255,255,.15);color:#fff}
-body.dark .empty{background:var(--card)}
-body.dark .footer{background:#050507;border-top:1px solid rgba(255,255,255,.06)}
+/* new look: dark header and a dark band at the top of every page, light below (like Tudum) */
+body.tudum{--bg:#FFFFFF}
+body.tudum .mast{background:rgba(10,10,13,.94);backdrop-filter:blur(14px);border-bottom-color:rgba(255,255,255,.08);box-shadow:none}
+body.tudum .mast-top{background:transparent}
+body.tudum .mast-logo,body.tudum .mast-mini{color:#fff}
+body.tudum .brand-by,body.tudum .mast-tag,body.tudum .mast-date{color:rgba(255,255,255,.6)}
+body.tudum .brand-by img{filter:none;opacity:.9}
+body.tudum .mast-tag{border-left-color:rgba(255,255,255,.15)}
+body.tudum .mast-link{background:#fff;color:#0D0D0D;border-color:#fff}
+body.tudum .mast-link:hover{background:transparent;color:#fff}
+body.tudum .burger span{background:#fff}
+body.tudum .subnav{border-top-color:rgba(255,255,255,.08)}
+body.tudum .subnav-tabs a{color:rgba(255,255,255,.62)}
+body.tudum .subnav-tabs a:hover{color:#fff}
+body.tudum .subnav-tabs a.on{color:#FF5CB4}
+body.tudum .msearch{background:rgba(255,255,255,.08);border-color:transparent}
+body.tudum .msearch:focus-within{border-color:rgba(255,255,255,.4)}
+body.tudum .msearch input{color:#fff}
+body.tudum .msearch button{color:rgba(255,255,255,.7)}
+body.tudum .mast-mini::after{background:rgba(255,255,255,.2)}
+/* full-width dark band behind the top of a page (section/search heading, article header + cover, hub hero) */
+body.tudum .pband,body.tudum .art-top{position:relative;isolation:isolate;color:#fff}
+body.tudum .pband::before,body.tudum .art-top::before{content:"";position:absolute;z-index:-1;left:50%;width:100vw;transform:translateX(-50%);top:-32px;bottom:-8px;background:radial-gradient(120% 140% at 85% 0%,#3A0F2C 0%,#0A0A0D 55%)}
+body.tudum .pband{display:flow-root;padding-bottom:28px;margin-bottom:48px}
+body.tudum .pband .phead p{color:rgba(255,255,255,.72)}
+body.tudum .pband .phead p span,body.tudum .pband .art-kicker,body.tudum .pband .art-kicker a{color:#FF8CC6}
+body.tudum .pband .ptabs{margin-bottom:0}
+body.tudum .pband .ptabs a{background:transparent;border-color:rgba(255,255,255,.22);color:#fff}
+body.tudum .pband .ptabs a span{color:rgba(255,255,255,.55)}
+body.tudum .pband .ptabs a.on{background:#fff;color:#0D0D0D;border-color:#fff}
+body.tudum .pband .ptabs a.on span{color:rgba(13,13,13,.55)}
+body.tudum .pband .sbox{margin-bottom:0}
+body.tudum .pband .sbox input{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2);color:#fff}
+/* article: band covers the header and the top of the cover; the body reads on white */
+body.tudum .art-main{background:transparent;padding-top:0}
+body.tudum .art-top::before{bottom:140px}
+body.tudum .art-head{padding-top:48px}
+body.tudum .art-kicker,body.tudum .art-kicker a{color:#FF8CC6}
+body.tudum .art-top .art-lead{color:rgba(255,255,255,.8)}
+body.tudum .art-top .art-meta{color:rgba(255,255,255,.6);border-top-color:rgba(255,255,255,.15)}
+body.tudum .art-top .sh{background:rgba(255,255,255,.1);border-color:transparent;color:#fff}
+body.tudum .art-top .art-cover{box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.art-top .art-cover{margin-left:0;margin-right:0}
+/* hub hero becomes the band itself */
+body.tudum .page-hero{width:100vw;margin:-32px 0 48px calc(50% - 50vw);border-radius:0;min-height:440px;padding:72px max(24px,calc((100vw - 1280px)/2 + 24px)) 56px}
+/* the NOW poster row keeps a deep panel of its own */
+body.tudum .now-row{background:radial-gradient(120% 140% at 85% 0%,#3A0F2C 0%,#0A0A0D 60%);color:#fff}
+body.tudum .now-row .ntile{color:#fff}
+body.tudum .now-row .rcard-d,body.tudum .now-row .hhead>span{color:rgba(255,255,255,.6)}
+body.tudum .now-row .hhead a{color:#FF8CC6}
+body.tudum .ntile-img{box-shadow:0 10px 26px rgba(0,0,0,.45)}
+body.tudum .t10-tabs{background:#F1F1F3}
+body.tudum .t10-tabs button.on{background:#141414;color:#fff}
 
 /* cinematic hero */
 .cine{position:relative;isolation:isolate;overflow:hidden;width:100vw;margin:-32px 0 0 calc(50% - 50vw);min-height:min(78vh,720px);display:flex;align-items:flex-end;color:#fff;background:#0A0A0D}
@@ -391,9 +410,8 @@ body.dark .footer{background:#050507;border-top:1px solid rgba(255,255,255,.06)}
 .t10-tabs button.on{background:#fff;color:#0D0D0D;opacity:1}
 .t10-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:28px 16px}
 .t10{position:relative;display:grid;grid-template-columns:44% 56%;align-items:end}
-.t10-n{font-size:clamp(90px,10vw,150px);font-weight:800;line-height:.78;letter-spacing:-.06em;color:transparent;-webkit-text-stroke:3px rgba(255,255,255,.55);text-align:right;margin-right:-14px;z-index:0}
-body:not(.dark) .t10-n{-webkit-text-stroke-color:#141414}
-.t10-p{position:relative;z-index:1;aspect-ratio:2/3;border-radius:8px;overflow:hidden;background:var(--grad);box-shadow:0 10px 28px rgba(0,0,0,.45)}
+.t10-n{font-size:clamp(90px,10vw,150px);font-weight:800;line-height:.78;letter-spacing:-.06em;color:transparent;-webkit-text-stroke:3px #141414;text-align:right;margin-right:-14px;z-index:0}
+.t10-p{position:relative;z-index:1;aspect-ratio:2/3;border-radius:8px;overflow:hidden;background:var(--grad);box-shadow:0 10px 24px rgba(0,0,0,.25)}
 .t10-p img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
 .t10:hover .t10-p img{transform:scale(1.06)}
 
@@ -437,6 +455,10 @@ body.tudum :is(.story,.rcard,.ntile,.soon):hover{transform:translateY(-3px)}
   .grid.g4{grid-template-columns:repeat(3,1fr)}
 }
 @media (max-width:860px){
+  body.tudum .pband::before,body.tudum .art-top::before{top:-20px}
+  body.tudum .art-top::before{bottom:80px}
+  body.tudum .art-head{padding-top:28px}
+  body.tudum .page-hero{margin-top:-20px;min-height:360px;padding:40px 24px 32px}
   .cine{margin-top:-20px;min-height:0}
   .cine-in{padding-top:120px;padding-bottom:32px}
   .cine.full{flex-direction:column;align-items:stretch}
