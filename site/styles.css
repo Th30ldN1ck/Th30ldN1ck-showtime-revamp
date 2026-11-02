@@ -369,7 +369,7 @@ body.tudum .mast-tag{border-left-color:rgba(255,255,255,.15)}
 body.tudum .mast-link{background:#fff;color:#0D0D0D;border-color:#fff}
 body.tudum .mast-link:hover{background:transparent;color:#fff}
 body.tudum .burger span{background:#fff}
-body.tudum .subnav{border-top-color:rgba(255,255,255,.08)}
+body.tudum .subnav{border-top-color:transparent}
 body.tudum .subnav-tabs a{color:rgba(255,255,255,.62)}
 body.tudum .subnav-tabs a:hover{color:#fff}
 body.tudum .subnav-tabs a.on{color:#FF5CB4}
