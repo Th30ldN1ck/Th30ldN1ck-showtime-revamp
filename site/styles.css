@@ -415,9 +415,9 @@ body.tudum.overhero .mast:not(.solid):not(.open){background:linear-gradient(180d
 body.tudum.overhero .cine{margin-top:calc(-1 * var(--main-pt) - var(--mast-h,126px))}
 body.tudum.overhero .cine-in{padding-top:calc(64px + var(--mast-h,126px))}
 body.tudum.overhero .page-hero{margin-top:calc(-1 * var(--main-pt) - var(--mast-h,126px));padding-top:calc(72px + var(--mast-h,126px))}
-/* images fade in as they load */
-body.tudum :is(.thumb,.t10-p,.soon-img,.ntile-img,.hub,.page-hero,.cine,.tcard-img) img:not(.ok){opacity:0}
-body.tudum :is(.thumb,.t10-p,.soon-img,.ntile-img,.hub,.page-hero,.cine,.tcard-img) img{transition:opacity .5s ease,transform .35s ease}
+/* images fade in as they load (not the hero photos: they are the first thing on screen) */
+body.tudum :is(.thumb,.t10-p,.soon-img,.ntile-img,.hub,.tcard-img) img:not(.ok){opacity:0}
+body.tudum :is(.thumb,.t10-p,.soon-img,.ntile-img,.hub,.tcard-img) img{transition:opacity .5s ease,transform .35s ease}
 /* reading: lede, pull quotes, wide photos, progress bar */
 body.tudum .art-body p.lede{font-size:21px;line-height:1.75;color:var(--ink);font-weight:500}
 body.tudum .art-body p.pull{margin:44px 0;padding:0 8px;text-align:center;font-family:var(--display);font-size:28px;font-weight:700;line-height:1.45;color:#141414;text-wrap:balance}
@@ -531,8 +531,9 @@ body.tudum :is(.story,.rcard,.ntile,.soon):hover{transform:translateY(-3px)}
   .cine{min-height:0}
   .cine-in{padding-top:120px;padding-bottom:32px}
   .cine.full{flex-direction:column;align-items:stretch}
-  .cine.full .cine-img{position:relative;inset:auto;height:auto;aspect-ratio:16/9;animation:none}
-  .cine.full::after{bottom:auto;height:calc(100vw * 9 / 16 + 2px);background:linear-gradient(0deg,#0A0A0D 0%,rgba(10,10,13,0) 45%)}
+  /* the photo fades into the blurred backdrop instead of ending in a hard edge above the text */
+  .cine.full .cine-img{position:relative;inset:auto;height:auto;aspect-ratio:16/9;animation:none;-webkit-mask-image:linear-gradient(180deg,#000 50%,transparent 100%);mask-image:linear-gradient(180deg,#000 50%,transparent 100%)}
+  .cine.full::after{background:linear-gradient(0deg,rgba(10,10,13,.85) 0%,rgba(10,10,13,.35) 60%,rgba(10,10,13,0) 100%)}
   .cine.full .cine-in{padding-top:0;margin-top:-28px;position:relative}
   .wide-only{display:none}
   .cine:not(.full) .cine-in{padding-top:24px}
