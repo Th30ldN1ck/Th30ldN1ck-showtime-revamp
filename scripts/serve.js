@@ -10,7 +10,7 @@ const API = path.join(__dirname, '..', 'api');
 require('child_process').execFileSync(process.execPath, [path.join(__dirname, 'build_pages.mjs')], { stdio: 'inherit' });
 
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
-  '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.jpg': 'image/jpeg', '.webp': 'image/webp' };
+  '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.otf': 'font/otf' };
 
 http.createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');

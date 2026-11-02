@@ -29,6 +29,6 @@ then `python3 scripts/build_titles.py site/data` (also re-run it to refresh titl
 ## Design rules
 - Two looks behind the เดิม/ใหม่ switch in the demo ribbon (`LOOK` in app.js; `?look=tudum|classic`, remembered per browser; default classic). The Tudum-style look is everything scoped under `body.tudum` in styles.css plus `homeTudum()`; `homeClassic()` is the current home.
 - Header: white sticky masthead modelled on the NOW Blog header in peacock-clone (`src/components/NowBlogHeader.jsx`) – logo row folds away on scroll on desktop, phones get one bar plus a tab drawer. The old magenta truevisions.co.th top bar was dropped.
-- Page body keeps the current truevisions.co.th Showtime look: pink headings (#F2408E), white cards with pink/purple gradient borders, font Prompt (stand-in for the brand font).
+- Page body keeps the current truevisions.co.th Showtime look: pink headings (#F2408E), white cards with pink/purple gradient borders, font Better Together (the TrueVisions brand font, self-hosted in site/fonts/ from now.truevisions.co.th; covers Thai).
 - Brand CTA colours from the TVS NOW design system: magenta #FB008D, brand gradient #FB008D → #FF0000.
 - Copy is Thai-first; keep English labels where the live site uses them (Highlight, Sports, See More).
