@@ -599,7 +599,9 @@
   }
   function reveal() {
     pending = [];
-    if (calm || !tudum()) return;
+    // desktop only: on phones the hero photo loads after this runs and shifts everything, and some in-app
+    // browsers report scroll late, so content could stay hidden
+    if (calm || !tudum() || innerWidth <= 860) return;
     app.querySelectorAll(':scope > section, :scope > div, :scope > header').forEach(el => {
       // the hero and the dark top bands meet the header, so they never slide in
       if (el.classList.contains('rv') || el.matches('.cine, .pband, .page-hero, .art')) return;
@@ -630,7 +632,7 @@
     app.querySelectorAll('img').forEach(i => { if (i.complete) i.classList.add('ok'); });
   }
   // images fade in once loaded (new look); the listener is on document, so later-inserted images are covered too
-  document.addEventListener('load', e => { if (e.target.tagName === 'IMG') e.target.classList.add('ok'); }, true);
+  document.addEventListener('load', e => { if (e.target.tagName === 'IMG') { e.target.classList.add('ok'); revealCheck(); } }, true);
   // cross-fade between pages where the browser supports it
   const swap = fn => (document.startViewTransition && !calm && tudum()) ? document.startViewTransition(fn) : fn();
   // links from before the switch to real paths (#a-123, #sports-football, #show-agt, #home)
