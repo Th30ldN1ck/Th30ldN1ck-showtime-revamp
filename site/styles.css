@@ -403,7 +403,7 @@ body.tudum .pband-bg::before{content:"";position:absolute;inset:-60px;background
 body.tudum .pband-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,10,13,.85) 0%,rgba(10,10,13,.45) 60%,rgba(10,10,13,.2) 100%)}
 /* see-through header over the home hero and show heroes */
 body.tudum .mast{transition:background .3s ease,border-color .3s ease}
-body.tudum.overhero .mast:not(.solid):not(.open){background:linear-gradient(180deg,rgba(0,0,0,.62) 0%,rgba(0,0,0,0) 100%);backdrop-filter:none;border-bottom-color:transparent}
+body.tudum.overhero .mast:not(.solid):not(.open){background:linear-gradient(180deg,rgba(0,0,0,.62) 0%,rgba(0,0,0,0) 100%) border-box;backdrop-filter:none;border-bottom-color:transparent}
 body.tudum.overhero .cine{margin-top:calc(-32px - var(--mast-h,126px))}
 body.tudum.overhero .cine-in{padding-top:calc(64px + var(--mast-h,126px))}
 body.tudum.overhero .page-hero{margin-top:calc(-32px - var(--mast-h,126px));padding-top:calc(72px + var(--mast-h,126px))}
@@ -455,7 +455,12 @@ body.tudum .t10-tabs button.on{background:#141414;color:#fff}
 .t10-tabs{margin-left:auto;display:flex;gap:4px;padding:4px;border-radius:999px;background:rgba(127,127,127,.15)}
 .t10-tabs button{border:0;background:none;color:inherit;font:600 14px 'Prompt',sans-serif;padding:7px 18px;border-radius:999px;cursor:pointer;opacity:.7}
 .t10-tabs button.on{background:#fff;color:#0D0D0D;opacity:1}
-.t10-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:28px 16px}
+.t10-row{display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 64px) / 5.3);gap:16px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;padding:14px 0 30px;margin:-14px 0 -30px}
+.t10-row::-webkit-scrollbar{display:none}
+.t10{scroll-snap-align:start}
+.t10-arrows{display:flex;gap:6px;margin-left:12px}
+.t10-arrows button{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:#fff;color:#141414;font-size:22px;line-height:1;cursor:pointer;padding:0 0 3px}
+.t10-arrows button:hover{border-color:#141414}
 .t10{position:relative;display:grid;grid-template-columns:44% 56%;align-items:end}
 .t10-n{font-size:clamp(90px,10vw,150px);font-weight:800;line-height:.78;letter-spacing:-.06em;color:transparent;-webkit-text-stroke:3px #141414;text-align:right;margin-right:-14px;z-index:0}
 .t10-p{position:relative;z-index:1;aspect-ratio:2/3;border-radius:8px;overflow:hidden;background:var(--grad);box-shadow:0 10px 24px rgba(0,0,0,.25)}
@@ -497,13 +502,15 @@ body.tudum :is(.story,.rcard,.ntile,.soon):hover{transform:translateY(-3px)}
   .foot{grid-template-columns:repeat(3,minmax(0,1fr))}
   .foot-brand{grid-column:1/-1}
   .top4,.bento,.soon-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .t10-row{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .t10-row{grid-auto-columns:calc((100% - 48px) / 3.4)}
   body.tudum .row.now{grid-template-columns:repeat(4,minmax(0,1fr))}
   .cine:not(.full) .cine-in{grid-template-columns:1fr;gap:28px}
   .cine-frame{max-width:640px}
   .grid.g4{grid-template-columns:repeat(3,1fr)}
 }
 @media (max-width:860px){
+  body.tudum .row.now{grid-template-columns:none}
+  .t10-arrows{display:none}
   body.tudum.overhero .cine{margin-top:calc(-20px - var(--mast-h,64px))}
   body.tudum.overhero .cine:not(.full) .cine-in{padding-top:calc(24px + var(--mast-h,64px))}
   body.tudum.overhero .cine.full .cine-in{padding-top:0}
@@ -623,8 +630,10 @@ body.tudum :is(.story,.rcard,.ntile,.soon):hover{transform:translateY(-3px)}
   .footer{padding-top:40px}
   .top4,.bento,.soon-grid{gap:20px 12px}
   .bento>.story.mid{grid-column:1/-1;grid-row:auto}
-  .t10-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px 8px}
-  .t10-n{-webkit-text-stroke-width:2px;font-size:72px;margin-right:-8px}
+  .t10{grid-template-columns:30% 70%}
+  .t10-row{grid-auto-columns:44%;gap:10px;margin:-14px -16px -30px;padding:14px 16px 30px;scroll-padding:0 16px}
+  .cine .cine-in.wrap{padding-bottom:28px}
+  .t10-n{-webkit-text-stroke-width:2px;font-size:68px;margin-right:-6px}
   .cine-btns .tbtn{flex:1;justify-content:center}
   .fx-list{grid-template-columns:1fr;gap:10px}
   .fx{grid-template-columns:70px minmax(0,1fr) 96px;gap:12px;padding:8px}

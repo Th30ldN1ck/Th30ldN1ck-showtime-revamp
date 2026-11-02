@@ -173,7 +173,7 @@
       <section class="top4">${top.map(a => story(a)).join('')}</section>
       <section>${hhead('Shows', '/shows', 'รายการโชว์ที่คุณติดตาม')}<div class="hubs even">${hubs}</div></section>
       ${hasTop ? `<section class="top10">
-        <div class="hhead"><h2>Top 10 บน TrueVisions NOW</h2><nav class="t10-tabs" role="tablist"><button class="on" data-k="top_series" role="tab">ซีรีส์</button><button data-k="top_movies" role="tab">หนัง</button></nav></div>
+        <div class="hhead"><h2>Top 10 บน TrueVisions NOW</h2><nav class="t10-tabs" role="tablist"><button class="on" data-k="top_series" role="tab">ซีรีส์</button><button data-k="top_movies" role="tab">หนัง</button></nav><span class="t10-arrows"><button data-d="-1" aria-label="ก่อนหน้า">‹</button><button data-d="1" aria-label="ถัดไป">›</button></span></div>
         <div class="t10-row" id="t10">${topTen('top_series')}</div></section>` : ''}
       <section>${hhead('ล่าสุด')}<div class="bento">${latest.map((a, i) => i ? rcard(a) : story(a, 'mid')).join('')}</div></section>
       ${block(feat('sports', 5))}
@@ -184,7 +184,12 @@
 
     app.querySelectorAll('.t10-tabs button').forEach(b => b.onclick = () => {
       app.querySelectorAll('.t10-tabs button').forEach(x => x.classList.toggle('on', x === b));
-      document.getElementById('t10').innerHTML = topTen(b.dataset.k);
+      const row = document.getElementById('t10');
+      row.innerHTML = topTen(b.dataset.k); row.scrollLeft = 0;
+    });
+    app.querySelectorAll('.t10-arrows button').forEach(b => b.onclick = () => {
+      const row = document.getElementById('t10');
+      row.scrollBy({ left: b.dataset.d * row.clientWidth * 0.8, behavior: calm ? 'auto' : 'smooth' });
     });
     nowRow().then(html => { const el = document.getElementById('now-row'); if (el && html) { el.outerHTML = html; reveal(); } });
   }
