@@ -21,7 +21,10 @@ img{display:block;max-width:100%}
 .muted{color:var(--muted)}
 
 /* demo ribbon */
-.demo-ribbon{background:#141414;color:#fff;font-size:12px;text-align:center;padding:6px 16px;letter-spacing:.3px}
+.demo-ribbon{background:#141414;color:#fff;font-size:12px;text-align:center;padding:6px 16px;letter-spacing:.3px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px 14px}
+.look{display:inline-flex;gap:2px;padding:2px;border-radius:999px;background:rgba(255,255,255,.14)}
+.look button{border:0;background:none;color:rgba(255,255,255,.75);font:600 12px 'Prompt',sans-serif;padding:3px 12px;border-radius:999px;cursor:pointer}
+.look button.on{background:#fff;color:#141414}
 
 /* header – editorial masthead, same pattern as the NOW Blog in the TVS NOW app */
 .mast{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid rgba(0,0,0,.08);box-shadow:0 4px 18px rgba(143,60,156,.08)}
@@ -319,9 +322,9 @@ a:hover .thumb img{transform:scale(1.03)}
 
 /* ---- Tudum-style layer: display type, dark browsing pages, cinematic hero, catalog modules, motion ---- */
 :root{--display:'Kanit','Prompt',sans-serif}
-.cine h1,.hhead h2,.phead h1,.page-hero h1,.story.lead b,.story.mid b,.art-title,.art-h2,.t10-n,.brand-word{font-family:var(--display)}
-.hhead h2{font-size:32px;font-weight:700;letter-spacing:-.01em}
-.phead h1{font-weight:800}
+body.tudum :is(.cine h1,.hhead h2,.phead h1,.page-hero h1,.story.lead b,.story.mid b,.art-title,.art-h2,.t10-n,.brand-word){font-family:var(--display)}
+body.tudum .hhead h2{font-size:32px;font-weight:700;letter-spacing:-.01em}
+body.tudum .phead h1{font-weight:800}
 
 /* dark frame: everything but article pages */
 body.dark{--bg:#0A0A0D;--card:#15151B;--ink:#F4F4F6;--body:#C7C7CF;--muted:#8D8D98;--line:rgba(255,255,255,.12);background:var(--bg);color:var(--ink)}
@@ -409,26 +412,26 @@ body:not(.dark) .t10-n{-webkit-text-stroke-color:#141414}
 .soon b{font-size:16px;font-weight:600}
 
 /* portrait posters in the NOW row */
-.ntile-img{aspect-ratio:2/3}
-.row.now{grid-template-columns:repeat(6,minmax(0,1fr))}
+body.tudum .ntile-img{aspect-ratio:2/3}
+body.tudum .row.now{grid-template-columns:repeat(6,minmax(0,1fr))}
 
 /* motion */
 .rv{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
 .rv.in{opacity:1;transform:none}
-.story,.rcard,.citem,.hub,.ntile,.soon,.t10{transition:transform .25s ease}
-.story:hover,.rcard:hover,.ntile:hover,.soon:hover{transform:translateY(-3px)}
+body.tudum :is(.story,.rcard,.citem,.hub,.ntile,.soon,.t10){transition:transform .25s ease}
+body.tudum :is(.story,.rcard,.ntile,.soon):hover{transform:translateY(-3px)}
 ::view-transition-old(root),::view-transition-new(root){animation-duration:.28s}
 @media (prefers-reduced-motion:reduce){
   .cine-img{animation:none}
   .rv{opacity:1;transform:none;transition:none}
-  .story:hover,.rcard:hover,.ntile:hover,.soon:hover{transform:none}
+  body.tudum :is(.story,.rcard,.ntile,.soon):hover{transform:none}
 }
 
 /* responsive */
 @media (max-width:1080px){
   .top4,.bento,.soon-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .t10-row{grid-template-columns:repeat(3,minmax(0,1fr))}
-  .row.now{grid-template-columns:repeat(4,minmax(0,1fr))}
+  body.tudum .row.now{grid-template-columns:repeat(4,minmax(0,1fr))}
   .cine:not(.full) .cine-in{grid-template-columns:1fr;gap:28px}
   .cine-frame{max-width:640px}
   .grid.g4{grid-template-columns:repeat(3,1fr)}
@@ -443,8 +446,8 @@ body:not(.dark) .t10-n{-webkit-text-stroke-color:#141414}
   .wide-only{display:none}
   .cine:not(.full) .cine-in{padding-top:24px}
   .cine p{font-size:16px}
-  .hhead h2{font-size:25px}
-  .row.now{grid-auto-columns:38%}
+  body.tudum .hhead h2{font-size:25px}
+  body.tudum .row.now{grid-auto-columns:38%}
   .mast-row{height:60px}
   .mast-logo .brand-word{font-size:24px}
   .brand-by{font-size:10px}

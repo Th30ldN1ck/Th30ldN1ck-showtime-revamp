@@ -153,7 +153,7 @@
     return `<a class="soon" href="${nowInfo(t)}" ${ext}><span class="soon-img"><img src="${esc(t.img)}" alt="" loading="lazy" onerror="this.remove()"><em>${on > Date.now() ? `พร้อมดู ${dayMonth.format(on)}` : 'ดูได้แล้ว'}</em></span><b class="clamp1">${esc(t.t)}</b><span class="rcard-d">${esc([t.g, t.eps ? `${t.eps} ตอน` : ''].filter(Boolean).join(' · '))}</span></a>`;
   }).join('');
 
-  function home() {
+  function homeTudum() {
     setSubnav(''); setTitle('');
     const used = new Set();
     const take = (list, n) => { const out = list.filter(x => x.img && !used.has(x)).slice(0, n); out.forEach(x => used.add(x)); return out; };
@@ -189,16 +189,72 @@
     nowRow().then(html => { const el = document.getElementById('now-row'); if (el && html) { el.outerHTML = html; reveal(); } });
   }
 
+  function homeClassic() {
+    setSubnav(''); setTitle('');
+    const used = new Set();
+    const take = (list, n) => { const out = list.filter(x => x.img && !used.has(x)).slice(0, n); out.forEach(x => used.add(x)); return out; };
+    const [lead, ...top] = take(DATA.filter(a => a.sec !== 'sports'), 5);
+    const hubs = hubsOf(h => h.status !== 'archive').slice(0, 3).map(hubTile).join('');
+    const latest = take(DATA, 8);
+    const feat = (k, n) => [SEC[k], take(of(k), n)];
+    const block = ([s, [first, ...rest]], flip) => first ? `${hhead(s.name, '/' + s.key)}<div class="feat${flip ? ' flip' : ''}">${story(first, 'mid')}<div class="clist">${rest.map(citem).join('')}</div></div>` : '';
+    const half = ([s, [first, ...rest]]) => first ? `<div>${hhead(s.name, '/' + s.key)}${story(first, 'mid')}<div class="clist">${rest.map(citem).join('')}</div></div>` : '';
+
+    app.innerHTML = `
+      <section class="top">
+        ${story(lead, 'lead')}
+        <div class="top-side">${top.map(a => story(a)).join('')}</div>
+      </section>
+      ${hhead('Shows', '/shows', 'รายการโชว์ที่คุณติดตาม')}
+      <div class="hubs even">${hubs}</div>
+      ${hhead('ล่าสุด')}
+      <div class="grid g4 cards">${latest.map(rcard).join('')}</div>
+      <div id="now-row"></div>
+      ${block(feat('sports', 4))}
+      ${block(feat('movies-series', 4), true)}
+      <div class="pair">${half(feat('kids', 3))}${half(feat('knowledge', 3))}</div>`;
+
+    nowRow().then(html => { const el = document.getElementById('now-row'); if (el && html) el.outerHTML = html; });
+  }
+
+
+  // Demo switch between the current look and the Tudum-style one (home layout, dark frame, display type,
+  // motion). ?look=tudum|classic in a link sets it; the choice is remembered in this browser.
+  const LOOK_KEY = 'showtime-look';
+  let LOOK = (() => {
+    const q = new URLSearchParams(location.search).get('look');
+    let saved = null;
+    try { saved = localStorage.getItem(LOOK_KEY); } catch (e) {}
+    return q === 'tudum' || q === 'classic' ? q : saved === 'tudum' ? 'tudum' : 'classic';
+  })();
+  const tudum = () => LOOK === 'tudum';
+  const home = () => (tudum() ? homeTudum() : homeClassic());
+  function lookToggle() {
+    const bar = document.querySelector('.demo-ribbon');
+    if (!bar) return;
+    bar.insertAdjacentHTML('beforeend', `<span class="look" role="group" aria-label="รูปแบบหน้าเว็บ"><button data-l="classic">เดิม</button><button data-l="tudum">ใหม่</button></span>`);
+    const paint = () => { document.body.classList.toggle('tudum', tudum()); bar.querySelectorAll('.look button').forEach(b => b.classList.toggle('on', b.dataset.l === LOOK)); };
+    bar.querySelectorAll('.look button').forEach(b => b.onclick = () => {
+      if (b.dataset.l === LOOK) return;
+      LOOK = b.dataset.l;
+      try { localStorage.setItem(LOOK_KEY, LOOK); } catch (e) {}
+      const u = new URL(location.href);
+      if (u.searchParams.has('look')) { u.searchParams.set('look', LOOK); history.replaceState(history.state, '', u.pathname + u.search); }
+      paint(); route();
+    });
+    paint();
+  }
+
   // titles Showtime wrote about most recently, linking to their NOW detail pages
   async function nowRow() {
     try {
       titlesPromise ||= fetch('/data/titles.json').then(r => r.json());
       const { titles, art } = await titlesPromise;
-      const ids = [...new Set(DATA.map(a => art[a.id]).filter(id => id && titles[id]?.img))].slice(0, 12);
+      const ids = [...new Set(DATA.map(a => art[a.id]).filter(id => id && titles[id]?.img))].slice(0, tudum() ? 12 : 8);
       if (!ids.length) return '';
       return `<section class="now-row">${hhead('ดูบน TrueVisions NOW', NOW_APP, 'เรื่องที่เพิ่งพูดถึงใน Showtime')}<div class="row now">${ids.map(id => {
         const t = titles[id];
-        return `<a class="ntile" href="${NOW_APP}/watch/${t.type}/${id}" ${ext}><span class="ntile-img"><img src="${esc(t.p || t.img)}" alt="" loading="lazy" onerror="this.remove()">${t.badge === 'only' ? '<em>ดูได้ที่เดียว</em>' : ''}</span><b class="clamp1">${esc(t.t)}</b><span class="rcard-d">${esc(titleMeta(t).join(' · '))}</span></a>`;
+        return `<a class="ntile" href="${NOW_APP}/watch/${t.type}/${id}" ${ext}><span class="ntile-img"><img src="${esc(tudum() ? t.p || t.img : t.img)}" alt="" loading="lazy" onerror="this.remove()">${t.badge === 'only' ? '<em>ดูได้ที่เดียว</em>' : ''}</span><b class="clamp1">${esc(t.t)}</b><span class="rcard-d">${esc(titleMeta(t).join(' · '))}</span></a>`;
       }).join('')}</div></section>`;
     } catch (e) {
       return '';
@@ -519,7 +575,7 @@
     if (e.isIntersecting) { e.target.classList.add('in'); seen.unobserve(e.target); }
   }), { rootMargin: '0px 0px -8% 0px' });
   function reveal() {
-    if (!seen) return;
+    if (!seen || !tudum()) return;
     app.querySelectorAll(':scope > section, :scope > div, :scope > header').forEach(el => {
       if (el.classList.contains('rv')) return;
       el.classList.add('rv'); seen.observe(el);
@@ -531,7 +587,7 @@
     closeMenu();
     const [p0, p1] = location.pathname.split('/').filter(Boolean).map(decodeURIComponent);
     // dark, Tudum-style frame for browsing pages; articles stay light for reading
-    document.body.classList.toggle('dark', !(p0 && /^\d+$/.test(p1 || '')));
+    document.body.classList.toggle('dark', tudum() && !(p0 && /^\d+$/.test(p1 || '')));
     if (!p0) home();
     else if (p0 === 'search') search(new URLSearchParams(location.search).get('q') || '');
     else if (!SEC[p0]) notFound();
@@ -543,7 +599,7 @@
     reveal();
   }
   // cross-fade between pages where the browser supports it
-  const swap = fn => (document.startViewTransition && !calm) ? document.startViewTransition(fn) : fn();
+  const swap = fn => (document.startViewTransition && !calm && tudum()) ? document.startViewTransition(fn) : fn();
   // links from before the switch to real paths (#a-123, #sports-football, #show-agt, #home)
   function fromHash(h) {
     if (h === 'home') return '/';
@@ -588,6 +644,7 @@
     DATA = d; BYID = Object.fromEntries(d.map(a => [a.id, a]));
     TITLES = { titles: t.titles || {}, art: t.art || {}, lists: t.lists || {} };
     buildHubs(t.titles);
+    lookToggle();
     document.getElementById('mast-date').textContent = fmtLong(DATA[0].d);
     const legacy = location.hash.length > 1 && fromHash(decodeURIComponent(location.hash.slice(1)));
     if (legacy) history.replaceState({}, '', legacy);
