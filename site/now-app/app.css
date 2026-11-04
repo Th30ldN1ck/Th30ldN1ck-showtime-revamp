@@ -528,13 +528,8 @@ body.look-new .nowb {
 }
 body.look-new .when .nowb { width: 40px; height: 19px; }
 
-/* ใหม่ 2: over the full-bleed hero the header pills are sheer glass (the art shows through) and a little smaller; the
-   hero's top fade reaches further so the header sits on a soft shade. Once scrolled, the frosted bar takes over. */
-body.look-apple .phone:not(.scrolled) .tb-pills a {
-  height: 34px; padding: 0 13px 0 11px; font-size: 14px; gap: 6px;
-  background: rgba(255,255,255,.12); box-shadow: inset 0 0 0 .5px rgba(255,255,255,.35);
-  backdrop-filter: blur(16px) saturate(180%); -webkit-backdrop-filter: blur(16px) saturate(180%);
-  text-shadow: 0 1px 4px rgba(0,0,0,.45);
-}
-body.look-apple .phone:not(.scrolled) .tb-pills svg { width: 16px; height: 16px; filter: drop-shadow(0 1px 3px rgba(0,0,0,.45)); }
+/* ใหม่ 2: like Apple TV, the header over the full-bleed hero is just the logo and icons; the category pills fade in with
+   the frosted bar once the page scrolls, so they never sit on the artwork */
+body.look-apple .tb-pills { transition: opacity .25s ease, transform .25s ease; }
+body.look-apple .phone:not(.scrolled) .tb-pills { opacity: 0; transform: translateY(-6px); pointer-events: none; }
 body.look-apple .hf::after { background: linear-gradient(rgba(0,0,0,.62), rgba(0,0,0,.25) 22%, transparent 34%, transparent 50%, rgba(0,0,0,.7) 70%, #000 97%); }
