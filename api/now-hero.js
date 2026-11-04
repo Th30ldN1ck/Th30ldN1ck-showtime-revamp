@@ -76,18 +76,22 @@ async function slide(t, rank) {
 
 module.exports = async (req, res) => {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  if (!process.env.TMDB_API_KEY) { res.statusCode = 200; return res.end('[]'); }
+  // ?debug=1 says why the hero is empty (key missing / TMDB error / nothing left after filters), never the key itself
+  const debug = new URL(req.url || '/', 'http://x').searchParams.has('debug');
+  const why = (code, reason, body = '[]') => { res.statusCode = code; res.setHeader('Cache-Control', 'no-store'); res.end(debug ? JSON.stringify({ reason, keySet: !!process.env.TMDB_API_KEY }) : body); };
+  if (!process.env.TMDB_API_KEY) return why(200, 'TMDB_API_KEY is not set on this deployment');
   try {
     // two pages, so there are enough left after the Netflix and no-logo cuts
     const pages = await Promise.all([1, 2].map(page => get('/trending/all/week', { language: 'th-TH', page })));
     const trending = pages.flatMap(p => p.results).filter(t => t.media_type === 'movie' || t.media_type === 'tv');
     const slides = (await Promise.all(trending.map((t, i) => slide(t, i + 1).catch(() => null)))).filter(Boolean).slice(0, MAX);
     assign(slides);
+    if (debug) return why(200, `ok: ${slides.length} slides`);
     res.statusCode = 200;
-    res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
+    // cache only a filled hero, so an empty result (e.g. before the key was set) is never stuck at the edge
+    res.setHeader('Cache-Control', slides.length ? 's-maxage=3600, stale-while-revalidate=86400' : 'no-store');
     res.end(JSON.stringify(slides));
   } catch (e) {
-    res.statusCode = 502;
-    res.end('[]');
+    why(502, `TMDB request failed: ${e.message}`);
   }
 };
