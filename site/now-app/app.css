@@ -404,7 +404,12 @@ body.look-new .bgh .poster { width: 132px; border-radius: 4px; }
 .err { padding: 320px 30px 0; text-align: center; color: var(--muted); }
 
 /* new look: scrolled header is a frosted bar (Disney+), so rows blur behind it instead of showing through */
-body.look-new .phone.scrolled .topbar, body.look-new .phone.scrolled .statusbar {
+/* one frosted layer: the header's background (::before) reaches up behind the status bar, so there is no seam where two
+   separately blurred layers meet */
+body.look-new .phone.scrolled .statusbar { background: none; }
+body.look-new .phone.scrolled .topbar { background: none; }
+body.look-new .phone.scrolled .topbar::before {
+  content: ''; position: absolute; z-index: -1; left: 0; right: 0; top: -54px; bottom: 0;
   background: rgba(18,19,24,.94); backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%);
 }
 body.look-new .phone.scrolled .topbar { box-shadow: 0 1px 0 rgba(255,255,255,.06); }
