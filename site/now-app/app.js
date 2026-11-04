@@ -132,15 +132,23 @@ function heroCards(s) {
   const n = slides.length;
   return `<section class="hc${LOOK === 'apple' ? ' hc-apple' : ''}">
     <div class="hc-glow"><img class="top" src="${esc(slides[0].bg)}" alt=""><img alt=""></div>
-    <div class="hc-track">${HeroCard(slides[n - 1], false, true)}${slides.map((h, i) => HeroCard(h, !i)).join('')}${HeroCard(slides[0], false, true)}</div>
+    <div class="hc-track">${heroClones(slides, -1)}${slides.map((h, i) => HeroCard(h, !i)).join('')}${heroClones(slides, 1)}</div>
     <div class="dots">${slides.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>
   </section>`;
 }
+// The loop has HC_CLONES copies at each end (the last slides before the first, the first slides after the last), so a
+// copy's peeking neighbours are the same as its real slide's and the silent swap between them doesn't jump.
+const HC_CLONES = 2;
+const heroClones = (slides, side) => {
+  const n = slides.length, k = Math.min(HC_CLONES, n);
+  const picks = side < 0 ? slides.slice(n - k) : slides.slice(0, k);
+  return picks.map(h => HeroCard(h, false, true)).join('');
+};
 function wireHeroCards(screen) {
   const sec = screen.querySelector('.hc');
   if (!sec) return;
   const track = sec.querySelector('.hc-track'), cards = [...track.children], dots = [...sec.querySelectorAll('.dots i')];
-  const n = cards.length - 2, layers = [...sec.querySelectorAll('.hc-glow img')];
+  const k = track.querySelectorAll('[data-clone]').length / 2, n = cards.length - 2 * k, layers = [...sec.querySelectorAll('.hc-glow img')];
   // backdrop crossfade: the next glow loads into the hidden layer, then fades in over the current one (no dip to black)
   cards.forEach(c => { new Image().src = c.dataset.bg; });   // preload, so the fade starts right away
   const showBg = src => {
@@ -151,20 +159,20 @@ function wireHeroCards(screen) {
   };
   const step = () => cards[2].offsetLeft - cards[1].offsetLeft;
   const go = (i, smooth) => track.scrollTo({ left: i * step(), behavior: smooth ? 'smooth' : 'instant' });
-  let cur = 1, touching = false, idle;
-  requestAnimationFrame(() => go(1));                       // start on the real first slide, clone of the last to its left
+  let cur = k, touching = false, idle;
+  requestAnimationFrame(() => go(k));                       // start on the real first slide, copies of the last ones to its left
   // as the card changes: scale, dot and backdrop follow (clones carry their slide's backdrop, so a wrap is seamless)
   const mark = i => {
     cards.forEach((c, j) => c.classList.toggle('on', j === i));
-    dots.forEach((d, j) => d.classList.toggle('on', j === (i - 1 + n) % n));
+    dots.forEach((d, j) => d.classList.toggle('on', j === ((i - k) % n + n) % n));
     showBg(cards[i].dataset.bg);
   };
   // once the scroll has fully settled (finger up, momentum and snap done): wrap off a clone onto the real slide
   // the wrap swaps a clone for its identical real slide: no transitions for that one frame, so nothing replays
   const settle = () => {
-    if (touching || (cur !== 0 && cur !== n + 1)) return;
+    if (touching || (cur >= k && cur < k + n)) return;
     track.classList.add('instant');
-    cur = cur === 0 ? n : 1; go(cur); mark(cur); parallax();
+    cur += cur < k ? n : -n; go(cur); mark(cur); parallax();
     requestAnimationFrame(() => requestAnimationFrame(() => track.classList.remove('instant')));
   };
   // parallax: each card's art shifts against the swipe in proportion to its distance from the centre
