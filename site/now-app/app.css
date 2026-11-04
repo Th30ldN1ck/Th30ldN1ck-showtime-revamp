@@ -1,0 +1,529 @@
+/* TVS NOW mobile home mock. Sizes are iPhone points (393 wide); on desktop the app sits in a phone frame. */
+@font-face { font-family: 'Better Together'; src: url('/fonts/BetterTogether-Regular.otf') format('opentype'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Better Together'; src: url('/fonts/BetterTogether-Medium.otf') format('opentype'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'Better Together'; src: url('/fonts/BetterTogether-Bold.otf') format('opentype'); font-weight: 700; font-display: swap; }
+
+:root {
+  --bg: #000;
+  --card: #1a1a1a;
+  --text: #fff;
+  --muted: #a3a3a3;
+  --pad: 20px;
+  --now: linear-gradient(90deg, #ff2b6e, #e6007e);
+  --cta: linear-gradient(90deg, #fb008d, #ff0000);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: #2a2a2e radial-gradient(circle at 50% 0, #3a3a40, #17171a 70%);
+  color: var(--text);
+  font: 400 15px/1.35 'Better Together', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; justify-items: center; padding: 20px 0;
+}
+.phone { grid-column: 2; }
+a { color: inherit; text-decoration: none; }
+img { display: block; }
+
+/* ---------- frame ---------- */
+.phone {
+  /* true iPhone proportions; app.js zooms the whole frame down to fit short windows instead of cutting its height */
+  position: relative; width: 393px; height: 852px; flex: none;
+  background: var(--bg); border-radius: 54px; overflow: hidden;
+  box-shadow: 0 0 0 11px #0c0c0d, 0 0 0 13px #3b3b40, 0 40px 90px rgba(0,0,0,.6);
+}
+.screen {
+  position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
+  scrollbar-width: none; padding-bottom: 110px;
+}
+.screen::-webkit-scrollbar, .row::-webkit-scrollbar { display: none; }
+/* demo switch: beside the phone on desktop, above it on narrow windows, a thin ribbon over the app on phones */
+.demo {
+  grid-column: 1; justify-self: end; margin-right: 20px; z-index: 50;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  padding: 14px 14px 12px; border-radius: 16px; background: rgba(0,0,0,.45);
+  font-size: 12px; color: rgba(255,255,255,.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.demo b { display: block; font-size: 11px; letter-spacing: .12em; color: rgba(255,255,255,.5); }
+.demo .look button { padding: 5px 16px; font-size: 13px; }
+/* set by fitFrame() in app.js when the window is too narrow for the switch beside the phone */
+@media (min-width: 501px) {
+  body.demo-top { grid-template-columns: 1fr; padding: 62px 0 20px; }
+  body.demo-top .phone { grid-column: 1; }
+  body.demo-top .demo { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); margin: 0; flex-direction: row; align-items: center; white-space: nowrap; padding: 4px 4px 4px 14px; border-radius: 999px; }
+  body.demo-top .demo b { display: inline; margin-right: 4px; }
+}
+.look { display: inline-flex; gap: 2px; padding: 2px; border-radius: 999px; background: rgba(255,255,255,.14); }
+.look button { border: 0; background: none; color: rgba(255,255,255,.75); font: 600 12px 'Better Together', sans-serif; padding: 3px 12px; border-radius: 999px; cursor: pointer; }
+.look button.on { background: #fff; color: #141414; }
+@media (max-width: 500px) {
+  body { display: block; padding: 0; background: var(--bg); }
+  .demo { position: fixed; top: 0; left: 0; right: 0; justify-self: stretch; transform: none; margin: 0; flex-direction: row; align-items: center; justify-content: space-between; border-radius: 0; padding: calc(env(safe-area-inset-top) + 4px) 10px 4px 16px; background: #111; }
+  .demo b { display: inline; margin-right: 4px; }
+  .demo .look button { padding: 3px 12px; font-size: 12px; }
+  .phone { position: fixed; inset: calc(env(safe-area-inset-top) + 34px) 0 0; width: auto; height: auto; border-radius: 0; box-shadow: none; }
+  .statusbar { display: none !important; }
+  .topbar { top: 0 !important; }
+}
+
+.statusbar {
+  position: absolute; z-index: 30; top: 0; left: 0; right: 0; height: 54px;
+  display: flex; align-items: center; justify-content: space-between; padding: 6px 34px 0 50px;
+  font: 600 17px -apple-system, system-ui, sans-serif; pointer-events: none;
+}
+.sb-right { display: flex; align-items: center; gap: 7px; font-size: 15px; }
+.sb-right svg { fill: #fff; }
+.sb-batt { background: #fff; color: #000; border-radius: 5px; padding: 0 5px; font-size: 13px; font-weight: 700; line-height: 18px; position: relative; }
+.sb-batt::after { content: ''; position: absolute; right: -4px; top: 6px; width: 2px; height: 6px; border-radius: 0 2px 2px 0; background: #fff8; }
+
+/* ---------- header ---------- */
+.topbar {
+  position: absolute; z-index: 20; left: 0; right: 0; top: 54px; padding: 4px 14px 10px;
+  transition: background .25s;
+}
+.phone.scrolled .topbar { background: rgba(0,0,0,.92); }
+.phone.scrolled .statusbar { background: rgba(0,0,0,.92); }
+.tb-row { display: flex; align-items: center; justify-content: space-between; }
+.tb-logo { height: 38px; width: auto; }
+.tb-icons { display: flex; gap: 18px; align-items: center; padding-right: 10px; }
+.tb-bell { position: relative; display: flex; }
+.tb-bell i { position: absolute; top: -2px; right: -3px; width: 9px; height: 9px; border-radius: 50%; background: #f0388a; }
+/* new look: Disney+-style pill components, icon + label, in a sideways-scrolling row that bleeds off the edge */
+body.look-new .tb-pills {
+  gap: 10px; margin: 12px -14px 0; padding: 0 14px; overflow-x: auto; scrollbar-width: none;
+}
+body.look-new .tb-pills::-webkit-scrollbar { display: none; }
+body.look-new .tb-pills a {
+  flex: none; display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px 0 14px; border: 0; border-radius: 999px;
+  background: rgba(30,31,38,.72); box-shadow: inset 0 0 0 1px rgba(255,255,255,.14);
+  font-size: 15px; font-weight: 500; white-space: nowrap; cursor: pointer;
+  backdrop-filter: blur(14px) saturate(160%); -webkit-backdrop-filter: blur(14px) saturate(160%);
+  transition: background .2s;
+}
+body.look-new .tb-pills a:active { background: rgba(255,255,255,.16); }
+body.look-new .tb-pills svg { flex: none; opacity: .9; }
+.tb-pills { display: flex; gap: 8px; margin-top: 12px; }
+.tb-pills a {
+  border: 1.5px solid rgba(255,255,255,.75); border-radius: 6px; padding: 4px 12px; font-size: 15px;
+  background: rgba(0,0,0,.15); backdrop-filter: blur(4px);
+}
+
+/* ---------- tab bar: iOS 26 floating glass capsule ---------- */
+/* Soft scroll-edge fade behind the bar, like iOS, so posters don't collide with it */
+.phone::after {
+  content: ''; position: absolute; z-index: 19; left: 0; right: 0; bottom: 0; height: 130px; pointer-events: none;
+  background: linear-gradient(transparent, rgba(0,0,0,.75));
+}
+.tabbar {
+  --w: calc(100% - 32px);
+  position: absolute; z-index: 20; left: 16px; bottom: 26px; width: var(--w); height: 62px; padding: 4px;
+  display: flex; border-radius: 31px; overflow: hidden;
+  background: rgba(30,30,32,.5);
+  backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%);
+  box-shadow: inset 0 .5px 0 rgba(255,255,255,.35), inset 0 0 0 .5px rgba(255,255,255,.12), 0 10px 30px rgba(0,0,0,.45);
+  transition: width .4s cubic-bezier(.3,1.2,.4,1), height .3s, border-radius .3s;
+}
+.tab-ind {
+  position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / 4); border-radius: 27px;
+  background: rgba(255,255,255,.14); transform: translateX(calc(var(--i) * 100%));
+  transition: transform .45s cubic-bezier(.3,1.35,.5,1), opacity .2s;
+}
+.tabbar a {
+  position: relative; flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 1px; font-size: 10.5px; font-weight: 500; color: rgba(255,255,255,.62); cursor: pointer;
+  -webkit-tap-highlight-color: transparent; transition: flex .4s, opacity .25s, color .2s;
+}
+.tabbar a svg { width: 26px; height: 26px; }
+.tabbar a.on { color: #fff; }
+.tabbar a:active { transform: scale(.94); }
+.tab-avatar { width: 26px; height: 26px; border-radius: 8px; background: #ee59a6; display: grid; place-items: center; }
+/* scrolled down: the bar shrinks to the active tab's icon, and taps or scrolling up bring it back */
+.phone.min .tabbar { --w: 54px; height: 54px; border-radius: 27px; }
+.phone.min .tabbar a:not(.on) { flex: 0 0 0; opacity: 0; pointer-events: none; }
+.phone.min .tabbar a { font-size: 0; gap: 0; }
+.phone.min .tab-ind { opacity: 0; }
+.homebar { position: absolute; z-index: 21; left: 50%; bottom: 8px; width: 134px; height: 5px; margin-left: -67px; border-radius: 3px; background: #fff; }
+@media (max-width: 500px) {
+  .homebar { display: none; }
+  .tabbar { bottom: calc(env(safe-area-inset-bottom) + 6px); }
+}
+
+/* ---------- hero ---------- */
+.hero { position: relative; margin-bottom: 26px; }
+.hero-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.hero-track::-webkit-scrollbar { display: none; }
+.slide { flex: 0 0 100%; scroll-snap-align: start; position: relative; }
+.slide img { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; }
+.slide::after { content: ''; position: absolute; left: 0; right: 0; top: 0; aspect-ratio: 2 / 3; pointer-events: none;
+  background: linear-gradient(rgba(0,0,0,.35), transparent 22%, transparent 55%, #000 99%); }
+.slide-body { position: relative; z-index: 1; margin-top: -120px; padding: 0 var(--pad); text-align: center; }
+.slide-body h2 { margin: 0 0 6px; font-size: 28px; font-weight: 700; line-height: 1.2; }
+.slide-body p {
+  margin: 0 auto; max-width: 350px; color: #c9c9c9; font-size: 13.5px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.7em;
+}
+.hero-ctas { display: flex; gap: 8px; justify-content: center; margin-top: 18px; }
+.btn-play {
+  display: flex; align-items: center; justify-content: center; gap: 10px; width: 194px; height: 43px;
+  background: #fff; color: #000; border-radius: 5px; font-size: 17px; font-weight: 500;
+}
+.btn-add { width: 43px; height: 43px; border-radius: 5px; background: #333; display: grid; place-items: center; }
+.dots { display: flex; gap: 8px; justify-content: center; margin-top: 22px; }
+.dots i { width: 8px; height: 8px; border-radius: 50%; background: #555; transition: background .2s; }
+.dots i.on { background: #fff; }
+
+/* ---------- shelves ---------- */
+.shelf { margin-bottom: 28px; }
+.shelf-h { display: flex; align-items: center; gap: 8px; padding: 0 var(--pad); margin: 0 0 12px; font-size: 19px; font-weight: 500; }
+.shelf-h .chev { margin-left: auto; }
+.row {
+  display: flex; gap: 8px; overflow-x: auto; padding: 0 var(--pad); scroll-padding: 0 var(--pad);
+  scroll-snap-type: x proximity; scrollbar-width: none;
+}
+.row > * { flex: none; scroll-snap-align: start; }
+
+.poster { position: relative; width: 132px; aspect-ratio: 132 / 199; border-radius: 4px; overflow: hidden; background: var(--card); }
+.poster img, .land img { width: 100%; height: 100%; object-fit: cover; }
+.nowb {
+  position: absolute; z-index: 2; top: 0; left: 0; padding: 3px 7px 2px; background: var(--now);
+  font: 800 16px/1 'Arial Black', 'Better Together', sans-serif; letter-spacing: -.5px; border-radius: 0 0 4px 0;
+}
+.land-card { width: 224px; }
+.land { position: relative; width: 100%; aspect-ratio: 224 / 133; border-radius: 4px; overflow: hidden; background: var(--card); }
+.land-t { margin-top: 10px; font-size: 15px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.when { position: absolute; z-index: 2; top: 8px; left: 8px; display: flex; gap: 6px; align-items: center; }
+.when span { background: rgba(0,0,0,.45); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+.when .nowb { position: static; font-size: 12px; border-radius: 3px; padding: 3px 5px 2px; }
+.live-pill { background: #e50914 !important; font-weight: 700; }
+
+/* continue watching */
+.cw .ep { position: absolute; top: 10px; left: 10px; font-size: 20px; font-weight: 700; text-shadow: 0 1px 6px #000; }
+.cw .playc { position: absolute; left: 50%; top: 50%; width: 32px; height: 32px; margin: -16px; border-radius: 50%; background: rgba(255,255,255,.35); display: grid; place-items: center; }
+.cw .left { position: absolute; left: 8px; bottom: 9px; font-size: 12px; text-shadow: 0 1px 4px #000; }
+.cw .bar { position: absolute; left: 8px; right: 8px; bottom: 4px; height: 2px; background: rgba(255,255,255,.3); }
+.cw .bar i { display: block; height: 100%; background: #f0388a; }
+.cw-t { display: flex; gap: 6px; margin-top: 10px; font-size: 14.5px; color: #ddd; }
+.cw-t span { flex: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* ranking */
+.rank { display: flex; align-items: flex-end; width: 206px; }
+.rank b {
+  font: 700 120px/0.78 'Better Together', sans-serif; color: #000; -webkit-text-stroke: 3px #fff;
+  width: 74px; margin-right: -14px; text-align: right; letter-spacing: -6px;
+}
+.rank .poster { z-index: 1; }
+
+/* Top 10 rank. ใหม่: MonoMax-style, a big white-outlined numeral inside the poster's bottom-right corner */
+.rank-in::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(160deg, transparent 55%, rgba(0,0,0,.55)); }
+.rank-in b {
+  position: absolute; z-index: 2; right: 4px; bottom: -7px;
+  font: 700 76px/1 'Better Together', sans-serif; letter-spacing: -4px;
+  color: rgba(0,0,0,.25); -webkit-text-stroke: 2.5px #fff; paint-order: stroke fill;
+  text-shadow: 0 2px 10px rgba(0,0,0,.45);
+}
+/* ใหม่ 2: Apple TV-style, a solid bold numeral in the top-right corner (the NOW badge has the top-left), white shading
+   to a light pink with a soft magenta glow */
+body.look-apple .rank-in::after { background: radial-gradient(70% 45% at 100% 0, rgba(0,0,0,.45), transparent 70%); }
+body.look-apple .rank-in b {
+  top: 4px; right: 9px; bottom: auto; font-size: 46px; letter-spacing: -1.5px; -webkit-text-stroke: 0; text-shadow: none;
+  background: linear-gradient(#fff 35%, #ffc4e4); -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 10px rgba(251,0,141,.35)) drop-shadow(0 1px 3px rgba(0,0,0,.5));
+}
+
+/* background header shelf */
+.bgh { position: relative; padding-bottom: 24px; margin-bottom: 0; }
+.bgh-img { width: 100%; aspect-ratio: 393 / 330; object-fit: cover; object-position: 50% 12%; display: block; -webkit-mask-image: linear-gradient(#000 55%, transparent); mask-image: linear-gradient(#000 55%, transparent); }
+.bgh::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(#000, #2b0606 40%, #200404); }
+.bgh-body { position: relative; margin-top: -90px; }
+.bgh-tag { padding: 0 var(--pad); font-size: 14px; color: #ddd; }
+.bgh .shelf-h { font-size: 24px; font-weight: 700; margin-top: 2px; }
+.bgh .poster { width: 110px; border-radius: 6px; }
+body.look-new .bgh .poster { width: 132px; border-radius: 4px; }
+
+/* Netflix contextual banner */
+.banner { display: block; margin: 0 var(--pad); border-radius: 10px; overflow: hidden; }
+.banner img { width: 100%; height: auto; }
+
+/* vertical shorts */
+.shorts { padding: 34px 0 30px; background: linear-gradient(var(--c1), var(--c2)); }
+.shorts .shelf-h { font-size: 22px; margin-bottom: 18px; }
+.stack { position: relative; height: 396px; margin: 0 var(--pad); cursor: pointer; }
+.stack .sc {
+  position: absolute; left: 0; top: 0; width: 226px; height: 396px; border-radius: 16px; overflow: hidden;
+  transform-origin: right center; transition: transform .35s ease, opacity .35s; background: var(--card);
+}
+.stack .sc img { width: 100%; height: 100%; object-fit: cover; }
+.stack .sc:first-child { border: 4px solid #fff; }
+.stack .sc span {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 30px 14px 14px; font-size: 14px;
+  background: linear-gradient(transparent, rgba(0,0,0,.65));
+}
+
+/* new look: vertical series row (bigger posters, chip + title on card) */
+.shorts-sub { margin: -10px var(--pad) 14px; font-size: 13.5px; color: rgba(255,255,255,.75); }
+.vcard { width: 168px; border-radius: 8px; cursor: pointer; }
+.vcard img { transition: transform .3s; }
+.vcard:active img { transform: scale(.97); }
+.vchip {
+  position: absolute; top: 8px; left: 8px; display: flex; align-items: center; gap: 4px; padding: 3px 7px;
+  border-radius: 999px; background: rgba(0,0,0,.55); font-size: 11.5px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.vtitle {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 36px 10px 10px; font-size: 14px; font-weight: 500; line-height: 1.3;
+  background: linear-gradient(transparent, rgba(0,0,0,.85));
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* full-screen vertical player */
+.vplayer { position: absolute; inset: 0; z-index: 25; background: #000; animation: vp-in .28s ease-out; }
+.vplayer.out { animation: vp-out .25s ease-in forwards; }
+@keyframes vp-in { from { transform: translateY(6%); opacity: 0; } }
+@keyframes vp-out { to { transform: translateY(6%); opacity: 0; } }
+.vp-track { height: 100%; overflow-y: auto; scroll-snap-type: y mandatory; scrollbar-width: none; }
+.vp-track::-webkit-scrollbar { display: none; }
+.vp-slide { position: relative; height: 100%; scroll-snap-align: start; scroll-snap-stop: always; overflow: hidden; cursor: pointer; }
+.vp-slide > img { width: 100%; height: 100%; object-fit: cover; transform-origin: 50% 40%; }
+.vp-slide.on > img { animation: kenburns 15s linear forwards; }
+.vp-slide.paused > img, .vp-slide.paused .vp-bar i { animation-play-state: paused; }
+@keyframes kenburns { to { transform: scale(1.12); } }
+.vp-slide::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(rgba(0,0,0,.45), transparent 18%, transparent 55%, rgba(0,0,0,.85)); }
+.vp-paused { position: absolute; z-index: 2; left: 50%; top: 45%; transform: translate(-50%, -50%); opacity: 0; transition: opacity .2s; pointer-events: none; }
+.vp-slide.paused .vp-paused { opacity: .85; }
+.vp-top { position: absolute; z-index: 3; top: 58px; left: 0; right: 0; display: flex; align-items: center; gap: 6px; padding: 0 12px; pointer-events: none; }
+.vp-top b { font-size: 17px; font-weight: 500; }
+.vp-close { pointer-events: auto; border: 0; background: none; padding: 4px; cursor: pointer; display: flex; }
+.vp-rail { position: absolute; z-index: 3; right: 10px; bottom: 150px; display: flex; flex-direction: column; gap: 18px; }
+.vp-rail button { border: 0; background: none; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; color: #fff; cursor: pointer; }
+.vp-rail svg { fill: rgba(255,255,255,.95); filter: drop-shadow(0 1px 4px rgba(0,0,0,.5)); transition: transform .2s; }
+.vp-rail button.active svg { transform: scale(1.15); }
+.vp-rail button[data-act=like].active svg { fill: #ff3b5c; }
+.vp-rail button[data-act=save].active svg { fill: #ffd400; }
+.vp-rail small { font: 500 11px 'Better Together', sans-serif; text-shadow: 0 1px 4px #000; }
+.vp-info { position: absolute; z-index: 3; left: 16px; right: 76px; bottom: 56px; }
+.vp-ep { display: inline-block; margin: 0 6px 8px 0; padding: 2px 8px; border-radius: 4px; background: rgba(255,255,255,.2); font-size: 12px; }
+.vp-info h3 { margin: 0 0 4px; font-size: 20px; font-weight: 700; line-height: 1.25; }
+.vp-info p { margin: 0; font-size: 13.5px; color: #ddd; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.vp-bar { position: absolute; z-index: 3; left: 16px; right: 16px; bottom: 36px; height: 3px; border-radius: 2px; background: rgba(255,255,255,.25); overflow: hidden; }
+.vp-bar i { display: block; height: 100%; width: 0; background: #fff; }
+.vp-slide.on .vp-bar i { animation: vp-prog 15s linear forwards; }
+@keyframes vp-prog { to { width: 100%; } }
+.vp-hint {
+  position: absolute; z-index: 4; left: 50%; bottom: 120px; transform: translateX(-50%); padding: 6px 14px; border-radius: 999px;
+  background: rgba(0,0,0,.6); font-size: 13px; pointer-events: none; animation: hint 1.6s ease-in-out 3; transition: opacity .3s;
+}
+.vp-hint.gone { opacity: 0; }
+@keyframes hint { 50% { transform: translate(-50%, -8px); } }
+@media (max-width: 500px) { .vp-top { top: 12px; } .vp-info { bottom: 40px; } .vp-bar { bottom: 22px; } }
+
+/* new look: Only on NOW, Disney+ "Recommended For You"-style tall cards */
+.excl-row { gap: 12px; scroll-snap-type: x mandatory; }
+.excl-card {
+  position: relative; flex: none; width: 262px; aspect-ratio: 2 / 3; border-radius: 10px; overflow: hidden;
+  background: var(--card);
+}
+.excl-card img { width: 100%; height: 100%; object-fit: cover; }
+.excl-card::after { content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); background: linear-gradient(transparent 78%, rgba(0,0,0,.8)); }
+.excl-meta {
+  position: absolute; z-index: 1; left: 0; right: 0; bottom: 14px; display: flex; justify-content: center; align-items: center; gap: 8px;
+  font-size: 14px; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,.6);
+}
+.excl-meta .rate { font-style: normal; font-weight: 700; font-size: 13px; line-height: 1; padding: 4px 6px 3px; border-radius: 4px; background: rgba(255,255,255,.22); }
+
+/* only on NOW */
+.onlynow { padding-top: 30px; background: linear-gradient(#5b3f3b, #000 55%); }
+.on-card { width: 345px; }
+.on-card .land { aspect-ratio: 345 / 204; border-radius: 6px; }
+.on-card h3 { margin: 12px 8px 2px; font-size: 18px; font-weight: 400; }
+.on-card p { margin: 0 8px; color: var(--muted); font-size: 13.5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* partner nest panels */
+.nest { margin: 0 var(--pad) 28px; border-radius: 12px; padding: 18px 0 16px; background: linear-gradient(var(--c1), var(--c2)); overflow: hidden; }
+.nest .shelf-h { padding: 0 16px; margin-bottom: 14px; font-weight: 500; }
+.nest .row { padding: 0 16px; scroll-padding: 0 16px; }
+
+/* new look: Disney+-style partner hub. --c1/--c2 are registered so the backdrop gradient eases between partners. */
+@property --c1 { syntax: '<color>'; inherits: true; initial-value: #222; }
+@property --c2 { syntax: '<color>'; inherits: true; initial-value: #111; }
+.hub {
+  /* the partner's own CI colours at full strength (set from PARTNERS.ci in app.js), not darkened */
+  padding: 26px 0 30px; transition: --c1 .5s, --c2 .5s;
+  background: linear-gradient(to top right, var(--c2), var(--c1));
+}
+/* white type on bright brand colours (green, yellow): a soft shadow keeps the tagline legible */
+.hub-stage p { text-shadow: 0 1px 3px rgba(0,0,0,.3); }
+.hub .hub-btn { background: rgba(0,0,0,.16); }
+.hub-solo { padding-top: 0; }
+/* Lemino's own app-icon gradient: orange bottom-left to pink top-right */
+.hub-lemino { background: linear-gradient(to top right, #ffab30, #ff0b74); }
+.hub-logo { display: block; width: auto; height: 62px; max-width: 230px; object-fit: contain; margin: 6px auto 8px; filter: drop-shadow(0 2px 10px rgba(0,0,0,.18)); }
+.hub-lemino .hub-logo { height: auto; width: 210px; }
+.wm-text { height: auto; font-size: 46px; font-weight: 700; line-height: 62px; letter-spacing: -.5px; }
+.hub-lemino .hub-stage p { color: #fff; }
+.hub-lemino .hub-btn { background: rgba(255,255,255,.22); }
+.hub-chips { display: flex; gap: 10px; overflow-x: auto; padding: 4px var(--pad) 12px; margin: -4px 0 -12px; scrollbar-width: none; }
+.hub-chips::-webkit-scrollbar { display: none; }
+/* Chips on any brand colour: unselected are a light dark tint with a slightly soft logo; the selected one is white
+   glass with a crisp outline, which the rotation timer fills with more white. */
+.hub-chips button {
+  position: relative; overflow: hidden; isolation: isolate;
+  flex: none; display: grid; place-items: center; width: 104px; height: 44px; padding: 0 16px; border: 0; border-radius: 999px;
+  background: rgba(0,0,0,.14); color: #fff; font: 700 17px 'Better Together', sans-serif; cursor: pointer; transition: background .2s, box-shadow .2s;
+}
+.hub-chips button .chip-logo { opacity: .85; transition: opacity .2s; }
+.hub-chips button.on { background: rgba(255,255,255,.18); box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.75); }
+.hub-chips button.on .chip-logo { opacity: 1; }
+/* rotation timer: the selected chip fills left to right over --hub-ms; its animationend moves to the next partner */
+.hub-chips button.on::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; transform-origin: left; transform: scaleX(0);
+  background: rgba(255,255,255,.26); animation: hub-timer var(--hub-ms, 6s) linear forwards;
+}
+.hub.paused .hub-chips button.on::before { animation-play-state: paused; }
+@keyframes hub-timer { to { transform: scaleX(1); } }
+.chip-logo { display: block; height: 20px; max-width: 72px; object-fit: contain; }
+.chip-logo.wm-text { height: auto; font-size: 19px; line-height: 20px; letter-spacing: 0; }
+.hub-body { transition: opacity .18s; }
+.hub-body.fade { opacity: 0; }
+.hub-stage { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 30px var(--pad) 26px; }
+.hub-name { margin: 0 0 4px; }
+.hub-stage p { margin: 0 0 18px; font-size: 15px; color: rgba(255,255,255,.85); }
+.hub-btn {
+  padding: 10px 30px; border-radius: 999px; background: rgba(255,255,255,.16); font-size: 15px; font-weight: 500; letter-spacing: .04em;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); cursor: pointer;
+}
+
+/* live channels */
+.chan { position: relative; width: 117px; height: 117px; border-radius: 6px; background: #1c1c1c; display: grid; place-items: center; }
+.chan img { max-width: 64%; max-height: 46%; object-fit: contain; }
+.chan span { position: absolute; right: 8px; bottom: 6px; display: flex; gap: 4px; align-items: center; font-size: 13px; color: #ddd; }
+
+.loading { height: 100%; display: grid; place-items: center; padding-top: 300px; }
+.loading i { width: 34px; height: 34px; border-radius: 50%; border: 3px solid #333; border-top-color: #fff; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.err { padding: 320px 30px 0; text-align: center; color: var(--muted); }
+
+/* new look: scrolled header is a frosted bar (Disney+), so rows blur behind it instead of showing through */
+body.look-new .phone.scrolled .topbar, body.look-new .phone.scrolled .statusbar {
+  background: rgba(18,19,24,.94); backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%);
+}
+body.look-new .phone.scrolled .topbar { box-shadow: 0 1px 0 rgba(255,255,255,.06); }
+
+/* new look: hero cards (Netflix / Disney+ size): big card, the title's logo large and centred over the art's foot */
+.hc { position: relative; isolation: isolate; padding: 170px 0 6px; margin-bottom: 26px; container-type: inline-size; }
+.hc-glow { position: absolute; z-index: -1; inset: 0; overflow: hidden; }
+/* two stacked layers crossfade: the .top one fades in over the other */
+.hc-glow img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: blur(40px) saturate(1.4) brightness(.6); transform: scale(1.4); opacity: 0; transition: opacity .9s cubic-bezier(.4, 0, .2, 1); }
+.hc-glow img.top { opacity: 1; }
+.hc-glow::after { z-index: 1; }
+.hc-glow::after { content: ''; position: absolute; inset: 0; background: linear-gradient(rgba(0,0,0,.25), rgba(0,0,0,.35) 60%, #000); }
+.hc-track {
+  /* narrower than full so the previous and next titles show at the sides (Disney+) */
+  --hc-w: min(304px, calc(100cqw - 92px));
+  display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+  padding: 0 calc((100cqw - var(--hc-w)) / 2);
+}
+.hc-track::-webkit-scrollbar { display: none; }
+.hc-card {
+  position: relative; flex: none; width: var(--hc-w); scroll-snap-align: center; scroll-snap-stop: always; border-radius: 14px; overflow: hidden;
+  aspect-ratio: 2 / 2.95; background: #0c0d11; box-shadow: 0 18px 40px rgba(0,0,0,.45);
+  transform: scale(.92); opacity: .7; transition: transform .35s, opacity .35s;
+}
+.hc-card.on { transform: none; opacity: 1; }
+.hc-card::after { content: ''; position: absolute; inset: 0; z-index: 2; border-radius: inherit; pointer-events: none; box-shadow: inset 0 0 0 1px rgba(255,255,255,.18); }
+.hc-art { position: absolute; inset: 0; }
+.hc-art img { width: 100%; height: 100%; object-fit: cover; }
+.hc-feed .hc-art img { object-position: 72% 30%; }
+.hc-art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(transparent 45%, rgba(10,10,14,.6) 66%, rgba(10,10,14,.96)); }
+.hc-body { position: absolute; z-index: 1; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 0 18px 20px; text-align: center; }
+.hc-logo { display: block; max-width: 84%; max-height: 120px; width: auto; height: auto; object-fit: contain; filter: drop-shadow(0 2px 12px rgba(0,0,0,.5)); }
+.hc-feed .hc-logo { width: 90%; height: 120px; max-width: none; object-position: center bottom; }
+.hc-tt { font-size: 30px; line-height: 1.15; text-shadow: 0 2px 10px #000; }
+.hc-badge { font-style: normal; font-size: 12.5px; font-weight: 500; line-height: 1; padding: 5px 9px 4px; border-radius: 4px; background: #fff; color: #111; order: -1; }
+.hc-body .excl-meta { position: static; }
+.hc-body .hero-ctas { margin-top: 6px; }
+.hc .dots { margin-top: 16px; }
+@media (max-width: 500px) { .hc { padding-top: 116px; } }
+
+/* hero live slides (Netflix live-event style): status line + two equal square-cornered buttons */
+.hc-live .hc-art::after { background: linear-gradient(transparent 55%, rgba(10,10,14,.75) 72%, rgba(10,10,14,.97)); }
+.hc-status { font-size: 15.5px; color: #fff; font-variant-numeric: tabular-nums; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
+/* live CTA variants on the standard hero buttons (.btn-play / .btn-add sizes unchanged) */
+.btn-live { background: #e50914; color: #fff; }
+.btn-live b { width: 11px; height: 11px; border-radius: 50%; background: #ffc2c5; animation: live-pulse 1.4s ease-in-out infinite; }
+@keyframes live-pulse { 50% { opacity: .35; transform: scale(.75); } }
+.btn-remind { cursor: pointer; }
+.btn-remind.set { background: rgba(255,255,255,.2); color: #fff; }
+
+/* ใหม่ 2: Apple TV-style hero. Same slides and wiring as the card hero, restyled: full-bleed art up behind the header,
+   one slide per screen, big centred logo, quiet meta line, pill + circle CTAs at the standard sizes, timer-pill dots. */
+.hc.hc-apple { padding: 0; margin-bottom: 22px; }
+.hc-apple .hc-glow { display: none; }
+.hc-apple .hc-track { --hc-w: 100cqw; gap: 0; padding: 0; }
+.hc-apple .hc-card { width: 100cqw; aspect-ratio: 2 / 3.1; border-radius: 0; box-shadow: none; transform: none; opacity: 1; background: #000; }
+.hc-apple .hc-card::after { display: none; }
+.hc-apple .hc-art::after { background: linear-gradient(rgba(0,0,0,.45), transparent 22%, transparent 50%, rgba(0,0,0,.7) 70%, #000 97%); }
+.hc-apple .hc-body { gap: 12px; padding: 0 24px 6px; }
+.hc-apple .hc-logo { max-width: 84%; max-height: 128px; }
+.hc-apple .hc-badge { display: none; }
+.hc-apple .excl-meta { font-size: 15px; color: rgba(255,255,255,.88); gap: 6px; }
+.hc-apple .excl-meta .rate { background: none; box-shadow: inset 0 0 0 1.2px rgba(255,255,255,.75); padding: 3px 5px 2px; font-size: 11.5px; }
+.hc-apple .hero-ctas { margin-top: 4px; }
+.hc-apple .btn-play { border-radius: 999px; }
+.hc-apple .btn-add { border-radius: 50%; background: rgba(255,255,255,.2); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.hc-apple .dots { gap: 8px; margin-top: 18px; align-items: center; }
+.hc-apple .dots i { width: 7px; height: 7px; background: rgba(255,255,255,.35); transition: width .3s; position: relative; overflow: hidden; border-radius: 4px; }
+.hc-apple .dots i.on { width: 30px; background: rgba(255,255,255,.3); }
+.hc-apple .dots i.on::after { content: ''; position: absolute; inset: 0; background: #fff; transform-origin: left; transform: scaleX(0); animation: hub-timer 5s linear forwards; }
+.hc-apple.held .dots i.on::after { animation-play-state: paused; }
+@media (max-width: 500px) { .hc.hc-apple { padding-top: 0; } }
+
+/* beside the phone: the three looks stack vertically so the switch stays narrow enough to fit at the side */
+@media (min-width: 501px) {
+  body:not(.demo-top) .demo .look { flex-direction: column; align-self: stretch; border-radius: 14px; padding: 3px; gap: 3px; }
+  body:not(.demo-top) .demo .look button { border-radius: 11px; text-align: left; padding: 7px 14px; }
+}
+
+/* hero transitions: parallax art (app.js sets .hc-art translateX; the art is wider than the card to have room),
+   a slow zoom on the current slide, and its content rising in one piece after another */
+.hc-art { inset: 0 -14%; will-change: transform; }
+.hc-art img { transition: transform 6s linear; }
+.hc-card.on .hc-art img { transform: scale(1.07); }
+.hc-body > * { opacity: 0; transform: translateY(10px); transition: opacity .2s ease, transform .2s ease; }
+.hc-card.on .hc-body > * { opacity: 1; transform: none; transition: opacity .3s ease, transform .35s cubic-bezier(.2, .8, .2, 1); }
+.hc-card.on .hc-body > :nth-child(1) { transition-delay: .04s; }
+.hc-card.on .hc-body > :nth-child(2) { transition-delay: .08s; }
+.hc-card.on .hc-body > :nth-child(3) { transition-delay: .12s; }
+.hc-card.on .hc-body > :nth-child(4) { transition-delay: .16s; }
+.hc-track.instant *, .hc-track.instant { transition: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .hc-card.on .hc-art img { transform: none; }
+  .hc-body > *, .hc-card.on .hc-body > * { transition: none; transform: none; }
+}
+
+/* ใหม่ 2 hero: crossfading art, sliding logo + meta, fixed buttons */
+.hf { position: relative; aspect-ratio: 2 / 3.1; margin-bottom: 22px; overflow: hidden; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.hf-art { position: absolute; inset: 0; opacity: 0; transition: opacity .7s ease; }
+.hf-art.on { opacity: 1; }
+.hf-art img { width: 100%; height: 100%; object-fit: cover; -webkit-user-drag: none; }
+.hf::after { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(rgba(0,0,0,.45), transparent 22%, transparent 50%, rgba(0,0,0,.7) 70%, #000 97%); }
+.hf-body { position: absolute; z-index: 2; left: 0; right: 0; bottom: 34px; display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 0 24px; }
+.hf-logos { position: relative; width: 100%; height: 172px; }
+.hf-slide { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 12px; text-align: center;
+  opacity: 0; transform: translateX(70px); transition: opacity .3s ease, transform .4s cubic-bezier(.2, .8, .2, 1); pointer-events: none; }
+.hf-slide.on { opacity: 1; transform: none; pointer-events: auto; }
+.hf-slide .hc-logo { -webkit-user-drag: none; }
+.hf .dots { position: absolute; z-index: 2; left: 0; right: 0; bottom: 6px; margin: 0; }
+.hf .hc-status { font-size: 15px; }
+.hf-slide .excl-meta { position: static; }
+
+/* ใหม่ 2: the NOW exclusive mark is the white NOW wordmark with a magenta play triangle in the O (img/now-mark-tri.png, cut from the logo) on a
+   small frosted-glass pill in the top-left corner, instead of the pink block; the badge's "NOW" text is hidden */
+body.look-apple .nowb {
+  top: 7px; left: 7px; width: 42px; height: 20px; padding: 0; border-radius: 999px; font-size: 0; color: transparent;
+  background: url(/img/now-mark-tri.png) center / auto 9px no-repeat, rgba(16,16,20,.5);
+  box-shadow: inset 0 0 0 .5px rgba(255,255,255,.35), 0 2px 8px rgba(0,0,0,.25);
+  backdrop-filter: blur(12px) saturate(170%); -webkit-backdrop-filter: blur(12px) saturate(170%);
+}
+body.look-apple .when .nowb { width: 40px; height: 19px; }
