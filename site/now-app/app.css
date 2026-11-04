@@ -518,12 +518,12 @@ body.look-new .phone.scrolled .topbar { box-shadow: 0 1px 0 rgba(255,255,255,.06
 .hf .hc-status { font-size: 15px; }
 .hf-slide .excl-meta { position: static; }
 
-/* ใหม่ 2: the NOW exclusive mark is the white NOW wordmark with a magenta play triangle in the O (img/now-mark-tri.png, cut from the logo) on a
+/* new looks (ใหม่ and ใหม่ 2): the NOW exclusive mark is the white NOW wordmark with a magenta play triangle in the O (img/now-mark-tri.png, cut from the logo) on a
    small frosted-glass pill in the top-left corner, instead of the pink block; the badge's "NOW" text is hidden */
-body.look-apple .nowb {
+body.look-new .nowb {
   top: 7px; left: 7px; width: 42px; height: 20px; padding: 0; border-radius: 999px; font-size: 0; color: transparent;
   background: url(/img/now-mark-tri.png) center / auto 9px no-repeat, rgba(16,16,20,.5);
   box-shadow: inset 0 0 0 .5px rgba(255,255,255,.35), 0 2px 8px rgba(0,0,0,.25);
   backdrop-filter: blur(12px) saturate(170%); -webkit-backdrop-filter: blur(12px) saturate(170%);
 }
-body.look-apple .when .nowb { width: 40px; height: 19px; }
+body.look-new .when .nowb { width: 40px; height: 19px; }
