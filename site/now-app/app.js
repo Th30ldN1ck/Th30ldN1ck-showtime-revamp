@@ -533,11 +533,14 @@ function wireHub(screen) {
 }
 const isLive = s => s.kind === 'coming_shelf' && s.items.some(it => it.type === 'tvs-live');
 
+// Shelf kinds a page add-on brings with it (now-appCP's True Exclusive rail): kind -> (shelf, shelves) => html
+const EXTRA_SHELVES = {};
 function render(shelves) {
   LIVE_HERO = liveHero(shelves);
   const upcoming = shelves.find(isLive), hasLiveNow = shelves.some(s => s.kind === 'title_shelf');
   const nests = shelves.filter(s => s.kind === 'nest_shelf' && !partner(s).own);
   return shelves.map(s => {
+    if (EXTRA_SHELVES[s.kind]) return EXTRA_SHELVES[s.kind](s, shelves);
     if (LOOK !== 'classic') {
       if (s.kind === 'hero_banner_shelf') return LOOK === 'apple' ? heroFade(s) : heroCards(s);
       if (s.kind === 'nest_shelf') return partner(s).own ? brandSection(s) : s === nests[0] ? partnerHub(nests) : '';
@@ -644,7 +647,9 @@ function clock() {
 const LOOK_KEY = 'now-app-look';
 // classic = the current app; new = the tidied home; apple = the tidied home with an Apple TV-style full-bleed hero
 const LOOKS = ['classic', 'new', 'apple'];
+// A page can pin one look with <body data-look> (the now-appCP concept is ใหม่ 2 only).
 let LOOK = (() => {
+  if (document.body.dataset.look) return document.body.dataset.look;
   const q = new URLSearchParams(location.search).get('look');
   let saved = null;
   try { if (q) localStorage.setItem(LOOK_KEY, q); saved = localStorage.getItem(LOOK_KEY); } catch (e) {}
@@ -702,6 +707,7 @@ function lookToggle(onChange) {
     TMDB_HERO = Array.isArray(hero) ? hero : [];
     if (!shelves.length) throw new Error('empty feed');
     const draw = () => { screen.innerHTML = render(shelves); wire(screen); };
+    document.dispatchEvent(new CustomEvent('now-home', { detail: shelves }));   // for page add-ons like now-appCP
     lookToggle(draw);
     draw();
   } catch (e) {
