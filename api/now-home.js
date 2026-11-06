@@ -33,9 +33,18 @@ function item(d, shelfType) {
   return out;
 }
 
+// ?details=1: what the mock's content detail page adds for each feed title (synopsis, length, resolution, rating, year,
+// genres), fetched once after the home draws so the home payload stays small
+function details(d) {
+  const res = (d.resolution || {}).description || '';
+  return { syn: (d.synopsis || '').trim(), dur: +d.duration || 0, res: (res.match(/\(([^)]+)\)/) || [, res])[1],
+    rate: d.rate || '', year: d.release_year || '', genres: d.genres || [], series: d.movie_type === 'series' };
+}
+
 module.exports = async (req, res) => {
   try {
     const shelves = await (await fetch(FEED)).json();
+    const wantDetails = new URL(req.url || '/', 'http://x').searchParams.has('details'), more = {};
     const out = [];
     for (const s of shelves) {
       const st = s.style || {}, h = s.header || {}, bg = st.background || {};
@@ -43,6 +52,7 @@ module.exports = async (req, res) => {
       if (s.type_call_api && !personal && s.type_call_api !== 'by_netflix_activation' && s.type_call_api !== 'by_shelfid') continue;
       if (s.type_call_api === 'by_netflix_activation' && h.type === 'unset_header') continue;
       const items = (s.items || []).map(e => item(e.data || {}, st.type)).filter(x => x.id);
+      if (wantDetails) (s.items || []).slice(0, 30).forEach(e => { const d = e.data || {}; if (d.id && d.movie_type && !more[d.id]) more[d.id] = details(d); });
       if (!items.length && !personal) continue;
       out.push({
         id: s.id, kind: personal || st.type,
@@ -56,7 +66,7 @@ module.exports = async (req, res) => {
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
-    res.end(JSON.stringify(out));
+    res.end(JSON.stringify(wantDetails ? more : out));
   } catch (e) {
     res.statusCode = 502;
     res.setHeader('Content-Type', 'application/json; charset=utf-8');

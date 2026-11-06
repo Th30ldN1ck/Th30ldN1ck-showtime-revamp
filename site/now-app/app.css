@@ -60,7 +60,9 @@ img { display: block; }
   body { display: block; padding: 0; background: var(--bg); }
   .demo { position: fixed; top: 0; left: 0; right: 0; justify-self: stretch; transform: none; margin: 0; flex-direction: row; align-items: center; justify-content: space-between; border-radius: 0; padding: calc(env(safe-area-inset-top) + 4px) 10px 4px 16px; background: #111; }
   .demo b { display: inline; margin-right: 4px; }
-  .demo .look button { padding: 3px 12px; font-size: 12px; }
+  .demo .look button { padding: 3px 10px; font-size: 12px; white-space: nowrap; }
+  .demo:has(.look + .look) > span:first-child { display: none; }   /* two switches: no room for the label */
+  .demo:has(.look + .look) { justify-content: flex-end; gap: 8px; }
   .phone { position: fixed; inset: calc(env(safe-area-inset-top) + 34px) 0 0; width: auto; height: auto; border-radius: 0; box-shadow: none; }
   .statusbar { display: none !important; }
   .topbar { top: 0 !important; }
@@ -537,3 +539,40 @@ body.look-apple .phone:not(.scrolled) .tb-pills a {
 }
 body.look-apple .phone:not(.scrolled) .tb-pills svg { filter: drop-shadow(0 1px 3px rgba(0,0,0,.45)); }
 body.look-apple .hf::after { background: linear-gradient(rgba(0,0,0,.62), rgba(0,0,0,.25) 22%, transparent 34%, transparent 50%, rgba(0,0,0,.7) 70%, #000 97%); }
+
+/* ---------- content detail page (as in the app): a sheet under the status bar ---------- */
+.detail {
+  position: absolute; z-index: 25; inset: 54px 0 0; overflow: hidden; border-radius: 16px 16px 0 0; background: #000;
+  animation: dt-in .3s cubic-bezier(.2,.9,.3,1); transition: transform .25s ease-in, opacity .25s;
+}
+.detail.out { transform: translateY(8%); opacity: 0; }
+@keyframes dt-in { from { transform: translateY(100%); } }
+.dt-scroll { height: 100%; overflow-y: auto; scrollbar-width: none; padding-bottom: 40px; }
+.dt-scroll::-webkit-scrollbar { display: none; }
+.dt-art { position: relative; aspect-ratio: 16 / 9; background: #111; }
+.dt-art img { width: 100%; height: 100%; object-fit: cover; }
+.dt-x { position: absolute; top: 12px; right: 12px; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; background: none; cursor: pointer; filter: drop-shadow(0 1px 3px rgba(0,0,0,.5)); }
+.dt-body { padding: 18px var(--pad) 0; }
+.dt-body h1 { margin: 0; font-size: 22px; line-height: 1.3; }
+.dt-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; font-size: 15px; }
+.dt-chip { padding: 3px 9px; border-radius: 5px; background: #333; color: #ddd; font-style: normal; font-size: 14px; }
+.dt-chip.line { background: none; box-shadow: inset 0 0 0 1px #555; }
+.dt-play {
+  display: flex; align-items: center; justify-content: center; gap: 10px; height: 46px; margin-top: 16px; border-radius: 6px;
+  background: #fff; color: #000; font-size: 17px; font-weight: 700;
+}
+/* a free user's button: subscribe, in the subscribe magenta */
+.dt-play.dt-sub { background: var(--cta); color: #fff; }
+.dt-genre { margin: 18px 0 0; color: var(--muted); font-weight: 700; }
+.dt-syn { margin: 8px 0 0; font-size: 15px; line-height: 1.6; color: #eee; }
+.dt-wait { display: grid; gap: 8px; }
+.dt-wait i { height: 12px; border-radius: 6px; background: linear-gradient(90deg, #1c1c1c, #2a2a2a, #1c1c1c) 0 0 / 200% 100%; animation: dt-shim 1.2s linear infinite; }
+.dt-wait i:last-child { width: 60%; }
+@keyframes dt-shim { to { background-position: -200% 0; } }
+.dt-acts { display: flex; margin-top: 26px; }
+.dt-acts button { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 120px; padding: 0; border: 0; background: none; color: #fff; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
+.dt-tabs { display: flex; margin-top: 30px; border-bottom: 1px solid #333; }
+.dt-tabs a { flex: 0 0 50%; padding: 0 0 12px; text-align: center; font-weight: 700; color: #fff; box-shadow: inset 0 -2px #fff; }
+.dt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 16px var(--pad) 0; }
+.dt-grid .poster { width: auto; }
+@media (max-width: 500px) { .detail { top: 0; border-radius: 0; } }

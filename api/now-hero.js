@@ -71,6 +71,8 @@ async function slide(t, rank) {
     logo: `${IMG}/w500${logo.file_path}`,
     year: (d.release_date || d.first_air_date || '').slice(0, 4), rate: rating(d, type),
     genre: ((d.genres || [])[0] || {}).name || '',
+    // for the content detail page
+    syn: d.overview || '', dur: d.runtime || ((d.episode_run_time || [])[0]) || 0, series: type === 'tv',
   };
 }
 

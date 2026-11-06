@@ -758,3 +758,4 @@ body.clean .demo { display: none; }
 .tx-quest .ms-go { display: flex; align-items: center; gap: 4px; padding: 7px 12px; border-radius: 999px; background: #fff; color: #111; font-size: 12px; font-weight: 700; white-space: nowrap; }
 .ms-go svg { width: 12px; height: 12px; }
 .tx-quest.ms.done { background: rgba(0,0,0,.36); }
+

@@ -32,8 +32,9 @@ const swoosh = cls => `<svg class="swoosh" viewBox="0 0 400 120" preserveAspectR
 // ---------- who's watching: the demo's "ดูในฐานะ" switch ----------
 // Every privilege has a level it needs: 1 = CP-group members and True customers, 2 = True customers only.
 // sim = a True prepaid content SIM (The Voice SIM, sold at 7-Eleven to people not on True): CP-level privileges plus its
-// franchise, and it makes them a True customer
-const RANK = { ais: 0, cp: 1, sim: 1, true: 2 };
+// franchise, and it makes them a True customer. free = a NOW account with no package (any network): anything they
+// play opens the in-app purchase flow (iapSheet)
+const RANK = { ais: 0, free: 0, cp: 1, sim: 1, true: 2 };
 const PERSONAS = {
   true: {
     linked: { 'True 5G': true, 'ALL member': true, TrueMoney: false }, since: 2019,
@@ -48,6 +49,7 @@ const PERSONAS = {
     game: { points: 120, next: 500, level: 1, tier: 'VOICE', nextTier: 'RED', streak: 0, today: 0, watched: 0, mult: 1 },
   },
   ais: {},
+  free: {},
 };
 const AS_KEY = 'now-cp-as';
 let AS = (() => {
@@ -74,6 +76,8 @@ const can = need => RANK[AS] >= need || (PAID && need <= 1);   // what you can w
 const member = need => RANK[AS] >= need;                         // the club's own perks: rewards, events, points
 const priceFor = need => TEST.offer === 'price' && need <= 1 && !can(need);
 const GAME = () => PERSONAS[AS].game;
+const outsider = () => RANK[AS] === 0;   // neither True nor CP: other networks and free users
+isFree = () => AS === 'free';   // iap.js's gate: the free persona gets the purchase flow
 const onlyFor = need => need === 2 ? 'เฉพาะลูกค้าทรู' : 'เฉพาะลูกค้าทรูและสมาชิก CP';
 const onlyForShort = need => need === 2 ? 'เฉพาะลูกค้าทรู' : 'ลูกค้าทรู · CP';   // for poster tags and benefit tiles
 const lockMark = `<span class="lk">${I.lock}</span>`;
@@ -161,8 +165,8 @@ const SIM_BTN = `<button class="pv-cta2" data-sim><b>ซื้อ The Voice SIM 
 const joinButtons = (t = '') => `<div class="pv-join">
     ${AS === 'sim' ? `<button class="pv-cta" data-join="true"><b>อัปเกรดเป็นทรูรายเดือน</b><span>ปลดล็อกดูก่อนใคร จอเพิ่มให้คนในบ้าน และแต้ม x2</span></button>`
       : AS !== 'true' ? `<button class="pv-cta" data-join="true"><b>ย้ายมาทรู เบอร์เดิม</b><span>ออนไลน์ 15 นาที · ปลดล็อกทุกสิทธิ์</span></button>` : ''}
-    ${(AS === 'ais' || AS === 'cp') && (!t || /voice/i.test(t)) ? SIM_BTN : ''}
-    ${AS === 'ais' ? `<button class="pv-cta2" data-join="cp"><b>สมัคร ALL member ฟรี</b><span>ดูซีรีส์พรีเมียมได้เลย</span></button>` : ''}
+    ${(outsider() || AS === 'cp') && (!t || /voice/i.test(t)) ? SIM_BTN : ''}
+    ${outsider() ? `<button class="pv-cta2" data-join="cp"><b>สมัคร ALL member ฟรี</b><span>ดูซีรีส์พรีเมียมได้เลย</span></button>` : ''}
   </div>`;
 
 // My entitlements: every right this account holds, the plan or membership it came from, the apps it plays on and its
@@ -1063,7 +1067,7 @@ function joinSheet(el) {
       <h3>ดู ${esc(t)} ได้ทันที</h3>
       ${price ? `<p>แพ็กเกจ NOW Premium · ยกเลิกได้ทุกเมื่อ</p>
       <div class="pv-join"><button class="pv-cta" data-join="paid"><b>สมัคร ${PRICE_TXT}</b><span>ดู True Exclusive ได้ทุกเรื่อง</span></button></div>`
-      : `<p>${AS === 'ais' ? 'สิทธิ์นี้สำหรับลูกค้าทรูและสมาชิกเครือ CP' : 'สิทธิ์นี้สำหรับลูกค้าทรู'}</p>
+      : `<p>${outsider() ? 'สิทธิ์นี้สำหรับลูกค้าทรูและสมาชิกเครือ CP' : 'สิทธิ์นี้สำหรับลูกค้าทรู'}</p>
       ${joinButtons(t)}`}
       <button class="pv-later">ไว้ทีหลัง</button>
     </div>`;
@@ -1103,6 +1107,7 @@ let SHELVES = [];
 function setAs(as) {
   AS = as;
   PAID = false;
+  SUB = null;   // iap.js: switching persona drops the free user's package
   try { localStorage.setItem(AS_KEY, as); } catch (e) {}
   const u = new URL(location.href);
   if (u.searchParams.has('as')) { u.searchParams.set('as', as); history.replaceState(null, '', u.pathname + u.search); }

@@ -1,0 +1,124 @@
+/* Free user's in-app purchase flow (iap.js): the NOW paywall, the App Store purchase sheet, bought. Shared by
+   /now-app/ and /now-appCP/. */
+.iap { position: absolute; z-index: 40; inset: 0; display: flex; align-items: flex-end; background: rgba(0,0,0,.55); animation: iap-fade .2s; }
+@keyframes iap-fade { from { opacity: 0; } }
+@keyframes iap-up { from { transform: translateY(100%); } }
+@keyframes iap-pop { from { transform: scale(.4); opacity: 0; } }
+.iap .iap-card {
+  position: relative; width: 100%; max-height: 92%; overflow-y: auto; scrollbar-width: none; padding: 22px var(--pad) 34px;
+  border-radius: 26px 26px 0 0; background: #141414; box-shadow: 0 -1px 0 rgba(255,255,255,.12); animation: iap-up .3s cubic-bezier(.2,.9,.3,1);
+}
+.iap-x { position: absolute; z-index: 2; top: 14px; right: 14px; width: 30px; height: 30px; border: 0; border-radius: 50%; background: rgba(0,0,0,.5); color: #fff; font: inherit; font-size: 13px; cursor: pointer; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+/* the paywall: a tall sheet, the title's art on top, the price and subscribe button pinned at the bottom */
+.iap .iap-pay { display: flex; flex-direction: column; height: calc(100% - 54px); max-height: none; padding: 0; overflow: hidden; }
+.iap-body { flex: 1; overflow-y: auto; scrollbar-width: none; padding: 0 var(--pad) 16px; }
+.iap-body::-webkit-scrollbar { display: none; }
+.iap-hero { position: relative; height: 230px; margin: 0 calc(-1 * var(--pad)); display: flex; align-items: flex-end; padding: 0 var(--pad) 14px; }
+.iap-hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 20%; }
+.iap-hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(transparent 25%, rgba(20,20,20,.75) 65%, #141414); }
+.iap-hero div { position: relative; z-index: 1; display: flex; flex-direction: column; }
+.iap-hero span { font-size: 11.5px; font-weight: 700; letter-spacing: .08em; color: rgba(255,255,255,.75); }
+.iap-hero h3 { margin: 2px 0; font-size: 26px; line-height: 1.2; }
+.iap-hero small { font-size: 13px; color: rgba(255,255,255,.7); }
+.iap-seg { margin: 18px 0 10px; font-size: 12px; font-weight: 700; letter-spacing: .06em; color: var(--muted); }
+.iap-tiers { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; padding-top: 8px; }
+/* no tap flash or press bounce: the selection just moves */
+.iap-tiers button {
+  -webkit-tap-highlight-color: transparent; transition: background .15s, box-shadow .15s;
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 0; padding: 14px 4px 10px;
+  border: 0; border-radius: 12px; background: rgba(255,255,255,.06); box-shadow: inset 0 0 0 1px rgba(255,255,255,.14);
+  color: #fff; font: inherit; text-align: center; cursor: pointer;
+}
+.iap-tiers button.on { background: rgba(255,255,255,.12); box-shadow: inset 0 0 0 2px #fff; }
+.iap-tiers strong { font-size: 15px; white-space: nowrap; }
+.iap-tiers strong small { font-size: 10px; font-weight: 400; color: var(--muted); }
+.iap-tiers b { font-size: 13px; font-weight: 500; }
+.iap-tiers button > small { font-size: 10.5px; line-height: 1.25; color: var(--muted); }
+.iap-tiers em {
+  position: absolute; top: -8px; left: 50%; transform: translateX(-50%); padding: 1px 7px; border-radius: 999px; white-space: nowrap;
+  background: #fff; color: #000; font-style: normal; font-size: 10px; font-weight: 700;
+}
+.iap-tiers em.max { background: linear-gradient(135deg, #ca8a04, #f59e0b); color: #1a1206; }
+.iap-annual { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; margin-top: 14px; padding: 4px; border: 0; background: none; color: #fff; font: inherit; font-size: 13.5px; font-weight: 500; cursor: pointer; }
+.iap-annual i { position: relative; width: 40px; height: 24px; border-radius: 999px; background: rgba(255,255,255,.2); transition: background .2s; }
+.iap-annual i::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .2s; }
+.iap-annual i.on { background: #34c759; }
+.iap-annual i.on::after { transform: translateX(16px); }
+.iap-inc { margin: 0; }
+.iap-row { display: flex; gap: 12px; padding: 11px 0; border-bottom: .5px solid rgba(255,255,255,.12); font-size: 14px; }
+.iap-row:last-child { border-bottom: 0; }
+.iap-row dt { flex: none; width: 92px; color: var(--muted); }
+.iap-row dd { flex: 1; min-width: 0; margin: 0; }
+.iap-row i { font-style: normal; color: var(--muted); }
+.iap-inc .dim { opacity: .35; }
+.iap-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.iap-chips b { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 8px; background: rgba(255,255,255,.08); box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); font-size: 12.5px; font-weight: 500; }
+.iap-chips img { width: 16px; height: 16px; border-radius: 4px; }
+.iap-chips button { padding: 4px 2px; border: 0; background: none; color: #fff; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.iap-foot { padding: 12px var(--pad) 30px; background: #1b1b1b; box-shadow: 0 -1px 0 rgba(255,255,255,.1); }
+.iap-sum { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.iap-sum b { font-size: 17px; }
+.iap-sum span { text-align: right; font-size: 12px; color: var(--muted); }
+.iap-sum strong { font-size: 20px; color: #fff; }
+.iap-sum small { display: block; font-size: 11px; }
+/* subscribe is the one place NOW magenta belongs */
+.iap-go {
+  display: flex; flex-direction: column; align-items: center; width: 100%; padding: 12px 16px; border: 0; border-radius: 12px;
+  background: var(--cta); color: #fff; font: inherit; text-decoration: none; cursor: pointer;
+}
+.iap-go b { font-size: 16px; }
+.iap-go span { font-size: 12px; color: rgba(255,255,255,.85); }
+.iap-fine { margin: 12px 0 0; font-size: 11px; line-height: 1.45; color: var(--muted); text-align: center; }
+.iap-fine a { color: #fff; text-decoration: underline; }
+
+/* the App Store sheet: iOS system look, not NOW's */
+.as-sheet { position: absolute; z-index: 50; inset: 0; display: flex; align-items: flex-end; background: rgba(0,0,0,.4); animation: iap-fade .2s; transition: opacity .25s; }
+.as-sheet.out { opacity: 0; }
+.as-card {
+  width: 100%; padding: 16px 20px 38px; border-radius: 14px 14px 0 0; background: #1c1c1e; color: #fff;
+  font: 400 15px/1.35 -apple-system, 'SF Pro Text', system-ui, sans-serif; animation: iap-up .32s cubic-bezier(.2,.9,.3,1);
+}
+.as-top { display: flex; justify-content: space-between; align-items: center; }
+.as-top b { font-size: 20px; font-weight: 600; }
+.as-x { width: 30px; height: 30px; border: 0; border-radius: 50%; background: #3a3a3c; color: #aeaeb2; font-size: 13px; cursor: pointer; }
+.as-item { display: flex; gap: 12px; align-items: center; margin: 18px 0 14px; padding-bottom: 14px; border-bottom: .5px solid #38383a; }
+.as-item img { width: 56px; height: 56px; padding: 8px; object-fit: contain; border-radius: 13px; background: #000; box-shadow: inset 0 0 0 .5px #48484a; }
+.as-item div { display: flex; flex-direction: column; }
+.as-item b { font-weight: 600; }
+.as-item span { color: #ebebf5; font-size: 14px; }
+.as-item small { color: #8e8e93; font-size: 13px; }
+.as-rows { margin: 0; display: grid; gap: 10px; font-size: 14px; }
+.as-rows div { display: flex; gap: 12px; }
+.as-rows dt { width: 56px; color: #8e8e93; }
+.as-rows dd { margin: 0; }
+.as-fine { margin: 14px 0 18px; font-size: 12px; color: #8e8e93; }
+.as-confirm {
+  display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; padding: 6px 0 0; border: 0; background: none;
+  color: #fff; font: inherit; font-size: 15px; cursor: pointer;
+}
+.as-confirm b { font-weight: 500; }
+.as-side-ico { width: 34px; height: 34px; border-radius: 9px; box-shadow: inset 0 0 0 2px #0a84ff; position: relative; }
+.as-side-ico::after { content: ''; position: absolute; right: -6px; top: 8px; width: 4px; height: 14px; border-radius: 2px; background: #0a84ff; animation: as-nudge 1.1s ease-in-out infinite; }
+@keyframes as-nudge { 50% { transform: translateX(3px); } }
+/* the hint by the phone's side button */
+.as-side {
+  position: absolute; right: 0; top: 150px; display: flex; align-items: center; padding: 10px 14px 10px 12px; border: 0; border-radius: 14px 0 0 14px;
+  background: rgba(255,255,255,.92); color: #000; font: 600 12px/1.25 -apple-system, system-ui, sans-serif; text-align: right; cursor: pointer;
+  animation: as-side 1.1s ease-in-out infinite;
+}
+.as-side::after { content: ''; position: absolute; right: 0; top: 50%; width: 4px; height: 44px; margin-top: -22px; border-radius: 2px 0 0 2px; background: #0a84ff; }
+@keyframes as-side { 50% { transform: translateX(-5px); } }
+.as-sheet.paying .as-side { display: none; }
+.as-face { width: 44px; height: 44px; border-radius: 12px; border: 2.5px dashed #fff; animation: as-spin 1.1s linear infinite; }
+@keyframes as-spin { to { transform: rotate(360deg); } }
+.as-ok { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: #0a84ff; animation: iap-pop .4s cubic-bezier(.3,1.6,.5,1); }
+.as-ok svg { width: 24px; height: 24px; }
+
+/* bought */
+.iap-done .iap-card { text-align: center; }
+.iap-done-pic { display: block; width: 96px; aspect-ratio: 2 / 3; object-fit: cover; margin: 4px auto 0; border-radius: 8px; box-shadow: 0 10px 30px rgba(251,0,141,.35); }
+.iap-done h3 { margin: 0; font-size: 21px; }
+.iap-done p { margin: 4px 0 18px; font-size: 14px; color: var(--muted); }
+.iap-later { margin-top: 12px; padding: 8px 16px; border: 0; background: none; color: var(--muted); font: inherit; cursor: pointer; }
+.iap-done-ok { display: grid; place-items: center; width: 36px; height: 36px; margin: -18px auto 10px; position: relative; border-radius: 50%; background: var(--cta); box-shadow: 0 0 0 4px #141414; }
+.iap-done-ok svg { width: 20px; height: 20px; }

@@ -675,7 +675,7 @@ const drawNav = () => {
 };
 
 function lookToggle(onChange) {
-  const buttons = document.querySelectorAll('.look button');
+  const buttons = document.querySelectorAll('.look button[data-l]');
   const paint = () => {
     document.body.classList.toggle('look-new', LOOK !== 'classic');
     document.body.classList.toggle('look-apple', LOOK === 'apple');
@@ -693,6 +693,104 @@ function lookToggle(onChange) {
   paint();
 }
 
+// ---------- content detail page ----------
+// Tapping a title opens its detail page, as in the app: landscape art, title, rating / year / length / resolution,
+// รับชมตอนนี้ (สมัครเลย for a free user), genre, synopsis, รายการของฉัน and คุณน่าจะชอบ. Feed titles get their synopsis, length and genres from
+// /api/now-home?details=1 (fetched once, after the home draws); TMDB hero titles carry their own. The hero's play
+// buttons still play straight away, unless canPlayNow() says no (iap.js: a free user goes to the detail page first).
+let canPlayNow = () => true;
+const TITLES = new Map();
+let DETAILS = null, DETAILS_MAP = {}, DETAILS_DONE = false;
+const MY_LIST = new Set();
+const watchKey = href => ((href || '').match(/\/watch\/([\w-]+)\/([\w-]+)/) || []).slice(1).join('/');
+function indexTitles(shelves) {
+  TMDB_HERO.forEach(h => TITLES.set(`${h.type}/${h.id}`, { id: h.id, type: h.type, t: h.t, land: h.bg, poster: h.art, rate: h.rate,
+    year: h.year, genre: h.genre, syn: h.syn, dur: h.dur, series: h.series, tmdb: 1 }));
+  shelves.forEach(s => s.items.forEach(it => {
+    const k = `${it.type}/${it.id}`;
+    if (/^tvs-/.test(it.type) && !TITLES.has(k)) TITLES.set(k, { ...it, shelf: s.id });
+  }));
+}
+const loadDetails = () => DETAILS || (DETAILS = fetch('/api/now-home?details=1').then(r => r.json()).catch(() => ({}))
+  .then(m => { DETAILS_MAP = m; DETAILS_DONE = true; return m; }));
+const hm = min => min >= 60 ? `${Math.floor(min / 60)} ชม.${min % 60 ? ` ${min % 60} น.` : ''}` : `${min} น.`;
+function detailOf(d, more = {}) {
+  const x = { ...d, ...more, syn: d.syn || more.syn || '' };
+  x.genreTh = x.genre || (x.genres || []).map(g => GENRE_TH[g]).filter(Boolean).slice(0, 2).join(' · ');
+  return x;
+}
+// more like this: titles sharing a genre once the details are in, else the rest of the shelf it came from
+function likes(d, more) {
+  const pool = [...TITLES.values()].filter(t => t !== d && t.poster && /^tvs-(movie|series)$/.test(t.type));
+  const g = new Set((more[d.id] || {}).genres || []);
+  const same = g.size ? pool.filter(t => ((more[t.id] || {}).genres || []).some(x => g.has(x))) : [];
+  const shelf = pool.filter(t => t.shelf && t.shelf === d.shelf);
+  return [...new Set([...same, ...shelf, ...pool])].slice(0, 9);
+}
+const closeIcon = '<svg width="26" height="26" viewBox="0 0 24 24" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M5 5l14 14M19 5 5 19"/></svg>';
+const playDisc = '<svg width="26" height="26" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#000"/><path fill="#fff" d="m10 7.5 6 4.5-6 4.5z"/></svg>';
+function detailHtml(d, more) {
+  const x = detailOf(d, more[d.id]), live = d.type === 'tvs-live', mine = MY_LIST.has(d.id);
+  const meta = [x.rate && `<i class="dt-chip">${esc(x.rate)}</i>`, x.year && `<i class="dt-chip">${esc(x.year)}</i>`,
+    live ? (x.start ? `<span>${x.ch ? `ช่อง ${esc(x.ch)} · ` : ''}${esc(when(x.start))} น.</span>` : '') : x.series ? '<span>ซีรีส์</span>' : x.dur ? `<span>${hm(x.dur)}</span>` : '',
+    x.res && `<i class="dt-chip line">${esc(x.res)}</i>`].filter(Boolean).join('');
+  return `<div class="dt-art">${img(x.land || x.poster, x.t)}<button class="dt-x" aria-label="ปิด">${closeIcon}</button></div>
+    <div class="dt-body">
+      <h1>${esc(x.t)}</h1>
+      ${meta ? `<div class="dt-meta">${meta}</div>` : ''}
+      <a class="dt-play${canPlayNow() ? '' : ' dt-sub'}" ${link(d) || `href="${NOW_APP}/watch/${d.type}/${d.id}" target="_blank" rel="noopener"`}>${canPlayNow()
+        ? `${playDisc}${live && x.start <= Date.now() ? 'ดูสด' : 'รับชมตอนนี้'}` : 'สมัครเลย'}</a>
+      ${x.genreTh ? `<p class="dt-genre">${esc(x.genreTh)}</p>` : ''}
+      ${x.syn ? `<p class="dt-syn">${esc(x.syn)}</p>` : DETAILS_DONE || x.tmdb ? '' : '<p class="dt-syn dt-wait"><i></i><i></i><i></i></p>'}
+      <div class="dt-acts"><button data-mylist class="${mine ? 'on' : ''}">${mine
+        ? '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>'
+        : '<svg width="28" height="28" viewBox="0 0 24 24" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'}รายการของฉัน</button></div>
+    </div>
+    <nav class="dt-tabs"><a class="on">คุณน่าจะชอบ</a></nav>
+    <div class="dt-grid">${likes(d, more).map(t => `<a class="poster" ${link(t)}>${nowBadge(t)}${img(t.poster, t.t)}</a>`).join('')}</div>`;
+}
+function openDetail(d) {
+  let el = document.querySelector('.phone > .detail');
+  if (!el) {
+    el = document.createElement('section');
+    el.className = 'detail';
+    el.innerHTML = '<div class="dt-scroll"></div>';
+    el.addEventListener('click', e => {
+      if (e.target.closest('.dt-x')) { el.classList.add('out'); return setTimeout(() => el.remove(), 250); }
+      const my = e.target.closest('[data-mylist]');
+      if (my) { MY_LIST.has(el.dt.id) ? MY_LIST.delete(el.dt.id) : MY_LIST.add(el.dt.id); return paint(true); }
+      const a = e.target.closest('.dt-grid a[href]'), next = a && TITLES.get(watchKey(a.getAttribute('href')));
+      if (next) { e.preventDefault(); el.dt = next; paint(); el.firstChild.scrollTop = 0; }
+    });
+    document.querySelector('.phone').appendChild(el);
+  }
+  // same title again (details arrived, My List toggled): swap the text parts only, so the art doesn't redraw
+  const paint = same => {
+    const d = el.dt, html = detailHtml(d, DETAILS_MAP);
+    if (same) {
+      const t = document.createElement('div');
+      t.innerHTML = html;
+      ['.dt-body', '.dt-grid'].forEach(q => el.querySelector(q).replaceWith(t.querySelector(q)));
+    } else el.firstChild.innerHTML = html;
+    if (!DETAILS_DONE && !d.tmdb) loadDetails().then(() => { if (el.dt === d && el.isConnected) paint(true); });
+  };
+  el.paint = paint;   // iap.js redraws the button once a package is bought
+  el.dt = d;
+  paint();
+  el.firstChild.scrollTop = 0;
+}
+// any title link on the home opens its detail page; the hero's play buttons play, unless canPlayNow() says no
+function wireDetails(screen) {
+  screen.addEventListener('click', e => {
+    const a = e.target.closest('a[href*="/watch/"]');
+    if (!a || (a.matches('.btn-play, .btn-live') && canPlayNow())) return;
+    const d = TITLES.get(watchKey(a.getAttribute('href')));
+    if (!d) return;
+    e.preventDefault(); e.stopPropagation();
+    openDetail(d);
+  }, true);
+}
+
 (async () => {
   fitFrame();
   clock();
@@ -706,10 +804,13 @@ function lookToggle(onChange) {
     ]);
     TMDB_HERO = Array.isArray(hero) ? hero : [];
     if (!shelves.length) throw new Error('empty feed');
+    indexTitles(shelves);
+    wireDetails(screen);
     const draw = () => { screen.innerHTML = render(shelves); wire(screen); };
     document.dispatchEvent(new CustomEvent('now-home', { detail: shelves }));   // for page add-ons like now-appCP
     lookToggle(draw);
     draw();
+    setTimeout(loadDetails, 1500);   // ready before the first tap, usually
   } catch (e) {
     console.error(e);
     screen.innerHTML = '<p class="err">โหลดหน้าแรกไม่สำเร็จ ลองใหม่อีกครั้ง</p>';
