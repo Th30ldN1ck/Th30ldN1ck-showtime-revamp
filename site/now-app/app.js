@@ -390,7 +390,7 @@ function shortsRow(s) {
     <h2 class="shelf-h">${bolt}${esc(s.title)}${s.more ? chev : ''}</h2>
     <p class="shorts-sub">ดูจบไว ตอนละไม่กี่นาที · ปัดขึ้นดูเรื่องถัดไป</p>
     ${row(s.items, (it, i) => `<a class="poster vcard" data-v="${i}">${img(it.poster, it.t)}
-      <span class="vchip">${phoneIcon}แนวตั้ง</span><span class="vtitle">${esc(it.t)}</span></a>`)}
+      <span class="vchip">${phoneIcon}แนวตั้ง</span></a>`)}
   </section>`;
 }
 

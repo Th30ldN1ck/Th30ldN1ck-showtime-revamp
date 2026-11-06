@@ -259,7 +259,7 @@ body.look-new .bgh .poster { width: 132px; border-radius: 4px; }
   background: linear-gradient(transparent, rgba(0,0,0,.65));
 }
 
-/* new look: vertical series row (bigger posters, chip + title on card) */
+/* new look: vertical series row (bigger posters, chip on card; the poster carries the title) */
 .shorts-sub { margin: -10px var(--pad) 14px; font-size: 13.5px; color: rgba(255,255,255,.75); }
 .vcard { width: 168px; border-radius: 8px; cursor: pointer; }
 .vcard img { transition: transform .3s; }
@@ -267,11 +267,6 @@ body.look-new .bgh .poster { width: 132px; border-radius: 4px; }
 .vchip {
   position: absolute; top: 8px; left: 8px; display: flex; align-items: center; gap: 4px; padding: 3px 7px;
   border-radius: 999px; background: rgba(0,0,0,.55); font-size: 11.5px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-}
-.vtitle {
-  position: absolute; left: 0; right: 0; bottom: 0; padding: 36px 10px 10px; font-size: 14px; font-weight: 500; line-height: 1.3;
-  background: linear-gradient(transparent, rgba(0,0,0,.85));
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 
 /* full-screen vertical player */
