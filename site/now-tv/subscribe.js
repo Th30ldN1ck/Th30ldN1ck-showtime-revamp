@@ -8,12 +8,12 @@ const SPLASH_MS = 2500;      // shortest splash, even when the feed is already i
 // screens (drawn as TVs), two lines on what's in it (`lines`; ENT299 starts "ทุกอย่างใน ENT199" instead of repeating
 // it), partner apps (/img/packages/, optional tier label under the icon)
 const TV_PLANS = [
-  { id: 'ent199', name: 'ENT199', who: 'สำหรับคุณคนเดียว', ic: 'solo', price: 199, screens: 1, apps: [['netflix', 'Mobile']], lines: ['หนัง ซีรีส์ อนิเมะ', '13 ช่องชั้นนำ'] },
-  { id: 'ent299', name: 'ENT299', who: 'สำหรับครอบครัว', ic: 'family', price: 299, screens: 2, rec: 'ยอดนิยม', apps: [['netflix', 'Mobile'], ['iqiyi'], ['wetv']], lines: ['ทุกอย่างใน ENT199', 'เพิ่ม iQIYI และ WeTV'] },
+  { id: 'ent199', name: 'ENT199', who: 'สำหรับคุณคนเดียว', price: 199, screens: 1, apps: [['netflix', 'Mobile']], lines: ['หนัง ซีรีส์ อนิเมะ', '13 ช่องชั้นนำ'] },
+  { id: 'ent299', name: 'ENT299', who: 'สำหรับครอบครัว', price: 299, screens: 2, rec: 'ยอดนิยม', apps: [['netflix', 'Mobile'], ['iqiyi'], ['wetv']], lines: ['ทุกอย่างใน ENT199', 'เพิ่ม iQIYI และ WeTV'] },
   // Football ฿199 (Thai League + futsal; football titles only), Sport ฿499, Sport 2 screens ฿699
-  { id: 'football', name: 'FOOTBALL199', hex: '#2bd576', ic: 'sport', who: 'สำหรับแฟนบอลไทย', price: 199, screens: 1, sport: 1, foot: 1, apps: [], lines: ['ไทยลีกและฟุตซอล', '12 ช่องฟุตบอล'] },
-  { id: 'sports', name: 'SPORTS499', hex: '#3b9dff', ic: 'trophy', who: 'สำหรับคอกีฬา', price: 499, screens: 1, sport: 1, rec: 'ยอดนิยม', apps: [], lines: ['กีฬาสดทุกลีก', 'มวยไทยทุกสัปดาห์'] },
-  { id: 'sports2', name: 'SPORTS699', who: 'ดูพร้อมกัน 2 จอ', hex: '#a66bff', ic: 'screens', price: 699, screens: 2, sport: 1, apps: [], lines: ['กีฬาสดทุกลีก', 'ดูคนละแมตช์ได้'] },
+  { id: 'football', name: 'FOOTBALL199', hex: '#2bd576', who: 'สำหรับแฟนบอลไทย', price: 199, screens: 1, sport: 1, foot: 1, apps: [], lines: ['ไทยลีกและฟุตซอล', '12 ช่องฟุตบอล'] },
+  { id: 'sports', name: 'SPORTS499', hex: '#3b9dff', who: 'สำหรับคอกีฬา', price: 499, screens: 1, sport: 1, rec: 'ยอดนิยม', apps: [], lines: ['กีฬาสดทุกลีก', 'มวยไทยทุกสัปดาห์'] },
+  { id: 'sports2', name: 'SPORTS699', who: 'ดูพร้อมกัน 2 จอ', hex: '#a66bff', price: 699, screens: 2, sport: 1, apps: [], lines: ['กีฬาสดทุกลีก', 'ดูคนละแมตช์ได้'] },
   { id: 'max', name: 'MAX', who: 'บันเทิงและกีฬาครบ', price: 1599, screens: 4, rec: 'พรีเมียม', gold: 1, apps: [['netflix', 'Basic'], ['iqiyi'], ['wetv'], ['viu']], lines: ['รวม ENT + SPORTS', '60 ช่องชั้นนำ'] },
 ];
 // the lines a pass lists (checkout): what's in it, then screens
@@ -144,7 +144,7 @@ const FREE_PLAN = { id: 'free', name: 'NOW Free', price: 0, feats: [] };   // ev
 // ---- shared purchase UI: every buy/claim screen is a pass for what you get (left) and a header, a panel and a CTA row
 // (right); every scan uses the same QR block (tile, title, three steps, waiting + expiry line)
 function passCard(p) {
-  return `<div class="pass ${p.cls}"${p.hex ? ` style="--tier:${p.hex}"` : ''}><div class="pass-top"><i class="pk-ic">${p.ic}</i><img src="img/now-logo.svg?v=2" width="70" height="39.87" alt="NOW"></div>
+  return `<div class="pass ${p.cls}"${p.hex ? ` style="--tier:${p.hex}"` : ''}><div class="pass-top"><img src="img/now-logo.svg?v=2" width="70" height="39.87" alt="NOW"></div>
     <b class="pass-name">${p.name}</b>
     <div class="pass-price"><b>${p.price}</b><span>${p.unit}</span></div>
     <ul>${p.feats.map(f => `<li>${check}<span>${keep(f)}</span></li>`).join('')}</ul>
@@ -188,7 +188,7 @@ function welcome() {
   if (!TELCO.length) { SUB = FREE_PLAN; return toast('คุณกำลังดูแบบฟรี มีโฆษณาคั่น · สมัครแพ็กเกจได้ทุกเมื่อ'); }
   SUB = TELCO.map(packPlan).sort((p, q) => q.price - p.price)[0];
   const row = p => { const pl = packPlan(p), k = kindOf(pl);
-    return `<div class="trow on" style="--tier:${tierOf(pl)}"><i class="pk-ic">${planIc(pl)}</i>
+    return `<div class="trow on" style="--tier:${tierOf(pl)}">
       <div class="trow-main"><b>${p.name}</b><div class="chips"><span class="ok">${check}${esc(p.src)}</span></div></div>
       <div class="trow-price"><b>${pl.name}</b><span>ฟรีตามสิทธิ์</span></div></div>`; };
   overlay(`<div class="of-card welcome priv-hi"><div class="wl-art" data-tier="telco"><img class="wl-photo telco" src="img/welcome-telco.jpg" alt="">
@@ -203,16 +203,6 @@ function welcome() {
 // ---- package picker: cards carry a tier colour and icon (ENT white, ENT299 magenta, SPORTS green, MAX gold); the focused
 // plan's tier colour lights the page
 const TIER_HEX = { max: '#f5c518', sport: '#2bd576', ent: '#fb008d' };
-const PLAN_IC = {
-  ent: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="4" y="7" width="24" height="16" rx="2.5"/><path d="M11 27h10"/><path d="m14 11.5 5 3.5-5 3.5z" fill="currentColor"/></svg>',
-  sport: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><circle cx="16" cy="16" r="11.5"/><path d="m16 10 5 3.6-1.9 5.9h-6.2L11 13.6z"/><path d="M16 4.5V10M21 13.6l5.5-1.8M19.1 19.5l3.4 4.7M12.9 19.5l-3.4 4.7M11 13.6l-5.5-1.8"/></svg>',
-  max: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="m5 11 6 5 5-8 5 8 6-5-2.5 13h-17z"/><path d="M8 27.5h16"/></svg>',
-  solo: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="16" cy="11" r="5.5"/><path d="M6 27c1.2-5.5 5-8.5 10-8.5s8.8 3 10 8.5"/></svg>',
-  trophy: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5h12v7a6 6 0 0 1-12 0z"/><path d="M10 7H5.5c0 4 2 6.5 5 6.8M22 7h4.5c0 4-2 6.5-5 6.8"/><path d="M16 18v5M11 27h10M12.5 23h7"/></svg>',
-  screens: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="6" width="17" height="12" rx="2"/><rect x="12" y="13" width="17" height="12" rx="2" fill="#141418"/><path d="M17 29h7"/></svg>',
-  family: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="10" r="4"/><circle cx="22" cy="11.5" r="3.2"/><path d="M3.5 26c.9-5 3.6-7.6 7.5-7.6s6.6 2.6 7.5 7.6"/><path d="M18.5 19.6c1-.8 2.2-1.2 3.5-1.2 3.2 0 5.4 2.3 6.2 6.6"/></svg>',
-};
-const planIc = p => PLAN_IC[p.ic || kindOf(p)];
 // each plan's own colour, so plans of one family (the three sport ones) still tell apart: `hex` on the plan, else its kind's
 const tierOf = p => p.hex || (p.rec && !p.gold && !p.sport ? '#fb008d' : p.gold || p.sport ? TIER_HEX[kindOf(p)] : '#d1d1d1');
 // the plans that unlock a title: sport (live events, sports genre) -> SPORTS and MAX; everything else -> ENT199, ENT299
@@ -326,7 +316,7 @@ document.querySelectorAll('[data-checkout]').forEach(b => b.classList.toggle('on
 
 const BILL_METHOD = { id: 'trueonline', logo: '/img/cp/true.png', t: 'บิลทรูออนไลน์', sub: `บัญชี ${TRUEONLINE.account}`, tag: 'แนะนำ' };
 const planPass = plan => { const k = kindOf(plan);
-  return passCard({ cls: `${k}${plan.rec && !plan.gold ? ' rec' : ''}`, ic: planIc(plan), hex: plan.hex, name: plan.name, price: thb(plan.price), unit: '/เดือน',
+  return passCard({ cls: `${k}${plan.rec && !plan.gold ? ' rec' : ''}`, hex: plan.hex, name: plan.name, price: thb(plan.price), unit: '/เดือน',
     feats: featsOf(plan), foot: 'ต่ออายุทุกเดือน · ยกเลิกได้ทุกเมื่อ' }); };
 // checkout's left side, a test option (demo bar ฝั่งซ้าย, ?summary=pass|title): pass = the plan's NOW pass with its
 // benefits; title = the title being bought for carries on from the plans page, the plan shrunk to one line under it
@@ -341,12 +331,12 @@ function setSummary(v) {
 }
 document.querySelectorAll('[data-summary]').forEach(b => b.classList.toggle('on', b.dataset.summary === SUMMARY));
 // the plan as one line in its colour (title summary, PIN, approve-on-phone)
-const planChip = plan => `<div class="co-plan" style="--tier:${tierOf(plan)}"><i class="pk-ic">${planIc(plan)}</i><b>${plan.name}</b><span>${cost(plan)}</span></div>`;
+const planChip = plan => `<div class="co-plan" style="--tier:${tierOf(plan)}"><b>${plan.name}</b><span>${cost(plan)}</span></div>`;
 const titleMode = () => SUMMARY === 'title' && BUY_FOR;
 const coSide = plan => titleMode() ? `<div class="co-title">${titleSide(BUY_FOR)}</div>` : planPass(plan);
 // the checkout's heading; in title mode the plan and price sit right under it, unboxed (on a TV the top is read first:
 // what you pay, then how)
-const coHead = (plan, title) => `<h2>${title}</h2>${titleMode() ? `<div class="co-plan bare" style="--tier:${tierOf(plan)}"><i class="pk-ic">${planIc(plan)}</i><b>${plan.name}</b><span>${cost(plan)}</span></div>` : ''}`;
+const coHead = (plan, title) => `<h2>${title}</h2>${titleMode() ? `<div class="co-plan bare" style="--tier:${tierOf(plan)}"><b>${plan.name}</b><span>${cost(plan)}</span></div>` : ''}`;
 const termsToast = () => toast('ต่ออายุอัตโนมัติทุกเดือน ยกเลิกได้ทุกเมื่อในการตั้งค่าบัญชี ไม่มีค่าธรรมเนียม');
 // fills `el` with what a method does (the bill + confirm bar, or its QR) and starts the QR's wait; returns a stop function
 function payBody(el, plan, id, finish) {
@@ -500,8 +490,7 @@ function done(plan, pay) {
   const ov = overlay(`${BUY_FOR ? `<i class="done-bg" style="--art:url('${titleArt(BUY_FOR).art}')"></i>` : ''}<div class="done" style="--tier:${tier}">
     <div class="burst">${confetti(tier)}${confetti(tier, 1.6, 40)}</div>
     <div class="done-badge"><i class="ring"></i><i class="ring r2"></i>
-      <i class="done-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path class="tick" d="m5 12.5 4.5 4.5L19 7.5"/></svg></i>
-      <i class="done-plan">${planIc(plan)}</i></div>
+      <i class="done-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path class="tick" d="m5 12.5 4.5 4.5L19 7.5"/></svg></i></div>
     <h2 class="rise" style="--d:.55s">ยินดีต้อนรับสู่ ${plan.name}!</h2>
     <p class="rise" style="--d:.7s">${how}</p>
     <div class="obtn buy rise${BUY_FOR ? ' count' : ''}" style="--d:.85s;--s:${WATCH_IN}s" data-f>${BUY_FOR
