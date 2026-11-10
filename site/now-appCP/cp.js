@@ -33,7 +33,7 @@ const swoosh = cls => `<svg class="swoosh" viewBox="0 0 400 120" preserveAspectR
 // Every privilege has a level it needs: 1 = CP-group members and True customers, 2 = True customers only.
 // sim = a True prepaid content SIM (The Voice SIM, sold at 7-Eleven to people not on True): CP-level privileges plus its
 // franchise, and it makes them a True customer. free = a NOW account with no package (any network): anything they
-// play opens the in-app purchase flow (iapSheet)
+// play opens the in-app purchase flow (iap.js)
 const RANK = { ais: 0, free: 0, cp: 1, sim: 1, true: 2 };
 const PERSONAS = {
   true: {

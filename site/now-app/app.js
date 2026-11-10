@@ -124,7 +124,7 @@ function HeroActions(h) {
   }
   return `<span class="hero-ctas"><a class="btn-play" ${h.href}>${playIcon}รับชมตอนนี้</a>${addBtn}</span>`;
 }
-const HeroCard = (h, on, clone) => `<div class="hc-card ${h.cls}${on ? ' on' : ''}"${clone ? ' data-clone aria-hidden="true"' : ''} data-bg="${esc(h.bg)}">
+const HeroCard = (h, on, clone) => `<div class="hc-card ${h.cls}${on ? ' on' : ''}"${clone ? ' data-clone aria-hidden="true"' : ''} data-bg="${esc(h.bg)}" data-watch="${esc(watchKey(h.href))}">
   ${HeroArt(h)}<span class="hc-body">${HeroBadge(h)}${HeroLogo(h)}${HeroMeta(h)}${HeroActions(h)}</span></div>`;
 function heroCards(s) {
   const slides = heroSlides(s);
@@ -228,7 +228,7 @@ function heroFade(s) {
   if (!slides.length) return '';
   HF_SLIDES = slides;
   return `<section class="hf hc-apple">
-    ${slides.map((h, i) => `<div class="hf-art${i ? '' : ' on'}">${img(h.art, '')}</div>`).join('')}
+    ${slides.map((h, i) => `<div class="hf-art${i ? '' : ' on'}" data-watch="${esc(watchKey(h.href))}">${img(h.art, '')}</div>`).join('')}
     <div class="hf-body">
       <div class="hf-logos">${slides.map((h, i) => `<div class="hf-slide${i ? '' : ' on'}">${HeroLogo(h)}${HeroMeta(h)}</div>`).join('')}</div>
       <div class="hf-ctas">${HeroActions(slides[0])}</div>
@@ -267,10 +267,11 @@ function wireHeroFade(screen) {
   const hold = () => { sec.classList.add('held'); clearInterval(heroTimer); clearTimeout(idle); idle = setTimeout(play, 5000); };
   // drag: the current logo follows the finger; past 50px it commits to the next/previous slide
   let x0 = null, dx = 0;
-  sec.addEventListener('pointerdown', e => { if (e.target.closest('a')) return; x0 = e.clientX; dx = 0; hold(); });
+  sec.addEventListener('pointerdown', e => { if (e.target.closest('a')) return; x0 = e.clientX; dx = 0; sec.moved = false; hold(); });
   addEventListener('pointermove', e => {
     if (x0 === null) return;
     dx = e.clientX - x0;
+    if (Math.abs(dx) > 8) sec.moved = true;   // a swipe, not a tap on the poster (wireDetails)
     const l = logos[cur]; l.style.transition = 'none'; l.style.transform = `translateX(${dx * .5}px)`; l.style.opacity = 1 - Math.min(Math.abs(dx) / 260, .7);
   });
   addEventListener('pointerup', () => {
@@ -695,7 +696,7 @@ function lookToggle(onChange) {
 
 // ---------- content detail page ----------
 // Tapping a title opens its detail page, as in the app: landscape art, title, rating / year / length / resolution,
-// รับชมตอนนี้ (สมัครเลย for a free user), genre, synopsis, รายการของฉัน and คุณน่าจะชอบ. Feed titles get their synopsis, length and genres from
+// รับชมตอนนี้ (🔒 เริ่มรับชมเลย for a free user, which opens iap.js's Package page), genre, synopsis, รายการของฉัน and คุณน่าจะชอบ. Feed titles get their synopsis, length and genres from
 // /api/now-home?details=1 (fetched once, after the home draws); TMDB hero titles carry their own. The hero's play
 // buttons still play straight away, unless canPlayNow() says no (iap.js: a free user goes to the detail page first).
 let canPlayNow = () => true;
@@ -728,23 +729,30 @@ function likes(d, more) {
   return [...new Set([...same, ...shelf, ...pool])].slice(0, 9);
 }
 const closeIcon = '<svg width="26" height="26" viewBox="0 0 24 24" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M5 5l14 14M19 5 5 19"/></svg>';
+const lockIcon = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.2" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/><circle cx="12" cy="16" r="1.2" fill="#000"/></svg>';
+const shareIcon = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="m8.2 10.8 7.6-4.1M8.2 13.2l7.6 4.1"/></svg>';
 const playDisc = '<svg width="26" height="26" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#000"/><path fill="#fff" d="m10 7.5 6 4.5-6 4.5z"/></svg>';
 function detailHtml(d, more) {
   const x = detailOf(d, more[d.id]), live = d.type === 'tvs-live', mine = MY_LIST.has(d.id);
+  const sport = live || (x.genres || []).includes('sports');
+  const onAir = live && x.start <= Date.now() && (!x.end || x.end > Date.now());
+  const day = live && x.start ? new Date(x.start).toLocaleDateString('en-GB', { timeZone: TZ, day: 'numeric', month: 'long', year: 'numeric' }) : '';
   const meta = [x.rate && `<i class="dt-chip">${esc(x.rate)}</i>`, x.year && `<i class="dt-chip">${esc(x.year)}</i>`,
     live ? (x.start ? `<span>${x.ch ? `ช่อง ${esc(x.ch)} · ` : ''}${esc(when(x.start))} น.</span>` : '') : x.series ? '<span>ซีรีส์</span>' : x.dur ? `<span>${hm(x.dur)}</span>` : '',
     x.res && `<i class="dt-chip line">${esc(x.res)}</i>`].filter(Boolean).join('');
   return `<div class="dt-art">${img(x.land || x.poster, x.t)}<button class="dt-x" aria-label="ปิด">${closeIcon}</button></div>
     <div class="dt-body">
+      ${live && day ? `<span class="dt-live">${onAir ? '<b>Live</b>' : ''}<i>${day}</i></span>` : ''}
       <h1>${esc(x.t)}</h1>
       ${meta ? `<div class="dt-meta">${meta}</div>` : ''}
-      <a class="dt-play${canPlayNow() ? '' : ' dt-sub'}" ${link(d) || `href="${NOW_APP}/watch/${d.type}/${d.id}" target="_blank" rel="noopener"`}>${canPlayNow()
-        ? `${playDisc}${live && x.start <= Date.now() ? 'ดูสด' : 'รับชมตอนนี้'}` : 'สมัครเลย'}</a>
+      <a class="dt-play"${sport ? ' data-kind="sport"' : ''} ${link(d) || `href="${NOW_APP}/watch/${d.type}/${d.id}" target="_blank" rel="noopener"`}>${canPlayNow()
+        ? `${playDisc}${onAir ? 'ดูสด' : 'รับชมตอนนี้'}` : `${lockIcon}เริ่มรับชมเลย`}</a>
       ${x.genreTh ? `<p class="dt-genre">${esc(x.genreTh)}</p>` : ''}
       ${x.syn ? `<p class="dt-syn">${esc(x.syn)}</p>` : DETAILS_DONE || x.tmdb ? '' : '<p class="dt-syn dt-wait"><i></i><i></i><i></i></p>'}
       <div class="dt-acts"><button data-mylist class="${mine ? 'on' : ''}">${mine
         ? '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>'
-        : '<svg width="28" height="28" viewBox="0 0 24 24" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'}รายการของฉัน</button></div>
+        : '<svg width="28" height="28" viewBox="0 0 24 24" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'}รายการของฉัน</button>
+        <button data-share>${shareIcon}แชร์</button></div>
     </div>
     <nav class="dt-tabs"><a class="on">คุณน่าจะชอบ</a></nav>
     <div class="dt-grid">${likes(d, more).map(t => `<a class="poster" ${link(t)}>${nowBadge(t)}${img(t.poster, t.t)}</a>`).join('')}</div>`;
@@ -757,6 +765,8 @@ function openDetail(d) {
     el.innerHTML = '<div class="dt-scroll"></div>';
     el.addEventListener('click', e => {
       if (e.target.closest('.dt-x')) { el.classList.add('out'); return setTimeout(() => el.remove(), 250); }
+      if (e.target.closest('[data-share]') && navigator.share) return navigator.share({ title: el.dt.t, url: `${NOW_APP}/watch/${el.dt.type}/${el.dt.id}` }).catch(() => {});
+      if (e.target.closest('.dt-play')) { e.preventDefault(); return nowPlayer(el.dt); }   // a free user never gets here (iap.js)
       const my = e.target.closest('[data-mylist]');
       if (my) { MY_LIST.has(el.dt.id) ? MY_LIST.delete(el.dt.id) : MY_LIST.add(el.dt.id); return paint(true); }
       const a = e.target.closest('.dt-grid a[href]'), next = a && TITLES.get(watchKey(a.getAttribute('href')));
@@ -779,15 +789,65 @@ function openDetail(d) {
   paint();
   el.firstChild.scrollTop = 0;
 }
-// any title link on the home opens its detail page; the hero's play buttons play, unless canPlayNow() says no
+// Mock player: the watch buttons (hero, detail page) play here instead of opening the NOW web app. Like the app it
+// turns to landscape: the player is drawn a quarter turn round to fill the phone. The art stands in for the video,
+// the clock runs in real time, controls hide after 3 s and come back on a tap. Live titles sit at the live edge.
+const npIcon = {
+  back: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5 8 12l7 7"/></svg>',
+  play: '<svg width="44" height="44" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>',
+  pause: '<svg width="44" height="44" viewBox="0 0 24 24" fill="#fff"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>',
+  skip: n => `<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"${n > 0 ? ' style="transform:scaleX(-1)"' : ''}><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 3.5v3.7h3.7"/><text x="12" y="15.2" fill="#fff" stroke="none" font-size="7" font-weight="700" text-anchor="middle" font-family="system-ui"${n > 0 ? ' transform="matrix(-1 0 0 1 24 0)"' : ''}>10</text></svg>`,
+};
+const npClock = sec => { sec = Math.max(0, Math.round(sec)); const h = Math.floor(sec / 3600), m = Math.floor(sec / 60) % 60, x = pad2(sec % 60); return h ? `${h}:${pad2(m)}:${x}` : `${m}:${x}`; };
+function nowPlayer(d) {
+  const live = d.type === 'tvs-live', len = (d.dur || (d.series ? 45 : 100)) * 60;
+  let t = 0, playing = true, hide;
+  const el = document.createElement('div');
+  el.className = 'np';
+  el.innerHTML = `<div class="np-land">
+      <img class="np-art" src="${esc(d.land || d.poster || '')}" alt="">
+      <div class="np-ui">
+        <div class="np-top"><button class="np-x" aria-label="ปิด">${npIcon.back}</button>
+          <div class="np-tt"><b>${esc(d.t)}</b>${d.series ? '<span>ซีซัน 1 · ตอนที่ 1</span>' : ''}</div>${live ? '<i class="np-live">LIVE</i>' : ''}</div>
+        <div class="np-mid">${live ? '' : `<button data-skip="-10" aria-label="ย้อน 10 วินาที">${npIcon.skip(-1)}</button>`}<button class="np-pp" aria-label="เล่น/หยุด"></button>${live ? '' : `<button data-skip="10" aria-label="ข้าม 10 วินาที">${npIcon.skip(1)}</button>`}</div>
+        <div class="np-bot"><span class="np-cur"></span><div class="np-bar"><i></i></div><span class="np-end"></span></div>
+      </div>
+    </div>`;
+  const $ = q => el.querySelector(q);
+  const paint = () => {
+    $('.np-pp').innerHTML = playing ? npIcon.pause : npIcon.play;
+    $('.np-bar i').style.width = live ? '100%' : `${100 * t / len}%`;
+    $('.np-cur').textContent = live ? '' : npClock(t);
+    $('.np-end').textContent = live ? '' : `-${npClock(len - t)}`;
+  };
+  const wake = () => { el.classList.remove('idle'); clearTimeout(hide); if (playing) hide = setTimeout(() => el.classList.add('idle'), 3000); };
+  const timer = setInterval(() => { if (playing && !live) { t = Math.min(len, t + 1); if (t >= len) playing = false; paint(); } }, 1000);
+  el.addEventListener('click', e => {
+    if (e.target.closest('.np-x')) { clearInterval(timer); clearTimeout(hide); el.classList.add('out'); return setTimeout(() => el.remove(), 250); }
+    if (el.classList.contains('idle')) return wake();   // the first tap only brings the controls back
+    const sk = e.target.closest('[data-skip]'), bar = e.target.closest('.np-bar');
+    if (e.target.closest('.np-pp')) playing = !playing;
+    else if (sk) t = Math.min(len, Math.max(0, t + +sk.dataset.skip));
+    else if (bar && !live) { const r = bar.getBoundingClientRect(); t = Math.round(len * (e.clientY - r.top) / r.height); }   // turned a quarter: the bar runs top to bottom on screen
+    else if (!e.target.closest('button')) return el.classList.add('idle');
+    paint(); wake();
+  });
+  paint(); wake();
+  document.querySelector('.phone').appendChild(el);
+}
+// any title link on the home opens its detail page, and so does a tap on a ใหม่ / ใหม่ 2 hero poster outside its
+// buttons; the hero's play buttons open the player, unless canPlayNow() says no
 function wireDetails(screen) {
   screen.addEventListener('click', e => {
-    const a = e.target.closest('a[href*="/watch/"]');
-    if (!a || (a.matches('.btn-play, .btn-live') && canPlayNow())) return;
-    const d = TITLES.get(watchKey(a.getAttribute('href')));
+    const a = e.target.closest('a[href*="/watch/"]'), card = !a && e.target.closest('.hc-card, .hf');
+    let key = '';
+    if (card && !e.target.closest('.hero-ctas, .dots') && !card.moved)
+      key = card.matches('.hf') ? card.querySelector('.hf-art.on').dataset.watch : card.dataset.watch;
+    else if (a) key = watchKey(a.getAttribute('href'));
+    const d = key && TITLES.get(key);
     if (!d) return;
     e.preventDefault(); e.stopPropagation();
-    openDetail(d);
+    a && a.matches('.btn-play, .btn-live') && canPlayNow() ? nowPlayer(d) : openDetail(d);
   }, true);
 }
 
