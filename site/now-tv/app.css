@@ -289,7 +289,6 @@ img { display: block; }
 .burst i:nth-child(4n) { border-radius: 50%; height: var(--w); }
 @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
 @keyframes draw { to { stroke-dashoffset: 0; } }
-@keyframes ripple { 0% { transform: scale(1); opacity: .7; } 100% { transform: scale(2.2); opacity: 0; } }
 @keyframes drop { from { transform: translateY(-40px) scale(.4) rotate(-20deg); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes rise { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes glow { 50% { box-shadow: 0 0 0 6px #fff, 0 0 40px 8px rgba(251, 0, 141, .6); } }
@@ -774,3 +773,24 @@ img { display: block; }
 .co-plan.bare span { margin-left: 4px; font-size: 30px; color: #fff; }
 .co-plan.bare span::before { content: '·'; margin-right: 14px; color: var(--text-2); }
 .co-title .pk-side { padding-top: 24px; }
+
+/* critique round 1 (2026-11-10) */
+/* renewal line under the checkout plan line */
+.co-renew { margin: 8px 0 -10px; font-size: 22px; line-height: 32px; color: var(--text-2); }
+.co-plan.bare + .co-renew { margin-top: 10px; }
+.ap-text .co-renew { margin: 0; }
+/* success CTA is "watch": neutral, white when focused; the countdown sweep darkens instead of lightening */
+.done .obtn.watch.focus { animation: rise .5s var(--d, 0s) ease-out both; box-shadow: 0 0 0 6px rgba(255, 255, 255, .25); }
+.done .obtn.watch.count::before { background: rgba(0, 0, 0, .1); }
+.done .obtn.watch .cd { background: rgba(0, 0, 0, .1); }
+/* the ripple stays clear of the headline */
+@keyframes ripple { 0% { transform: scale(1); opacity: .7; } 100% { transform: scale(1.5); opacity: 0; } }
+.done-badge { margin-bottom: 28px; }
+/* ad controls on a plate of their own, whatever the creative; skip grey until focused; row inside the safe area */
+.ad::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 300px; z-index: 1; pointer-events: none;
+  background: linear-gradient(transparent, rgba(0, 0, 0, .78)); }
+.ad-bar { bottom: 88px; }
+.ad-skip[data-f] { background: rgba(40, 40, 44, .92); border-color: transparent; color: #fff; }
+.ad .obtn.buy:not(.focus) { background: rgba(40, 40, 44, .92); }
+/* titles wrap to 3 lines before truncating */
+.pk-side b { -webkit-line-clamp: 3; }

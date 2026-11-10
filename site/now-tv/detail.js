@@ -148,6 +148,7 @@ function paintDetail() {
 
 // ---- open / close
 function openDetail(it, push) {
+  clearToast();
   if (push && DT.open) DT.stack.push({ it: DT.it, m: DT.m });
   Object.assign(DT, { open: true, it, d: DETAILS[it.id] || {}, tm: TMDB.get(it.id) || null, view: 'menu', m: 0, l: 0, s: 0, c: 0, side: 'list' });
   DT.m = menu().findIndex(x => x.id === 'watch');   // the page opens on watch, even with subscribe above it

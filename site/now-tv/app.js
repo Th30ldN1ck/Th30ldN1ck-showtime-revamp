@@ -189,6 +189,8 @@ function move(dx, dy) {
 }
 
 let toastTimer;
+// a toast belongs to the screen it was shown on: any new screen clears it
+const clearToast = () => { clearTimeout(toastTimer); $('#toast').classList.remove('on'); };
 function toast(msg) {
   const t = $('#toast');
   t.textContent = msg;

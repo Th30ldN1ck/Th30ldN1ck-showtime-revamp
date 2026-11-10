@@ -13,7 +13,7 @@ const TV_PLANS = [
   // Football ฿199 (Thai League + futsal; football titles only), Sport ฿499, Sport 2 screens ฿699
   { id: 'football', name: 'FOOTBALL199', hex: '#2bd576', who: 'สำหรับแฟนบอลไทย', price: 199, screens: 1, sport: 1, foot: 1, apps: [], lines: ['ไทยลีกและฟุตซอล', '12 ช่องฟุตบอล'] },
   { id: 'sports', name: 'SPORTS499', hex: '#3b9dff', who: 'สำหรับคอกีฬา', price: 499, screens: 1, sport: 1, rec: 'ยอดนิยม', apps: [], lines: ['กีฬาสดทุกลีก', 'มวยไทยทุกสัปดาห์'] },
-  { id: 'sports2', name: 'SPORTS699', who: 'ดูพร้อมกัน 2 จอ', hex: '#a66bff', price: 699, screens: 2, sport: 1, apps: [], lines: ['กีฬาสดทุกลีก', 'ดูคนละแมตช์ได้'] },
+  { id: 'sports2', name: 'SPORTS699', who: 'สำหรับคอกีฬาทั้งบ้าน', hex: '#a66bff', price: 699, screens: 2, sport: 1, apps: [], lines: ['กีฬาสดทุกลีก', 'ดูคนละแมตช์ได้'] },
   { id: 'max', name: 'MAX', who: 'บันเทิงและกีฬาครบ', price: 1599, screens: 4, rec: 'พรีเมียม', gold: 1, apps: [['netflix', 'Basic'], ['iqiyi'], ['wetv'], ['viu']], lines: ['รวม ENT + SPORTS', '60 ช่องชั้นนำ'] },
 ];
 // the lines a pass lists (checkout): what's in it, then screens
@@ -33,6 +33,7 @@ let SUB = null;         // the plan bought in this session
 
 // an overlay: its focusable entries are [data-f] in order; arrows move along them (left/right too, for button rows)
 function overlay(html, cls, handlers) {
+  clearToast();
   const el = document.createElement('section');
   el.className = `ov ${cls}`;
   el.innerHTML = html;
@@ -234,7 +235,7 @@ function packages(it) {
       <div class="pk-go">เลือก ${p.name}<i>›</i></div></div></div>`;
   // the title's poster, whole, in a column at left with its name and genre right under it; a blur of it tints the page
   const ov = overlay(`<div class="ov-page packs-page${it ? ' for' : ''}"${it ? ` style="--art:url('${titleArt(it).art}')"` : ''}>${it ? titleSide(it) : ''}
-    <div class="pk-head"><h2>เลือกแพ็กเกจ</h2><p class="ov-sub">ไม่มีโฆษณา · ยกเลิกได้ทุกเมื่อ</p></div>
+    <div class="pk-head"><h2>เลือกแพ็กเกจ</h2><p class="ov-sub">ไม่มีโฆษณา · ต่ออายุทุกเดือน ยกเลิกได้ทุกเมื่อ</p></div>
     ${it ? '<div class="pk-view">' : ''}<div class="pk-row n${plans.length}">${plans.map(card).join('')}</div>${it ? '</div>' : ''}
     ${it && plans.length > PK_FIT ? `<div class="pk-dots">${plans.map(() => '<i></i>').join('')}</div>` : ''}</div>`, 'packs', {
     ok() { checkout(plans[this.i]); },
@@ -332,11 +333,13 @@ function setSummary(v) {
 document.querySelectorAll('[data-summary]').forEach(b => b.classList.toggle('on', b.dataset.summary === SUMMARY));
 // the plan as one line in its colour (title summary, PIN, approve-on-phone)
 const planChip = plan => `<div class="co-plan" style="--tier:${tierOf(plan)}"><b>${plan.name}</b><span>${cost(plan)}</span></div>`;
+// renewal, said once where the viewer pays (the pass says it in pass mode)
+const RENEW = '<p class="co-renew">ดูได้ทันที · ต่ออายุอัตโนมัติทุกเดือน · ยกเลิกได้ทุกเมื่อ</p>';
 const titleMode = () => SUMMARY === 'title' && BUY_FOR;
 const coSide = plan => titleMode() ? `<div class="co-title">${titleSide(BUY_FOR)}</div>` : planPass(plan);
 // the checkout's heading; in title mode the plan and price sit right under it, unboxed (on a TV the top is read first:
 // what you pay, then how)
-const coHead = (plan, title) => `<h2>${title}</h2>${titleMode() ? `<div class="co-plan bare" style="--tier:${tierOf(plan)}"><b>${plan.name}</b><span>${cost(plan)}</span></div>` : ''}`;
+const coHead = (plan, title) => `<h2>${title}</h2>${titleMode() ? `<div class="co-plan bare" style="--tier:${tierOf(plan)}"><b>${plan.name}</b><span>${cost(plan)}</span></div>${RENEW}` : ''}`;
 const termsToast = () => toast('ต่ออายุอัตโนมัติทุกเดือน ยกเลิกได้ทุกเมื่อในการตั้งค่าบัญชี ไม่มีค่าธรรมเนียม');
 // fills `el` with what a method does (the bill + confirm bar, or its QR) and starts the QR's wait; returns a stop function
 function payBody(el, plan, id, finish) {
@@ -349,7 +352,7 @@ function payBody(el, plan, id, finish) {
   const timer = qrWait(el), paid = setTimeout(() => finish(alt.id), QR_PAID_MS);
   return () => { clearInterval(timer); clearTimeout(paid); };
 }
-const methodHead = m => `<div class="prow-head"><img src="${m.logo}" alt=""><span><b>${m.t}</b>${m.sub ? `<em>${m.sub}</em>` : ''}</span>${m.tag ? `<i class="prow-tag">${m.tag}</i>` : ''}<i class="prow-arrow">›</i></div>`;
+const methodHead = m => `<div class="prow-head"><img src="${m.logo}" alt=""><span><b>${m.t}</b>${m.sub ? `<em>${m.sub}</em>` : ''}</span>${m.tag ? `<i class="prow-tag">${m.tag}</i>` : ''}</div>`;
 function checkout(plan) {
   if (CHECKOUT_STYLE === 'handoff') return checkoutHandoff(plan);
   if (CHECKOUT_STYLE !== 'list') return checkoutSimple(plan, CHECKOUT_STYLE === 'pin' ? pinConfirm : CHECKOUT_STYLE === 'approve' ? phoneApprove : null);
@@ -408,7 +411,7 @@ function pinConfirm(plan) {
   let pin = '';
   const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'del', '0', 'ok'];
   const ov = overlay(`<div class="cf-card"><img src="/img/cp/true.png" alt="" class="cf-logo"><h2>ใส่ PIN TrueID เพื่อยืนยัน</h2>
-      ${planChip(plan)}<p class="cf-bill">รวมในบิลทรูออนไลน์ · บัญชี ${TRUEONLINE.account}</p>
+      ${planChip(plan)}<p class="cf-bill">รวมในบิลทรูออนไลน์ · บัญชี ${TRUEONLINE.account}<br>ต่ออายุอัตโนมัติทุกเดือน · ยกเลิกได้ทุกเมื่อ</p>
       <div class="pin-dots">${[0, 1, 2, 3].map(() => '<i></i>').join('')}</div>
       <div class="pad">${keys.map(k => `<div class="pk-key${k === 'ok' ? ' go' : ''}" data-f data-k="${k}">${k === 'del' ? '⌫' : k === 'ok' ? 'ยืนยัน' : k}</div>`).join('')}</div>
       <span class="cf-note">ลืม PIN? ตั้งใหม่ในแอป TrueID (ทดสอบ: เลขใดก็ได้)</span></div>`, 'confirm', {
@@ -433,7 +436,7 @@ function phoneApprove(plan) {
   // the phone mock shows what arrives; the text side: what to do, the wait, then (under a rule) the QR fallback and cancel
   const ov = overlay(`<div class="cf-card wide"><div class="ap-phone"><div class="ap-push"><img src="/img/cp/true.png" alt=""><div><b>TrueID</b>
       <span>ยืนยันสมัคร NOW ${plan.name}<br>${cost(plan)}</span></div></div><div class="ap-btns"><i>ปฏิเสธ</i><i class="y">อนุมัติ</i></div></div>
-    <div class="ap-text"><h2>ยืนยันบนมือถือของคุณ</h2>${planChip(plan)}<p>กด <b>อนุมัติ</b> ในแอป TrueID บน <b>096-•••-7705</b></p>
+    <div class="ap-text"><h2>ยืนยันบนมือถือของคุณ</h2>${planChip(plan)}${RENEW}<p>กด <b>อนุมัติ</b> ในแอป TrueID บน <b>096-•••-7705</b></p>
       <span class="qr-time"><i class="spin"></i><em>กำลังรอการอนุมัติ…</em></span>
       <div class="ap-or"><div class="qrp-code">${qrSvg(55)}<img src="/img/cp/true.png" alt=""></div><span>ไม่ได้รับแจ้งเตือน?<br>สแกน QR นี้ด้วยแอป TrueID แทน</span></div>
       <div class="obtn alt" data-f>ยกเลิก</div></div></div>`, 'confirm', {
@@ -493,7 +496,7 @@ function done(plan, pay) {
       <i class="done-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path class="tick" d="m5 12.5 4.5 4.5L19 7.5"/></svg></i></div>
     <h2 class="rise" style="--d:.55s">ยินดีต้อนรับสู่ ${plan.name}!</h2>
     <p class="rise" style="--d:.7s">${how}</p>
-    <div class="obtn buy rise${BUY_FOR ? ' count' : ''}" style="--d:.85s;--s:${WATCH_IN}s" data-f>${BUY_FOR
+    <div class="obtn watch rise${BUY_FOR ? ' count' : ''}" style="--d:.85s;--s:${WATCH_IN}s" data-f>${BUY_FOR
       ? `<span>เริ่มดู ${esc(BUY_FOR.t)}</span><em class="cd">${WATCH_IN}</em>` : 'เริ่มดูเลย'}</div></div>`, 'success', {
     ok() { go(true); },
     back() { go(false); },
@@ -583,7 +586,7 @@ function player(it) {
   });
   const el = ov.el.querySelector('.pl');
   const picFor = (c, k) => surfing ? artFor(c, k) : c.land || c.poster;
-  const load = (c, k) => {
+  const load = (c, k, zap) => {
     cur = c; d = DETAILS[c.id] || {}; live = c.type === 'tvs-live';
     len = live ? Math.max(60, ((c.end || 0) - (c.start || 0)) / 1000) || 7200 : (d.dur || 45) * 60;
     at = live && c.start ? Math.max(0, Math.min(len - 1, (Date.now() - c.start) / 1000)) : 0;
@@ -600,7 +603,7 @@ function player(it) {
     const locked = !covers(c);
     el.classList.toggle('locked', locked);
     if (locked) el.querySelector('.pl-lock-for').textContent = `ดูได้กับแพ็กเกจ${isSport(c) ? 'กีฬา' : 'บันเทิง'} เริ่มต้น ${cost(plansFor(c).sort((p, q) => p.price - q.price)[0])}`;
-    if (surfing) {   // the channel number flashes top-right, like a TV
+    if (surfing && zap) {   // changing channel: the number flashes top-right, like a TV
       const num = el.querySelector('.pl-num');
       num.textContent = c.ch || '';
       num.classList.remove('on'); void num.offsetWidth; num.classList.add('on');
@@ -609,7 +612,7 @@ function player(it) {
     ov.paint();
   };
   ov.move = (dx, dy) => {
-    if (dy && surfing) { ci = (ci + dy + CHANNELS.length) % CHANNELS.length; paused = false; load(CHANNELS[ci], ci); }
+    if (dy && surfing) { ci = (ci + dy + CHANNELS.length) % CHANNELS.length; paused = false; load(CHANNELS[ci], ci, true); }
     else if (dx && !live) at = Math.max(0, Math.min(len - 1, at + dx * 10));
     show();
   };
