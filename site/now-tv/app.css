@@ -711,6 +711,8 @@ img { display: block; }
    so the eye compares across by position; the focused card shows its CTA in its own colour */
 .pk-row { align-items: stretch; }
 .pk-body { gap: 0; }
+/* no plan icon: the name starts under the ยอดนิยม/พรีเมียม badge on every card, so rows still line up */
+.pk-body { padding-top: 84px; }
 .pk .pk-price b, .gold .pk-price b { color: #fff; }
 .pk-screens { display: flex; align-items: center; gap: 6px; margin: 0 0 18px; padding-bottom: 18px; border-bottom: 1px solid rgba(255, 255, 255, .1); color: var(--tier); }
 .pk-screens svg { width: 30px; height: 30px; flex: none; }

@@ -235,10 +235,10 @@ let BUY_FOR = null;     // the title the viewer was trying to watch when the pur
 function packages(it) {
   BUY_FOR = it || null;
   const plans = plansFor(it);
-  const card = p => `<div class="pk${p.gold ? ' gold' : ''}${p.sport ? ' sport' : ''}${p.rec ? ' has-rec' : ''}" style="--tier:${tierOf(p)}" data-f>${p.rec ? `<i class="pk-rec">${p.rec}</i>` : ''}<i class="pk-mark">${planIc(p)}</i>
-      <div class="pk-body"><i class="pk-ic">${planIc(p)}</i><b class="pk-name">${p.name}</b><span class="pk-who">${p.who}</span>
+  const card = p => `<div class="pk${p.gold ? ' gold' : ''}${p.sport ? ' sport' : ''}${p.rec ? ' has-rec' : ''}" style="--tier:${tierOf(p)}" data-f>${p.rec ? `<i class="pk-rec">${p.rec}</i>` : ''}
+      <div class="pk-body"><b class="pk-name">${p.name}</b><span class="pk-who">${p.who}</span>
       <div class="pk-price"><b>${thb(p.price)}</b><span>/เดือน</span></div>
-      <div class="pk-screens">${TV_IC.repeat(p.screens)}<span>${p.screens > 1 ? `ดูพร้อมกัน ${p.screens} จอ` : 'ดูได้ 1 จอ'}</span></div>
+      <div class="pk-screens">${TV_IC}<span>${p.screens > 1 ? `ดูพร้อมกัน ${p.screens} จอ` : 'ดูได้ 1 จอ'}</span></div>
       <ul>${p.lines.map(f => `<li>${check}<span>${keep(f)}</span></li>`).join('')}</ul>
       <div class="pk-apps">${p.apps.map(([a, tier]) => `<span><img src="/img/packages/${a}.${a === 'netflix' ? 'svg' : 'png'}" alt="${a}">${tier ? `<em>${tier}</em>` : ''}</span>`).join('')}</div>
       <div class="pk-go">เลือก ${p.name}<i>›</i></div></div></div>`;
