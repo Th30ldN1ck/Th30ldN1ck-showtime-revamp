@@ -332,7 +332,7 @@ const planPass = plan => { const k = kindOf(plan);
 // benefits; title = the title being bought for carries on from the plans page, the plan shrunk to one line under it
 // (they've just picked it, no need to sell it again). With no title it's always the pass
 const SUMMARIES = { pass: 'บัตรแพ็กเกจ', title: 'เรื่องที่เลือก' };
-let SUMMARY = SUMMARIES[new URLSearchParams(location.search).get('summary')] ? new URLSearchParams(location.search).get('summary') : 'pass';
+let SUMMARY = SUMMARIES[new URLSearchParams(location.search).get('summary')] ? new URLSearchParams(location.search).get('summary') : 'title';
 function setSummary(v) {
   SUMMARY = v;
   const u = new URL(location.href); u.searchParams.set('summary', v); history.replaceState(null, '', u);
