@@ -170,7 +170,7 @@ const TELCO_PACKS = [
   { name: 'สิทธิ์ทรูออนไลน์ Gigatex', src: `อินเทอร์เน็ตบ้าน 1 Gbps · บัญชี ${TRUEONLINE.account}`, plan: 'max' },
 ];
 const telcoFor = q => q === 'many' ? TELCO_PACKS : q === 'none' ? [] : TELCO_PACKS.slice(0, 1);
-let TELCO_CASE = new URLSearchParams(location.search).get('telco') || 'one', TELCO = telcoFor(TELCO_CASE);
+let TELCO_CASE = new URLSearchParams(location.search).get('telco') || 'none', TELCO = telcoFor(TELCO_CASE);
 // the demo bar's case switch: kept in the URL so เริ่มใหม่ (reload) keeps it
 function setTelco(q) {
   TELCO_CASE = q; TELCO = telcoFor(q);
