@@ -1,0 +1,9 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="23.5" height="16.5" viewBox="0 0 23.5 16.5" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Group 2">
+<path id="Rectangle 2 (Stroke)" d="M3 3.75C3 3.33579 3.33579 3 3.75 3H18.75C19.7165 3 20.5 3.7835 20.5 4.75V12.75C20.5 13.1642 20.1642 13.5 19.75 13.5C19.3358 13.5 19 13.1642 19 12.75V4.75C19 4.61193 18.8881 4.5 18.75 4.5H3.75C3.33579 4.5 3 4.16421 3 3.75Z" fill-rule="evenodd" clip-rule="evenodd" fill="black"/>
+<g id="Group 1">
+<path id="Rectangle 1 (Stroke)" d="M0 7.75C0 6.7835 0.783502 6 1.75 6H15.75C16.7165 6 17.5 6.7835 17.5 7.75V14.75C17.5 15.7165 16.7165 16.5 15.75 16.5H1.75C0.783502 16.5 0 15.7165 0 14.75V7.75ZM1.75 7.5C1.61193 7.5 1.5 7.61193 1.5 7.75V14.75C1.5 14.8881 1.61193 15 1.75 15H15.75C15.8881 15 16 14.8881 16 14.75V7.75C16 7.61193 15.8881 7.5 15.75 7.5H1.75Z" fill-rule="evenodd" clip-rule="evenodd" fill="black"/>
+<path id="Rectangle 3 (Stroke)" d="M6 0.75C6 0.335786 6.33579 0 6.75 0H21.75C22.7165 0 23.5 0.783502 23.5 1.75V9.75C23.5 10.1642 23.1642 10.5 22.75 10.5C22.3358 10.5 22 10.1642 22 9.75V1.75C22 1.61193 21.8881 1.5 21.75 1.5H6.75C6.33579 1.5 6 1.16421 6 0.75Z" fill-rule="evenodd" clip-rule="evenodd" fill="black"/>
+</g>
+</g>
+</svg>

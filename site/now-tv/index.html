@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <base href="/now-tv/">   <!-- also served at /testtv (vercel.json rewrite): relative files always load from /now-tv/ -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TrueVisions NOW TV</title>
+  <link rel="icon" href="/img/tvs-logo.png">
+  <link rel="preload" href="/fonts/BetterTogether-Bold.otf" as="font" type="font/otf" crossorigin>
+  <link rel="stylesheet" href="app.css?v=75">
+</head>
+<body>
+  <div id="stage">
+    <div id="splash"><img class="sp-logo now" src="img/splash-now.svg" width="216" height="72.54" alt="NOW"><img class="sp-logo full" src="img/splash-logo.svg" width="216" height="121.877" alt="TrueVisions NOW"><img class="sp-load" src="img/loader.gif" width="127" height="127" alt=""></div>
+    <div class="hero">
+      <div class="hero-bg"><img alt=""><img alt=""><i class="scrim"></i></div>
+      <div class="hero-info">
+        <div class="hi-title"><span class="hi-cat"></span><h1></h1></div>
+        <div class="hi-chips"></div>
+        <p class="hi-syn"></p>
+      </div>
+    </div>
+    <img class="logo" src="img/now-logo.svg" width="70" height="38.866" alt="TrueVisions NOW">
+    <main id="rows"></main>
+    <nav class="nav" id="nav"></nav>
+    <section id="detail" class="dt">
+      <div class="dt-bg"><img alt=""><i class="scrim"></i></div>
+      <div class="dt-left"></div>
+      <div class="dt-right"></div>
+    </section>
+    <div class="toast" id="toast"></div>
+    <div class="demo">
+      <div class="keys"><kbd data-key="back">Esc</kbd>ย้อนกลับ <kbd data-key="ok">Enter</kbd>เลือก
+        <span class="arrows"><kbd data-key="left">←</kbd><kbd data-key="up">↑</kbd><kbd data-key="down">↓</kbd><kbd data-key="right">→</kbd></span>เลื่อน</div>
+      <div class="keys cases">สิทธิ์ทรู<button data-telco="one">1 สิทธิ์</button><button data-telco="many">2 สิทธิ์</button><button data-telco="none">ไม่มี</button>
+        <span class="cases-sep">ชำระเงิน</span><button data-checkout="list">รายการ</button><button data-checkout="simple">ขั้นตอนเดียว</button><button data-checkout="pin">PIN</button><button data-checkout="approve">ยืนยันบนมือถือ</button><button data-checkout="handoff">สมัครบนมือถือ</button>
+        <span class="cases-sep">ฝั่งซ้าย</span><button data-summary="pass">บัตรแพ็กเกจ</button><button data-summary="title">เรื่องที่เลือก</button>
+        <button data-scan>สแกน QR</button><button data-restart>เริ่มใหม่</button></div>
+    </div>
+  </div>
+  <script src="app.js?v=15"></script>
+  <script src="detail.js?v=8"></script>
+  <script src="subscribe.js?v=68"></script>
+</body>
+</html>

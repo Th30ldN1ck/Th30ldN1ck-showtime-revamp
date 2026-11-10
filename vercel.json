@@ -4,6 +4,8 @@
   "buildCommand": "node scripts/build_pages.mjs",
   "outputDirectory": "site",
   "rewrites": [
+    { "source": "/testtv", "destination": "/now-tv/index.html" },
+    { "source": "/testtv/", "destination": "/now-tv/index.html" },
     { "source": "/((?!api/|data/|img/|fonts/|_vercel/).*)", "destination": "/index.html" }
   ],
   "images": {

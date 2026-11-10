@@ -27,6 +27,7 @@ function item(d, shelfType) {
   if (type === 'tvs-live') {
     out.start = Date.parse(d.start_date) || 0; out.end = Date.parse(d.end_date) || 0;
     out.ch = d.digital_no || ''; out.logo = d.thumb || '';
+    if (!(d.subscription_tiers || []).includes('basic')) out.pay = 1; // needs a package: the TV design's crown
     out.land = tl.landscape_image || tl.poster || d.thumb || '';
   }
   if (d.enable_date) out.start = Date.parse(d.enable_date) || 0;
@@ -38,7 +39,8 @@ function item(d, shelfType) {
 function details(d) {
   const res = (d.resolution || {}).description || '';
   return { syn: (d.synopsis || '').trim(), dur: +d.duration || 0, res: (res.match(/\(([^)]+)\)/) || [, res])[1],
-    rate: d.rate || '', year: d.release_year || '', genres: d.genres || [], series: d.movie_type === 'series' };
+    rate: d.rate || '', year: d.release_year || '', genres: d.genres || [], series: d.movie_type === 'series',
+    aud: (d.audio || []).filter(Boolean), sub: (d.subtitle || []).filter(Boolean) };
 }
 
 module.exports = async (req, res) => {
