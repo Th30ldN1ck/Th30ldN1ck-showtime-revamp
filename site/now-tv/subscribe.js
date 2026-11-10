@@ -86,7 +86,7 @@ let scanLogin = null;   // the open login's "phone scanned the QR" (the demo bar
 function login() {
   let lang = 'th', left = QR_MINUTES * 60, busy = false, scanT = 0, lastCard = 0;
   const ov = overlay(`<div class="login"><div class="lg-bg"><img src="img/login-bg.png" alt=""></div>
-    <img class="lg-logo" src="img/splash-logo.svg" width="158" height="89.15" alt="TrueVisions NOW">
+    <img class="lg-logo" src="img/now-logo.svg?v=2" width="158" height="90" alt="TrueVisions NOW">
     <div class="lg-cards">
       <div class="lg-card lg-acct" data-f><div class="lg-head"><h2 data-c="title"></h2><p data-c="desc"></p></div>
         <div class="lg-box">${BOX_ACCOUNT ? `<div class="lg-id"><img src="img/trueid.png" width="80" height="80" alt=""><div><span>TrueID</span><b>094*******</b></div></div>` : ''}
@@ -144,7 +144,7 @@ const FREE_PLAN = { id: 'free', name: 'NOW Free', price: 0, feats: [] };   // ev
 // ---- shared purchase UI: every buy/claim screen is a pass for what you get (left) and a header, a panel and a CTA row
 // (right); every scan uses the same QR block (tile, title, three steps, waiting + expiry line)
 function passCard(p) {
-  return `<div class="pass ${p.cls}"${p.hex ? ` style="--tier:${p.hex}"` : ''}><div class="pass-top"><i class="pk-ic">${p.ic}</i><img src="img/now-logo.svg" width="70" height="38.866" alt="NOW"></div>
+  return `<div class="pass ${p.cls}"${p.hex ? ` style="--tier:${p.hex}"` : ''}><div class="pass-top"><i class="pk-ic">${p.ic}</i><img src="img/now-logo.svg?v=2" width="70" height="39.87" alt="NOW"></div>
     <b class="pass-name">${p.name}</b>
     <div class="pass-price"><b>${p.price}</b><span>${p.unit}</span></div>
     <ul>${p.feats.map(f => `<li>${check}<span>${keep(f)}</span></li>`).join('')}</ul>
@@ -192,7 +192,7 @@ function welcome() {
       <div class="trow-main"><b>${p.name}</b><div class="chips"><span class="ok">${check}${esc(p.src)}</span></div></div>
       <div class="trow-price"><b>${pl.name}</b><span>ฟรีตามสิทธิ์</span></div></div>`; };
   overlay(`<div class="of-card welcome priv-hi"><div class="wl-art" data-tier="telco"><img class="wl-photo telco" src="img/welcome-telco.jpg" alt="">
-      <div class="wl-hi"><img src="img/splash-logo.svg" width="112" height="63" alt="TrueVisions NOW"><h2>สิทธิ์ของคุณ<br>พร้อมแล้ว</h2>
+      <div class="wl-hi"><img src="img/now-logo.svg?v=2" width="112" height="63.8" alt="TrueVisions NOW"><h2>สิทธิ์ของคุณ<br>พร้อมแล้ว</h2>
         <p class="wl-line">ลูกค้าทรู-ดีแทค ดูฟรี ไม่มีโฆษณา</p></div></div>
       <div class="wl-pick"><h3>เปิดใช้บนทีวีเครื่องนี้ให้แล้ว</h3>${TELCO.map(row).join('')}
         <div class="obtn buy" data-f>เริ่มดูเลย</div><p class="wl-note">จัดการสิทธิ์ได้ในการตั้งค่า</p></div></div>`, 'offer', {
