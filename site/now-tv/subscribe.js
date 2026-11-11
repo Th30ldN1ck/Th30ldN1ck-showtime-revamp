@@ -269,9 +269,23 @@ function titleArt(it) {
 }
 // the poster column (plans page, and checkout's left side in the title summary); `head` goes above the poster, `foot`
 // under the name
+// so the purchase doesn't read as buying one title: a few trending titles lie scattered under it (other paid live
+// events for sport, the Top 10 shelves otherwise), with one line saying there's more
+const STACK = 4;
+function stackFor(it, wide) {
+  const pool = isSport(it) ? LIVE_EVENTS : TRENDING;
+  return pool.filter(x => x.id !== it.id).map(x => wide ? x.land : x.poster).filter(Boolean).slice(0, STACK);
+}
+// the title on top of its pile
+function pile(it) {
+  const { art } = titleArt(it), wide = titleArt(it).wide;
+  return `<div class="pk-stack">${stackFor(it, wide).map((a, n) => `<img class="bk f${n + 1}" src="${a}" alt="">`).join('')}<img class="front" src="${art}" alt=""></div>`;
+}
 function titleSide(it, foot = '', head = '') {
-  const { art, wide, what } = titleArt(it);
-  return `<div class="pk-side${wide ? ' wide' : ''}">${head}<img src="${art}" alt=""><span>สมัครเพื่อดู</span><b>${esc(it.t).split(' ').map(w => `<span class="nw">${w}</span>`).join(' ')}</b>${what ? `<em>${esc(what)}</em>` : ''}${foot}</div>`;
+  const { wide } = titleArt(it), more = stackFor(it, wide).length;
+  return `<div class="pk-side${wide ? ' wide' : ''}">${head}${pile(it)}
+    <span>สมัครเพื่อดู</span><b>${esc(it.t).split(' ').map(w => `<span class="nw">${w}</span>`).join(' ')}</b>
+    ${more ? `<i class="pk-more">${isSport(it) ? 'พร้อมกีฬาสดอีกเพียบทุกสัปดาห์' : 'พร้อมหนังและซีรีส์อีกมากมาย'}</i>` : ''}${foot}</div>`;
 }
 // art for a live title: events have their own; channels have none in the feed, so sport channels borrow a live sport
 // event's and the rest a feed title's (k picks which, so neighbouring channels differ)
@@ -336,7 +350,10 @@ const planChip = plan => `<div class="co-plan" style="--tier:${tierOf(plan)}"><b
 // renewal, said once where the viewer pays (the pass says it in pass mode)
 const RENEW = '<p class="co-renew">ดูได้ทันที · ต่ออายุอัตโนมัติทุกเดือน · ยกเลิกได้ทุกเมื่อ</p>';
 const titleMode = () => SUMMARY === 'title' && BUY_FOR;
-const coSide = plan => titleMode() ? `<div class="co-title">${titleSide(BUY_FOR)}</div>` : planPass(plan);
+// checkout's left side: the title (title mode), or the plan's ticket, laid on the title's pile when bought for one so the
+// story carries on from the plans page
+const coSide = plan => titleMode() ? `<div class="co-title">${titleSide(BUY_FOR)}</div>`
+  : BUY_FOR ? `<div class="co-pile${titleArt(BUY_FOR).wide ? ' wide' : ''}">${pile(BUY_FOR)}${planPass(plan)}</div>` : planPass(plan);
 // the checkout's heading; in title mode the plan and price sit right under it, unboxed (on a TV the top is read first:
 // what you pay, then how)
 const coHead = (plan, title) => `<h2>${title}</h2>${titleMode() ? `<div class="co-plan bare" style="--tier:${tierOf(plan)}"><b>${plan.name}</b><span>${cost(plan)}</span></div>${RENEW}` : ''}`;
@@ -638,5 +655,5 @@ function player(it) {
   show();
 }
 const LOCK_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
-let CHANNELS = [], LIVE_EVENTS = [];   // app.js fills these from the feed: the Live TV shelf, and paid live events' art
+let CHANNELS = [], LIVE_EVENTS = [], TRENDING = [];   // app.js fills these from the feed: the Live TV shelf, and paid live events' art
 endSplash(STARTED);
