@@ -298,7 +298,8 @@ async function start() {
   FEED_ITEMS = feed.flatMap(s => s.items).filter(x => /^tvs-(series|movie)$/.test(x.type));
   // surfing goes by channel number, like a TV remote
   CHANNELS = [...(feed.find(s => s.kind === 'livetv_shelf') || { items: [] }).items].sort((p, q) => (+p.ch || 0) - (+q.ch || 0));
-  LIVE_EVENTS = feed.flatMap(s => s.items).filter(x => x.type === 'tvs-live' && x.start && x.pay && x.land);
+  // paid live events only, never channels: a channel's art is just its logo (it showed up as a title's "picture")
+  LIVE_EVENTS = feed.flatMap(s => s.items).filter(x => x.type === 'tvs-live' && x.start && x.pay && x.land && !CHANNELS.some(c => c.id === x.id));
   // what's trending, for the poster stack behind a title being bought: the Top 10 TV and movie shelves, interleaved
   const tops = feed.filter(s => s.kind === 'ranking_shelf').map(s => s.items);
   TRENDING = Array.from({ length: Math.max(0, ...tops.map(t => t.length)) }, (_, i) => tops.map(t => t[i])).flat().filter(x => x && x.poster);
