@@ -234,7 +234,14 @@ function back() {
 const KEYS = { ArrowLeft: () => move(-1, 0), ArrowRight: () => move(1, 0), ArrowUp: () => move(0, -1), ArrowDown: () => move(0, 1),
   Enter: ok, NumpadEnter: ok, Escape: back, Backspace: back, GoBack: back, BrowserBack: back };
 const CODES = { 10009: back, 461: back };
+// screen captures: ?clean hides the demo bar, H toggles it (and the setting sticks in the URL)
+if (new URLSearchParams(location.search).has('clean')) document.body.classList.add('clean');
 document.addEventListener('keydown', e => {
+  if (e.key === 'h' || e.key === 'H') {
+    const on = document.body.classList.toggle('clean'), u = new URL(location.href);
+    on ? u.searchParams.set('clean', '') : u.searchParams.delete('clean');
+    return history.replaceState(null, '', u.toString().replace('clean=', 'clean'));
+  }
   if (/^\d$/.test(e.key) && typeof OV !== 'undefined' && OV && OV.digit) { e.preventDefault(); return OV.digit(e.key); }   // remote number keys (PIN)
   const fn = KEYS[e.key] || CODES[e.keyCode];
   if (!fn || !ROWS.length || $('#splash')) return;

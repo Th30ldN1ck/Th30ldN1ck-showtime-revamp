@@ -812,12 +812,81 @@ img { display: block; }
 .wide .pk-stack .f2 { transform: translate(44px, -12px) rotate(6deg); }
 .wide .pk-stack .f3 { transform: translate(-18px, -22px) rotate(-2deg); }
 .wide .pk-stack .f4 { transform: translate(30px, 20px) rotate(10deg); }
-/* checkout, card style, bought for a title: the plan's ticket lies on that title's pile */
-.co-pile { flex: none; width: 500px; display: flex; flex-direction: column; align-items: center; margin-top: 40px; }
+/* checkout, card style, bought for a title: titles tucked behind the ticket's top edge like cards in a wallet: an even
+   fan from one point below, the chosen title straight in the middle and raised; the ticket straight and centred covers
+   every poster's lower part by the same amount */
+.co-pile { flex: none; width: 500px; display: flex; flex-direction: column; align-items: center; margin-top: 28px; }
 .co-pile .pk-stack { margin-bottom: 0; }
-/* under the ticket the title loosens into the pile too, so the straight ticket reads as placed on top */
-.co-pile .pk-stack .front { transform: rotate(-3deg) translateX(-14px); }
-.co-pile .pass { margin-top: -110px; z-index: 5; scale: .84; translate: 36px 0; transform-origin: 50% 0;
-  box-shadow: 0 -6px 24px rgba(0, 0, 0, .55), 0 30px 80px rgba(0, 0, 0, .8); }
+.co-pile .pk-stack img.front, .co-pile .pk-stack img.bk { width: 200px; height: 300px; border-radius: 16px; }
+.co-pile.wide .pk-stack img.front, .co-pile.wide .pk-stack img.bk { width: 280px; height: 158px; }
+.co-pile .pk-stack .front { transform: translateY(-26px); box-shadow: 0 0 0 3px var(--tier, #fff), 0 20px 50px rgba(0, 0, 0, .6); }
+.co-pile .pk-stack .bk { transform-origin: 50% 220%; filter: brightness(.55); }
+.co-pile .pk-stack .f1 { z-index: 3; transform: rotate(-9deg); }
+.co-pile .pk-stack .f2 { z-index: 3; transform: rotate(9deg); }
+.co-pile .pk-stack .f3 { z-index: 2; transform: rotate(-18deg); filter: brightness(.38); }
+.co-pile .pk-stack .f4 { z-index: 2; transform: rotate(18deg); filter: brightness(.38); }
+.co-pile.wide .pk-stack .bk { transform-origin: 50% 300%; filter: brightness(.65); }
+.co-pile.wide .pk-stack .f3, .co-pile.wide .pk-stack .f4 { filter: brightness(.5); }
+.co-pile.wide .pk-stack .f1 { transform: rotate(-7deg); }
+.co-pile.wide .pk-stack .f2 { transform: rotate(7deg); }
+.co-pile.wide .pk-stack .f3 { transform: rotate(-14deg); }
+.co-pile.wide .pk-stack .f4 { transform: rotate(14deg); }
+.co-pile .pass { margin-top: -120px; z-index: 5; box-shadow: 0 -12px 30px rgba(0, 0, 0, .6), 0 30px 80px rgba(0, 0, 0, .7); }
 .co-pile.wide .pass { margin-top: -50px; }
 .pk-more { margin-top: 14px; font-style: normal; font-size: 22px; line-height: 32px; font-weight: 700; color: #fff; }
+
+/* screen captures (?clean or H): no demo bar */
+body.clean .demo { display: none !important; }
+
+/* privilege popup: everything the plan gives, under the bundle row */
+.wl-perks { padding: 4px 4px 0; }
+.wl-perks > b { display: block; font-size: 22px; line-height: 32px; font-weight: 500; color: var(--text-2); margin-bottom: 10px; }
+.wl-perks ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 24px; font-size: 24px; line-height: 34px; }
+.wl-perks li { display: flex; gap: 12px; align-items: flex-start; }
+.wl-perks li svg { flex: none; margin-top: 5px; color: var(--tier); }
+.wl-apps { display: flex; gap: 14px; margin-top: 18px; }
+.wl-apps span { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.wl-apps img { width: 52px; height: 52px; border-radius: 12px; object-fit: cover; }
+.wl-apps em { font-style: normal; font-size: 16px; color: var(--text-2); }
+.priv-hi .wl-pick { gap: 22px; }
+.priv-hi .wl-pick > .obtn { flex: none; }
+.priv-hi .wl-pick:has(.trow + .trow) { padding-top: 40px; padding-bottom: 32px; gap: 16px; }
+.priv-hi .wl-pick:has(.trow + .trow) .trow { padding-top: 18px; padding-bottom: 18px; }
+
+/* privilege on first sign-in, as a present: the box drops in and wobbles (0–1 s), the lid pops off with confetti
+   (1 s), the plan's ticket rises out (1.1 s), the copy follows (1.5 s+). Plain CSS, off under reduced motion */
+.gift-ov { background: radial-gradient(60% 70% at 50% 40%, color-mix(in srgb, var(--tier, #fb008d) 26%, rgba(0, 0, 0, .86)), rgba(0, 0, 0, .94)); }
+.gift { --gift: #fb008d; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.gift-stage { position: relative; width: 520px; height: 430px; }
+.gift .burst { left: 50%; top: 250px; }
+.gift-box { position: absolute; left: 50%; bottom: 0; width: 300px; height: 230px; margin-left: -150px; z-index: 2; animation: gb-in .5s cubic-bezier(.2, 1.4, .4, 1) both, gb-wobble .5s .5s ease-in-out both; }
+.gb-body, .gb-lid { position: absolute; left: 0; right: 0; border-radius: 16px; background:
+  linear-gradient(90deg, transparent 43%, #fff 43% 57%, transparent 57%), linear-gradient(135deg, #fb008d, #ff0000); box-shadow: 0 30px 70px rgba(0, 0, 0, .6); }
+.gb-body { bottom: 0; height: 180px; }
+/* the open top shows once the lid is off */
+.gb-body::before { content: ''; position: absolute; left: 10px; right: 10px; top: 8px; height: 26px; border-radius: 50%; background: radial-gradient(#3a0018, #12000a); opacity: 0; animation: rise .3s 1.15s forwards; }
+.gb-lid { top: 0; left: -18px; right: -18px; height: 64px; z-index: 1; animation: gb-lid .7s 1s cubic-bezier(.3, 0, .3, 1) forwards; }
+/* the bow: two loops on the lid */
+.gb-lid::before, .gb-lid::after { content: ''; position: absolute; top: -46px; left: 50%; width: 64px; height: 50px; border: 12px solid #fff; border-radius: 50% 50% 8px 50%; }
+.gb-lid::before { margin-left: -66px; transform: rotate(-18deg); }
+.gb-lid::after { margin-left: 2px; transform: scaleX(-1) rotate(-18deg); }
+/* the ticket inside, rising out once the lid is off */
+.gift-card { position: absolute; left: 50%; bottom: 60px; width: 300px; margin-left: -150px; padding: 26px 30px 24px; border-radius: 22px; z-index: 1;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--tier) 40%, #18181c), #111114 70%); border: 2px solid color-mix(in srgb, var(--tier) 70%, transparent);
+  box-shadow: 0 0 80px color-mix(in srgb, var(--tier) 45%, transparent); display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: left;
+  opacity: 0; animation: gc-up .8s 1.1s cubic-bezier(.2, 1.3, .4, 1) forwards; }
+.gift-card b { font-size: 52px; line-height: 62px; font-weight: 700; margin-top: 10px; }
+.gift-card span { font-size: 22px; color: var(--chip-text); }
+.gift-kicker { margin: 30px 0 0; font-size: 26px; line-height: 38px; color: var(--chip-text); }
+.gift h2 { margin: 4px 0 6px; font-size: 64px; line-height: 84px; font-weight: 700; letter-spacing: 0; }
+.gift-src { margin: 0; font-size: 22px; line-height: 32px; color: var(--text-2); }
+.gift .obtn { margin-top: 34px; min-width: 420px; height: 84px; font-size: 30px; }
+@keyframes gb-in { from { transform: translateY(-120px) scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes gb-wobble { 0%, 100% { rotate: 0deg; } 25% { rotate: -5deg; } 50% { rotate: 5deg; } 75% { rotate: -3deg; } }
+@keyframes gb-lid { 40% { transform: translateY(-120px) rotate(-14deg); opacity: 1; } 100% { transform: translate(-260px, 260px) rotate(-70deg); opacity: 0; } }
+@keyframes gc-up { from { transform: translateY(120px) scale(.8); opacity: 0; } to { transform: translateY(-150px) rotate(-3deg); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .gift-box, .gift .rise { animation: none; }
+  .gb-lid { animation: none; opacity: 0; }
+  .gift-card { animation: none; opacity: 1; transform: translateY(-150px) rotate(-3deg); }
+}

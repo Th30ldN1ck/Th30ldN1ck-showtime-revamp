@@ -188,18 +188,21 @@ const kindOf = pl => pl.gold ? 'max' : pl.sport ? 'sport' : 'ent';
 function welcome() {
   if (!TELCO.length) { SUB = FREE_PLAN; return toast('คุณกำลังดูแบบฟรี มีโฆษณาคั่น · สมัครแพ็กเกจได้ทุกเมื่อ'); }
   SUB = TELCO.map(packPlan).sort((p, q) => q.price - p.price)[0];
-  const row = p => { const pl = packPlan(p), k = kindOf(pl);
-    return `<div class="trow on" style="--tier:${tierOf(pl)}">
-      <div class="trow-main"><b>${p.name}</b><div class="chips"><span class="ok">${check}${esc(p.src)}</span></div></div>
-      <div class="trow-price"><b>${pl.name}</b><span>ฟรีตามสิทธิ์</span></div></div>`; };
-  overlay(`<div class="of-card welcome priv-hi"><div class="wl-art" data-tier="telco"><img class="wl-photo telco" src="img/welcome-telco.jpg" alt="">
-      <div class="wl-hi"><img src="img/now-logo.svg?v=2" width="112" height="63.8" alt="TrueVisions NOW"><h2>สิทธิ์ของคุณ<br>พร้อมแล้ว</h2>
-        <p class="wl-line">ลูกค้าทรู-ดีแทค ดูฟรี ไม่มีโฆษณา</p></div></div>
-      <div class="wl-pick"><h3>เปิดใช้บนทีวีเครื่องนี้ให้แล้ว</h3>${TELCO.map(row).join('')}
-        <div class="obtn buy" data-f>เริ่มดูเลย</div><p class="wl-note">จัดการสิทธิ์ได้ในการตั้งค่า</p></div></div>`, 'offer', {
+  // a present on first sign-in: the box wobbles, the lid pops with confetti, the plan's ticket rises out of it, then one
+  // line on where it's from and one button. Several bundles: the widest plan is the gift, the rest a small "+ n" line
+  const plan = SUB, src = TELCO.find(p => packPlan(p) === plan) || TELCO[0], more = TELCO.length - 1, tier = tierOf(plan);
+  const ov = overlay(`<div class="gift" style="--tier:${tier}">
+      <div class="gift-stage"><div class="burst">${confetti(tier, 1.05)}${confetti(tier, 1.9, 36)}</div>
+        <div class="gift-card"><img src="img/now-logo.svg?v=2" width="88" height="50" alt="TrueVisions NOW"><b>${plan.name}</b><span>ดูได้ไม่มีโฆษณา</span></div>
+        <div class="gift-box"><i class="gb-lid"></i><i class="gb-body"></i></div></div>
+      <p class="gift-kicker rise" style="--d:1.5s">ของขวัญจากทรูสำหรับคุณ</p>
+      <h2 class="rise" style="--d:1.6s">ดู ${plan.name} ฟรี</h2>
+      <p class="gift-src rise" style="--d:1.7s">${esc(src.name)}${more ? ` · และอีก ${more} สิทธิ์` : ''}</p>
+      <div class="obtn buy rise" style="--d:1.85s" data-f>เริ่มดูเลย</div></div>`, 'offer gift-ov', {
     ok() { this.close(); },
     back() { this.close(); },
   });
+  return ov;
 }
 // ---- package picker: cards carry a tier colour and icon (ENT white, ENT299 magenta, SPORTS green, MAX gold); the focused
 // plan's tier colour lights the page
@@ -353,7 +356,7 @@ const titleMode = () => SUMMARY === 'title' && BUY_FOR;
 // checkout's left side: the title (title mode), or the plan's ticket, laid on the title's pile when bought for one so the
 // story carries on from the plans page
 const coSide = plan => titleMode() ? `<div class="co-title">${titleSide(BUY_FOR)}</div>`
-  : BUY_FOR ? `<div class="co-pile${titleArt(BUY_FOR).wide ? ' wide' : ''}">${pile(BUY_FOR)}${planPass(plan)}</div>` : planPass(plan);
+  : BUY_FOR ? `<div class="co-pile${titleArt(BUY_FOR).wide ? ' wide' : ''}" style="--tier:${tierOf(plan)}">${pile(BUY_FOR)}${planPass(plan)}</div>` : planPass(plan);
 // the checkout's heading; in title mode the plan and price sit right under it, unboxed (on a TV the top is read first:
 // what you pay, then how)
 const coHead = (plan, title) => `<h2>${title}</h2>${titleMode() ? `<div class="co-plan bare" style="--tier:${tierOf(plan)}"><b>${plan.name}</b><span>${cost(plan)}</span></div>${RENEW}` : ''}`;
