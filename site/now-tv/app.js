@@ -259,6 +259,8 @@ document.addEventListener('click', e => {
   if (ck) return setCheckout(ck.dataset.checkout);
   const sm = e.target.closest('[data-summary]');
   if (sm) return setSummary(sm.dataset.summary);
+  const bd = e.target.closest('[data-bind]');
+  if (bd) return setBind(bd.dataset.bind);
   if (e.target.closest('[data-restart]')) return location.reload();
   if (e.target.closest('[data-scan]')) return scanLogin ? scanLogin() : toast('ไม่ได้อยู่ที่หน้าเข้าสู่ระบบ');
   if (e.target.closest('.demo')) return;

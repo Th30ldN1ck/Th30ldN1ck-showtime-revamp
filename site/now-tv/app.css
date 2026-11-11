@@ -864,7 +864,7 @@ body.clean .demo { display: none !important; }
   linear-gradient(90deg, transparent 43%, #fff 43% 57%, transparent 57%), linear-gradient(135deg, #fb008d, #ff0000); box-shadow: 0 30px 70px rgba(0, 0, 0, .6); }
 .gb-body { bottom: 0; height: 180px; }
 /* the open top shows once the lid is off */
-.gb-body::before { content: ''; position: absolute; left: 10px; right: 10px; top: 8px; height: 26px; border-radius: 50%; background: radial-gradient(#3a0018, #12000a); opacity: 0; animation: rise .3s 1.15s forwards; }
+.gb-body::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 18px; border-radius: 16px 16px 0 0; background: linear-gradient(rgba(60, 0, 25, .55), rgba(60, 0, 25, 0)); opacity: 0; animation: rise .3s 1.15s forwards; }
 .gb-lid { top: 0; left: -18px; right: -18px; height: 64px; z-index: 1; animation: gb-lid .7s 1s cubic-bezier(.3, 0, .3, 1) forwards; }
 /* the bow: two loops on the lid */
 .gb-lid::before, .gb-lid::after { content: ''; position: absolute; top: -46px; left: 50%; width: 64px; height: 50px; border: 12px solid #fff; border-radius: 50% 50% 8px 50%; }
@@ -884,9 +884,109 @@ body.clean .demo { display: none !important; }
 @keyframes gb-in { from { transform: translateY(-120px) scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes gb-wobble { 0%, 100% { rotate: 0deg; } 25% { rotate: -5deg; } 50% { rotate: 5deg; } 75% { rotate: -3deg; } }
 @keyframes gb-lid { 40% { transform: translateY(-120px) rotate(-14deg); opacity: 1; } 100% { transform: translate(-260px, 260px) rotate(-70deg); opacity: 0; } }
-@keyframes gc-up { from { transform: translateY(120px) scale(.8); opacity: 0; } to { transform: translateY(-150px) rotate(-3deg); opacity: 1; } }
+@keyframes gc-up { from { transform: translateY(120px) scale(.8); opacity: 0; } to { transform: translateY(-112px) rotate(-3deg); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
   .gift-box, .gift .rise { animation: none; }
   .gb-lid { animation: none; opacity: 0; }
-  .gift-card { animation: none; opacity: 1; transform: translateY(-150px) rotate(-3deg); }
+  .gift-card { animation: none; opacity: 1; transform: translateY(-112px) rotate(-3deg); }
 }
+
+/* typed forms in checkout (numForm): fields left, keypad right, one card */
+.nf { width: 1440px; min-height: 640px; padding: 64px 72px; border-radius: 28px; background: #141417; border: 1px solid #2c2c30; display: flex; gap: 80px; align-items: center; }
+.nf-left { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+.nf-head { display: flex; align-items: center; gap: 20px; }
+.nf-head img { width: 64px; height: 64px; border-radius: 14px; background: #fff; object-fit: contain; }
+.nf-head h2 { margin: 0; font-size: 44px; line-height: 62px; font-weight: 700; letter-spacing: 0; }
+.nf .co-plan { align-self: flex-start; margin: 4px 0 0; min-width: 0; }
+.nf-sub { margin: 0; font-size: 22px; line-height: 32px; color: var(--chip-text); }
+.nf-fields { display: flex; flex-direction: column; gap: 22px; margin-top: 18px; }
+.nf-field { padding: 18px 24px 14px; border-radius: 16px; background: rgba(255, 255, 255, .05); border: 2px solid transparent; transition: border-color .15s, background .15s; }
+.nf-field.at { border-color: #fff; background: rgba(255, 255, 255, .09); }
+.nf-field.ok:not(.at) .nf-val i { color: #fff; }
+.nf-field.bad { border-color: #ff4b6e; }
+.nf-label { display: flex; align-items: center; gap: 12px; font-size: 20px; line-height: 28px; color: var(--chip-text); }
+.nf-tag { font-style: normal; font-weight: 700; color: #fff; }
+.nf-tag:empty { display: none; }
+.nf-val { display: flex; align-items: center; gap: 22px; margin: 8px 0 4px; min-height: 52px; }
+.nf-g { display: flex; gap: 6px; }
+.nf-val i { width: 30px; height: 48px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 6px; font-style: normal; font-size: 36px; line-height: 40px; font-weight: 700;
+  border-bottom: 3px solid #555; color: #ddd; font-variant-numeric: tabular-nums; }
+.nf-val i.on { border-color: #888; }
+.nf-val i.cur { border-color: #fff; animation: caret 1s steps(1) infinite; }
+.nf-field.ok .nf-val i { border-color: #2bd576; }
+.nf-sep { font-size: 34px; color: #888; margin: 0 -8px; }
+.nf-err { display: block; font-size: 18px; line-height: 26px; color: #888; min-height: 26px; }
+.nf-field.bad .nf-err { color: #ff6b85; }
+.nf-note { margin: 10px 0 0; font-size: 18px; line-height: 28px; color: #8a8a8a; }
+.nf .pad { flex: none; }
+.nf .pk-key.go { font-size: 22px; padding: 0 8px; text-align: center; line-height: 1.2; }
+.nf.busy .pad { opacity: .6; }
+.nf .pk-key .spin { position: static; margin: 0; width: 30px; height: 30px; border-width: 4px; border-top-color: #fff; }
+@keyframes caret { 50% { border-color: #555; } }
+/* card row in checkout: under its QR, the remote way */
+.qr-or { display: flex; align-items: center; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid #333; font-size: 22px; line-height: 32px; color: #fff; white-space: nowrap; }
+.qr-or .k { padding: 0 10px; border-radius: 6px; background: #fff; color: #000; font-weight: 700; font-size: 18px; }
+/* five methods: the open QR row stays on screen */
+.plist:has(.prow:nth-child(5)) .prow .qrb .qrp-code { width: 270px; height: 270px; padding: 18px; }
+.plist:has(.prow:nth-child(5)) .prow:not(.focus) .prow-head { height: 64px; }
+.plist:has(.prow:nth-child(5)) { gap: 10px; }
+
+/* the demo bar with six switches still on one line */
+.demo { left: 16px; right: 16px; gap: 6px; }
+.cases button { padding: 2px 7px; }
+.cases-sep { margin-left: 8px; }
+.cases button[data-restart] { margin-left: 4px; }
+
+/* picking a field with the remote: it lights like any focused control */
+.nf-field.pick { border-color: #fff; background: #fff; }
+.nf-field.pick .nf-label, .nf-field.pick .nf-err, .nf-field.pick .nf-val i { color: #000; }
+.nf-field.pick .nf-val i { border-color: #999; }
+.nf-field { cursor: pointer; }
+.nf-right { flex: none; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.nf-hint { font-size: 18px; color: #8a8a8a; }
+
+/* payment logos: every method on the same white chip, its mark centred (wordmarks fill it, round marks sit in it) */
+.prow-head .plogo, .bill-head .plogo { flex: none; width: 128px; height: 52px; display: flex; flex-direction: row; align-items: center; justify-content: center;
+  padding: 0 14px; border-radius: 12px; background: #fff; }
+.prow-head .plogo img, .prow.main .prow-head .plogo img { width: 46px; height: 46px; border-radius: 50%; background: none; object-fit: contain; }
+.prow-head .plogo.word img, .prow.main .prow-head .plogo.word img, .bill-head .plogo.word img { width: 100%; height: 30px; border-radius: 0; }
+.bill-head .plogo { width: 150px; height: 56px; }
+.bill-head > div { flex: 1; }
+.bill-head .plogo img { width: 100%; height: 34px; border-radius: 0; }
+.nf-head img[src*="pay-true"] { width: auto; height: 64px; padding: 14px 16px; aspect-ratio: auto; object-fit: contain; }
+
+/* the focused row's drop shadow stays under its neighbours (it was greying the next row's logo chip) */
+.plist .prow { position: relative; z-index: 1; }
+.plist .prow.focus { z-index: 0; }
+
+/* step marker and recap for forms split one field per screen */
+.nf-step { display: flex; align-items: center; gap: 14px; font-size: 20px; line-height: 28px; color: var(--chip-text); }
+.nf-step i { display: flex; gap: 6px; }
+.nf-step b { width: 34px; height: 6px; border-radius: 3px; background: #3a3a40; }
+.nf-step b.on { background: #fff; }
+.nf-recap { display: flex; align-items: center; gap: 10px; margin: 4px 0 0; font-size: 22px; line-height: 32px; color: var(--chip-text); }
+.nf-recap svg { width: 22px; height: 22px; color: #2bd576; flex: none; }
+.nf-recap b { color: #fff; font-weight: 700; letter-spacing: 1px; font-variant-numeric: tabular-nums; }
+.nf-fields:has(.nf-field:only-child) .nf-val i { width: 38px; height: 58px; font-size: 44px; }
+
+/* back a step: a full-width button under the keypad (↓ from the bottom row) */
+.nf-prev { align-self: stretch; height: 64px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 500;
+  background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .18); color: var(--chip-text); cursor: pointer; }
+.nf-prev.focus { background: #fff; color: #000; border-color: #fff; }
+
+/* field icons: where the number comes from, in a tile at the field's left */
+.nf-field.has-ic { position: relative; padding-left: 112px; }
+.nf-ic { position: absolute; left: 22px; top: 50%; width: 68px; height: 68px; margin-top: -34px; border-radius: 16px; background: rgba(255, 255, 255, .08);
+  display: flex; align-items: center; justify-content: center; color: var(--chip-text); }
+.nf-ic svg { width: 40px; height: 40px; }
+.nf-field.at .nf-ic { background: rgba(255, 255, 255, .16); color: #fff; }
+.nf-field.pick .nf-ic { background: rgba(0, 0, 0, .08); color: #000; }
+.nf-field.has-ic .nf-val { gap: 16px; }
+
+/* digit slots share the field's width: each up to its size, shrinking together so a long number (card 16, ID 13) never
+   runs past the field's edge, empty or filled */
+.nf .nf-val { min-width: 0; }
+.nf .nf-val .nf-g { flex: 0 1 auto; min-width: 0; }
+.nf .nf-val i { flex: 0 1 38px; width: auto; min-width: 0; }
+.nf .nf-field.long .nf-val { gap: 14px; }
+.nf .nf-field.long .nf-val i { font-size: 36px; }

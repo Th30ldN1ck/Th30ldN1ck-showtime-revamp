@@ -312,7 +312,7 @@ const PAY_ALT = [
     steps: [['scan', 'สแกนด้วยแอป TrueMoney'], ['pay', 'ยืนยันบนมือถือ'], ['watch', 'ดูบนทีวีได้ทันที']] },
   { id: 'promptpay', sub: 'ทุกธนาคาร', t: 'พร้อมเพย์', logo: 'img/pay-promptpay.svg', seed: 2, done: 'พร้อมเพย์', hint: 'สแกน QR บนจอด้วยแอปธนาคาร',
     steps: [['scan', 'สแกนด้วยแอปธนาคาร'], ['pay', 'ยืนยันในแอป'], ['watch', 'ดูบนทีวีได้ทันที']] },
-  { id: 'card', sub: 'กรอกบนมือถือ', t: 'บัตรเครดิต / เดบิต', logo: 'img/pay-card.svg', seed: 3, done: 'บัตรเครดิต/เดบิต', hint: 'สแกน QR เพื่อกรอกบัตรบนมือถือ',
+  { id: 'card', sub: 'สแกน QR หรือกรอกบนทีวี', t: 'บัตรเครดิต / เดบิต', logo: 'img/pay-card.svg', seed: 3, done: 'บัตรเครดิต/เดบิต', hint: 'สแกน QR เพื่อกรอกบัตรบนมือถือ',
     steps: [['scan', 'สแกนเพื่อเปิดหน้าชำระเงิน'], ['pay', 'กรอกบัตรและ OTP'], ['watch', 'ดูบนทีวีได้ทันที']] },
 ];
 // two checkout styles for user tests (demo bar ชำระเงิน, ?checkout=list|simple):
@@ -332,7 +332,20 @@ function setCheckout(v) {
 }
 document.querySelectorAll('[data-checkout]').forEach(b => b.classList.toggle('on', b.dataset.checkout === CHECKOUT_STYLE));
 
-const BILL_METHOD = { id: 'trueonline', logo: '/img/cp/true.png', t: 'บิลทรูออนไลน์', sub: `บัญชี ${TRUEONLINE.account}`, tag: 'แนะนำ' };
+// TrueOnline bill: linked to the TrueID account, or not yet (?bind=no, demo bar บิลทรู): then OK first asks for the
+// circuit number and Thai ID (`bindForm`) and the row shows the linked account after
+let BOUND = new URLSearchParams(location.search).get('bind') !== 'no';
+function setBind(v) {
+  BOUND = v === 'yes';
+  const u = new URL(location.href); u.searchParams.set('bind', v); history.replaceState(null, '', u);
+  document.querySelectorAll('[data-bind]').forEach(b => b.classList.toggle('on', b.dataset.bind === v));
+  toast(`เคสทดสอบ: บิลทรูออนไลน์${BOUND ? 'เชื่อมบัญชีแล้ว' : 'ยังไม่เชื่อมบัญชี'}`);
+}
+document.querySelectorAll('[data-bind]').forEach(b => b.classList.toggle('on', b.dataset.bind === (BOUND ? 'yes' : 'no')));
+const billMethod = () => ({ id: 'trueonline', logo: 'img/pay-trueonline.svg', mark: 1, t: 'บิลทรูออนไลน์', sub: BOUND ? `บัญชี ${TRUEONLINE.account}` : 'ยังไม่ได้เชื่อมบัญชี', tag: 'แนะนำ' });
+// TrueMove H: direct carrier billing, the way app stores charge Thai mobile numbers: the number, then an SMS OTP that
+// also confirms the charge; postpaid lines pay on the next bill, prepaid from the balance (`truemoveForm`)
+const TRUEMOVE = { id: 'truemove', logo: 'img/pay-truemoveh.svg', mark: 1, t: 'บิลทรูมูฟ เอช', sub: 'รายเดือนหรือเติมเงิน · ยืนยันด้วย OTP' };
 const planPass = plan => { const k = kindOf(plan);
   return passCard({ cls: `${k}${plan.rec && !plan.gold ? ' rec' : ''}`, hex: plan.hex, name: plan.name, price: thb(plan.price), unit: '/เดือน',
     feats: featsOf(plan), foot: 'ต่ออายุทุกเดือน · ยกเลิกได้ทุกเมื่อ' }); };
@@ -364,19 +377,21 @@ const termsToast = () => toast('ต่ออายุอัตโนมัติ
 // fills `el` with what a method does (the bill + confirm bar, or its QR) and starts the QR's wait; returns a stop function
 function payBody(el, plan, id, finish) {
   const alt = PAY_ALT.find(p => p.id === id);
+  if (id === 'truemove') { el.innerHTML = '<div class="pgo">กด OK เพื่อใส่เบอร์ · รับรหัส OTP ทาง SMS</div>'; return () => {}; }
   if (!alt) {
-    el.innerHTML = `<div class="pgo">กด OK เพื่อยืนยัน · รวมในบิลรอบถัดไป</div>`;
+    el.innerHTML = `<div class="pgo">${BOUND ? 'กด OK เพื่อยืนยัน · รวมในบิลรอบถัดไป' : 'กด OK เพื่อเชื่อมบัญชีทรูออนไลน์'}</div>`;
     return () => {};
   }
   el.innerHTML = qrBlock({ seed: plan.price + alt.seed, logo: alt.logo, title: `สแกนจ่าย ${thb(plan.price)}`, steps: alt.steps });
+  if (id === 'card') el.querySelector('.qrb-info').insertAdjacentHTML('beforeend', '<span class="qr-or">หรือกด <span class="k">OK</span> เพื่อกรอกบัตรด้วยรีโมท</span>');
   const timer = qrWait(el), paid = setTimeout(() => finish(alt.id), QR_PAID_MS);
   return () => { clearInterval(timer); clearTimeout(paid); };
 }
-const methodHead = m => `<div class="prow-head"><img src="${m.logo}" alt=""><span><b>${m.t}</b>${m.sub ? `<em>${m.sub}</em>` : ''}</span>${m.tag ? `<i class="prow-tag">${m.tag}</i>` : ''}</div>`;
+const methodHead = m => `<div class="prow-head"><span class="plogo mark${m.mark ? ' word' : ''}"><img src="${m.logo}" alt=""></span><span><b>${m.t}</b>${m.sub ? `<em>${m.sub}</em>` : ''}</span>${m.tag ? `<i class="prow-tag">${m.tag}</i>` : ''}</div>`;
 function checkout(plan) {
   if (CHECKOUT_STYLE === 'handoff') return checkoutHandoff(plan);
   if (CHECKOUT_STYLE !== 'list') return checkoutSimple(plan, CHECKOUT_STYLE === 'pin' ? pinConfirm : CHECKOUT_STYLE === 'approve' ? phoneApprove : null);
-  return checkoutList(plan, [BILL_METHOD, ...PAY_ALT]);
+  return checkoutList(plan, [billMethod(), TRUEMOVE, ...PAY_ALT]);
 }
 
 // list: one column of payment rows; the focused row opens in place, so the eye stays on the focus
@@ -389,12 +404,17 @@ function checkoutList(plan, methods, title = 'เลือกวิธีชำ�
     ok() {
       const x = this.items()[this.i];
       if (x.dataset.terms) return termsToast();
-      if (x.dataset.pay === 'trueonline') return finish('trueonline');
+      if (x.dataset.pay === 'trueonline') return BOUND ? finish('trueonline') : bindForm(plan, relink);
+      if (x.dataset.pay === 'truemove') return truemoveForm(plan);
+      if (x.dataset.pay === 'card') return cardForm(plan);
       toast(PAY_ALT.find(p => p.id === x.dataset.pay).hint);
     },
     back() { stop(); this.close(); },
   });
   const finish = how => { stop(); if (OV === ov) { ov.close(); while (OV && OV.el.classList.contains('checkout')) OV.close(); done(plan, how); } };
+  // linked: the bill row shows the account and its confirm bar
+  const relink = () => { const row = ov.el.querySelector('[data-pay="trueonline"]'); if (!row) return;
+    row.querySelector('.prow-head').outerHTML = methodHead(billMethod()); pay = null; ov.onFocus(ov.i); };
   ov.onFocus = i => {
     const p = ov.items()[i].dataset.pay || null;
     if (p === pay) return;
@@ -409,13 +429,16 @@ function checkoutList(plan, methods, title = 'เลือกวิธีชำ�
 function checkoutSimple(plan, confirm) {
   const ov = overlay(`<div class="ov-page co co-simple">${coSide(plan)}
     <div class="co-main">${coHead(plan, 'ยืนยันการสมัคร')}
-      <div class="sbill"><div class="bill-head"><img src="/img/cp/true.png" alt=""><div><b>รวมในบิลทรูออนไลน์รอบถัดไป</b><span>บัญชี ${TRUEONLINE.account}</span></div></div></div>
+      <div class="sbill"><div class="bill-head"><span class="plogo mark"><img src="img/pay-trueonline.svg" alt="TrueOnline"></span><div><b>รวมในบิลทรูออนไลน์รอบถัดไป</b><span>${BOUND ? `บัญชี ${TRUEONLINE.account}` : 'ยังไม่ได้เชื่อมบัญชี · กด ยืนยัน เพื่อเชื่อม'}</span></div></div></div>
       <div class="obtn buy sgo" data-f>ยืนยัน</div>
       <div class="obtn alt sgo" data-f>ชำระด้วยวิธีอื่น</div>
       <a class="co-terms" data-f data-terms>อ่านเงื่อนไขการใช้บริการ</a></div></div>`, 'checkout', {
     ok() {
-      if (this.i === 0) { if (confirm) return confirm(plan); this.close(); return done(plan, 'trueonline'); }
-      if (this.i === 1) return checkoutList(plan, PAY_ALT, 'ชำระด้วยวิธีอื่น');
+      if (this.i === 0) {
+        if (!BOUND) return bindForm(plan, () => { ov.el.querySelector('.bill-head span').textContent = `บัญชี ${TRUEONLINE.account}`; });
+        if (confirm) return confirm(plan); this.close(); return done(plan, 'trueonline');
+      }
+      if (this.i === 1) return checkoutList(plan, [TRUEMOVE, ...PAY_ALT], 'ชำระด้วยวิธีอื่น');
       termsToast();
     },
     back() { this.close(); },
@@ -481,6 +504,173 @@ function checkoutHandoff(plan) {
   const t = setTimeout(() => { clearInterval(w); if (OV === ov) { ov.close(); done(plan, 'trueonline'); } }, QR_PAID_MS);
 }
 
+// ---- typing numbers with the remote: one screen for every form in checkout. Fields on the left (each a row of digit
+// slots in its own groups), a 3×4 keypad on the right; the remote's number keys type straight in. A full field moves on
+// to the next; ⌫ on an empty field goes back one. The last key reads ถัดไป until every field is complete, then the
+// form's own CTA. `done(values, ov)` takes over from there (busy state, next step)
+// a picture of where each number comes from, beside its field
+const sv = d => `<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const FIELD_IC = {
+  router: sv('<rect x="4" y="17" width="24" height="9" rx="2"/><path d="M9 21.5h.01M13 21.5h.01M20 21.5h4M11 17l-2-7M21 17l2-7"/><path d="M12 7.5a6 6 0 0 1 8 0M14.5 10.5a2.4 2.4 0 0 1 3 0"/>'),
+  idcard: sv('<rect x="3" y="7" width="26" height="18" rx="3"/><circle cx="11" cy="15" r="3"/><path d="M6.5 21.5c.8-2 2.5-3 4.5-3s3.7 1 4.5 3M19 13h6M19 17h6M19 21h4"/>'),
+  phone: sv('<rect x="9" y="3" width="14" height="26" rx="3"/><path d="M14 25h4"/>'),
+  card: sv('<rect x="3" y="7" width="26" height="18" rx="3"/><path d="M3 12.5h26M7 20h6"/>'),
+  expiry: sv('<rect x="4" y="6" width="24" height="22" rx="3"/><path d="M4 12h24M10 3v5M22 3v5M10 17h3M10 22h3M17 17h5"/>'),
+  cvv: sv('<rect x="3" y="7" width="26" height="18" rx="3"/><path d="M3 11.5h26"/><rect x="16" y="15.5" width="9" height="5" rx="1.5"/><path d="M18.2 18h.01M20.5 18h.01M22.8 18h.01"/>'),
+  sms: sv('<path d="M5 7h22a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H13l-6 5v-5H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"/><path d="M10 15h.01M16 15h.01M22 15h.01"/>'),
+};
+function numForm({ logo = '/img/cp/true.png', title, plan, sub = '', fields, cta = 'ยืนยัน', note = '', done: onDone, step, recap = [], quick, back: onBack }) {
+  const vals = fields.map(f => f.value || ''), keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'del', '0', 'ok'];
+  let at = Math.max(0, vals.findIndex((v, i) => v.length < fields[i].len)), busy = false;
+  const ov = overlay(`<div class="nf"><div class="nf-left">${step ? `<span class="nf-step">ขั้นตอน ${step[0]} จาก ${step[1]}<i>${Array.from({ length: step[1] }, (_, j) => `<b class="${j < step[0] ? 'on' : ''}"></b>`).join('')}</i></span>` : ''}
+      <div class="nf-head"><img src="${logo}" alt=""><h2>${title}</h2></div>
+      ${plan ? planChip(plan) : ''}${sub ? `<p class="nf-sub">${sub}</p>` : ''}
+      ${recap.map(([l, v]) => `<p class="nf-recap">${check}<span>${l}</span><b>${v}</b></p>`).join('')}
+      <div class="nf-fields">${fields.map((f, i) => `<div class="nf-field${f.ic ? ' has-ic' : ''}${f.len > 13 ? ' long' : ''}" data-n="${i}">${f.ic ? `<i class="nf-ic">${FIELD_IC[f.ic]}</i>` : ''}<span class="nf-label">${f.label}<em class="nf-tag"></em></span><div class="nf-val"></div>
+        <span class="nf-err">${f.hint || ''}</span></div>`).join('')}</div>${note ? `<p class="nf-note">${note}</p>` : ''}</div>
+    <div class="nf-right"><div class="pad">${keys.map(k => `<div class="pk-key${k === 'ok' ? ' go' : ''}" data-f data-k="${k}">${k === 'del' ? '⌫' : k === 'ok' ? '' : k}</div>`).join('')}</div>
+      ${onBack ? `<div class="nf-prev" data-f>‹ ย้อนกลับไปขั้นตอนที่ ${step[0] - 1}</div>` : ''}
+      ${fields.length > 1 ? '<span class="nf-hint">กด ← เพื่อเลือกช่องอื่น</span>' : ''}</div></div>`, 'confirm nfov', {
+    ok() { if (inFields) return toKeys(); if (this.i === keys.length) return onBack(vals.slice(), ov); press(keys[this.i]); },
+    back() { if (inFields) return toKeys(); if (onBack) return onBack(vals.slice(), ov); this.close(); },
+  });
+  // ← from the keypad's left column steps into the fields: ↑/↓ picks one, → or OK goes back to the keypad to type in it.
+  // A click on a field picks it too
+  let inFields = false, lastKey = 4;
+  const toFields = () => { inFields = true; lastKey = ov.i; ov.i = -1; ov.paint(); draw(); };
+  const toKeys = () => { inFields = false; ov.i = lastKey; ov.paint(); draw(); };
+  ov.move = (dx, dy) => {
+    if (inFields) { if (dx > 0) return toKeys(); if (dy) { at = Math.max(0, Math.min(fields.length - 1, at + dy)); draw(); } return; }
+    // the step-back button sits under the keypad: ↓ from the bottom row reaches it, ↑ returns to 0
+    if (ov.i === keys.length) { if (dy < 0) { ov.i = 10; ov.paint(); } return; }
+    if (dx < 0 && ov.i % 3 === 0 && fields.length > 1) return toFields();
+    const n = ov.i + dx + dy * 3;
+    if (n >= keys.length && dy > 0 && onBack) { ov.i = keys.length; return ov.paint(); }
+    if (n >= 0 && n < keys.length) { ov.i = n; ov.paint(); }
+  };
+  ov.el.addEventListener('click', e => { const f = e.target.closest('.nf-field'); if (!f || busy) return; at = +f.dataset.n; if (inFields) toKeys(); else draw(); });
+  ov.digit = d => press(d);
+  const complete = () => fields.every((f, i) => vals[i].length === f.len);
+  const draw = () => {
+    fields.forEach((f, i) => {
+      const el = ov.el.querySelector(`.nf-field[data-n="${i}"]`), v = vals[i];
+      let k = 0;
+      el.querySelector('.nf-val').innerHTML = f.groups.map((g, gi) => `${gi && f.sep ? `<b class="nf-sep">${f.sep}</b>` : ''}<span class="nf-g">${
+        Array.from({ length: g }, () => { const c = v[k], cls = k === v.length && i === at ? ' cur' : ''; k++; return `<i class="${c ? 'on' : ''}${cls}">${c ? (f.mask ? '•' : c) : ''}</i>`; }).join('')}</span>`).join('');
+      el.classList.toggle('at', i === at);
+      el.classList.toggle('pick', inFields && i === at);
+      el.classList.toggle('ok', v.length === f.len && !(f.check && f.check(v)));
+      el.querySelector('.nf-tag').textContent = f.tag ? f.tag(v) : '';
+    });
+    ov.el.querySelector('[data-k="ok"]').textContent = complete() ? cta : 'ถัดไป';
+  };
+  const err = (i, m) => { const e = ov.el.querySelector(`.nf-field[data-n="${i}"]`); e.classList.add('bad'); e.querySelector('.nf-err').textContent = m;
+    setTimeout(() => { e.classList.remove('bad'); e.querySelector('.nf-err').textContent = fields[i].hint || ''; }, 2200); };
+  const press = k => {
+    if (busy) return;
+    const f = fields[at];
+    if (k === 'del') { if (!vals[at] && at) at--; vals[at] = vals[at].slice(0, -1); }
+    else if (k === 'ok') {
+      if (vals[at].length < f.len) return err(at, `กรอกให้ครบ ${f.len} หลัก`);
+      const bad = fields.map((g, i) => g.check && vals[i].length === g.len && g.check(vals[i])).findIndex(Boolean);
+      if (bad >= 0) { at = bad; draw(); return err(bad, fields[bad].check(vals[bad])); }
+      if (!complete()) { at = vals.findIndex((v, i) => v.length < fields[i].len); return draw(); }
+      if (quick) return onDone(vals, ov, () => {});
+      busy = true; ov.el.classList.add('busy'); ov.el.querySelector('[data-k="ok"]').innerHTML = '<i class="spin"></i>';
+      return onDone(vals, ov, () => { busy = false; ov.el.classList.remove('busy'); draw(); });
+    } else if (vals[at].length < f.len) {
+      vals[at] += k;
+      if (vals[at].length === f.len) { const m = f.check && f.check(vals[at]); if (m) err(at, m); else if (at < fields.length - 1) at++; }
+      // the last digit typed: the focus goes to the form's CTA, so the next OK submits
+      if (complete()) { ov.i = keys.length - 1; ov.paint(); }
+    }
+    draw();
+  };
+  ov.i = complete() ? keys.length - 1 : 4; draw(); ov.paint();
+  return ov;
+}
+// a form split one field (or one tight pair) per screen, the TV pattern: a step marker, what's done so far as recap lines,
+// ถัดไป on all but the last, and the remote's Back steps to the previous screen with its digits kept (Back on the
+// first closes). `finish(all values, last screen's overlay)` runs on the last screen's CTA
+const shown = (f, v) => f.short ? f.short(v) : f.mask ? '•'.repeat(v.length) : f.groups.reduce((o, g) => [o[0] + (o[0] ? f.sep || ' ' : '') + v.slice(o[1], o[1] + g), o[1] + g], ['', 0])[0];
+function stepForm(base, steps, finish) {
+  const vals = steps.map(st => st.fields.map(() => ''));
+  const show = n => numForm({ ...base, ...steps[n], step: [n + 1, steps.length],
+    fields: steps[n].fields.map((f, i) => ({ ...f, value: vals[n][i] })),
+    recap: steps.slice(0, n).flatMap((st, j) => st.fields.map((f, i) => [f.label, shown(f, vals[j][i])])),
+    cta: n < steps.length - 1 ? 'ถัดไป' : steps[n].cta || base.cta, quick: n < steps.length - 1,
+    back: n ? (v, ov) => { vals[n] = v; ov.close(); show(n - 1); } : null,
+    done(v, ov) { vals[n] = v; if (n < steps.length - 1) { ov.close(); return show(n + 1); } finish(vals.flat(), ov); } });
+  return show(0);
+}
+const OTP_FIELD = { ic: 'sms', label: 'รหัส OTP 6 หลัก', len: 6, groups: [6] };
+const ref = () => Math.random().toString(36).slice(2, 6).toUpperCase();
+// every typed purchase ends here: close the forms and checkout, celebrate
+const paidBy = (plan, how) => { while (OV && /checkout|confirm/.test(OV.el.className)) OV.close(); done(plan, how); };
+const later = (ms, fn) => setTimeout(fn, ms);   // the test's network round trips
+
+// TrueOnline not linked yet: circuit number + Thai ID (the details True's own apps ask for), checked, then linked
+function bindForm(plan, linked) {
+  stepForm({ logo: 'img/pay-trueonline.svg', title: 'เชื่อมบัญชีทรูออนไลน์', sub: 'ใช้ครั้งเดียว ครั้งต่อไปชำระผ่านบิลได้ทันที',
+    note: 'ข้อมูลใช้ยืนยันว่าคุณเป็นเจ้าของบัญชีเท่านั้น (ทดสอบ: เลขใดก็ได้ที่ครบหลัก)' }, [
+    { fields: [{ ic: 'router', label: 'หมายเลขวงจร', len: 10, groups: [3, 3, 4], hint: 'ดูได้ที่หน้าบิล หรือแอป True iService' }] },
+    { fields: [{ ic: 'idcard', label: 'เลขบัตรประชาชนผู้จดทะเบียน', len: 13, groups: [1, 4, 5, 2, 1], hint: 'ของผู้ที่ชื่ออยู่บนบิล' }], cta: 'เชื่อมบัญชี' },
+  ], ([circuit], ov) => later(1200, () => {
+    BOUND = true; TRUEONLINE.account = `${circuit.slice(0, 3)}-•••-${circuit.slice(-4)}`;
+    ov.close(); linked && linked(); toast('เชื่อมบัญชีทรูออนไลน์แล้ว · กด OK เพื่อยืนยันการชำระ');
+  }));
+}
+
+// TrueMove H: the number, then the SMS OTP, which confirms the charge too
+let TM_NUMBER = '';
+function truemoveForm(plan) {
+  numForm({ logo: 'img/pay-truemoveh.svg', title: 'ชำระผ่านบิลทรูมูฟ เอช', plan, sub: 'รายเดือน: รวมในบิลรอบถัดไป · เติมเงิน: หักจากยอดเงินคงเหลือ',
+    fields: [{ ic: 'phone', label: 'เบอร์มือถือทรูมูฟ เอช', len: 10, groups: [3, 3, 4], sep: '-', hint: 'เราจะส่งรหัส OTP ไปที่เบอร์นี้',
+      check: v => /^0[689]/.test(v) ? '' : 'เบอร์มือถือขึ้นต้นด้วย 06, 08 หรือ 09' }],
+    cta: 'ส่งรหัส OTP',
+    done([num], ov) {
+      later(900, () => {
+        TM_NUMBER = `${num.slice(0, 3)}-•••-${num.slice(-4)}`;
+        ov.close();
+        otpForm({ title: 'ใส่รหัส OTP', plan, logo: 'img/pay-truemoveh.svg', to: TM_NUMBER, sub: `ยืนยันชำระด้วยเบอร์ ${TM_NUMBER}`,
+          paid: () => paidBy(plan, 'truemove') });
+      });
+    } });
+}
+// a 6-digit SMS code with a reference and a resend countdown; any 6 digits pass in the test
+function otpForm({ title, plan, to, sub, paid, logo }) {
+  const r = ref();
+  const ov = numForm({ title, plan, logo, sub, fields: [OTP_FIELD], cta: 'ยืนยัน',
+    note: `ส่ง SMS ไปที่ ${to} แล้ว · รหัสอ้างอิง ${r} · <span class="nf-resend">ขอรหัสใหม่ได้ใน 60 วินาที</span>`,
+    done(_, f) { later(1000, () => { clearInterval(t); paid(); }); } });
+  let left = 60;
+  const t = setInterval(() => { const e = ov.el.querySelector('.nf-resend'); if (!e || !ov.el.isConnected) return clearInterval(t);
+    e.textContent = --left > 0 ? `ขอรหัสใหม่ได้ใน ${left} วินาที` : 'ไม่ได้รับรหัส? กด ⌫ แล้วขอใหม่'; }, 1000);
+}
+
+// card typed with the remote: number (brand from its first digits), expiry, CVV; then the bank's 3-D Secure OTP
+let CARD_LAST4 = '';
+const cardBrand = v => /^4/.test(v) ? 'VISA' : /^(5[1-5]|2[2-7])/.test(v) ? 'Mastercard' : /^35/.test(v) ? 'JCB' : /^3[47]/.test(v) ? 'AMEX' : '';
+function cardForm(plan) {
+  stepForm({ logo: 'img/pay-card.svg', title: 'กรอกบัตรเครดิต / เดบิต', plan, sub: 'บัตรนี้จะใช้ต่ออายุทุกเดือน · ยกเลิกได้ทุกเมื่อ',
+    note: 'ข้อมูลบัตรเข้ารหัสและส่งตรงถึงผู้ให้บริการชำระเงิน · NOW ไม่เก็บเลขบัตร' }, [
+    { fields: [{ ic: 'card', label: 'หมายเลขบัตร', len: 16, groups: [4, 4, 4, 4], tag: cardBrand, short: v => `${cardBrand(v)} •••• ${v.slice(-4)}` }] },
+    { cta: `ชำระ ${thb(plan.price)}`, fields: [
+      { ic: 'expiry', label: 'วันหมดอายุ (เดือน/ปี)', len: 4, groups: [2, 2], sep: '/',
+        check: v => { const m = +v.slice(0, 2), y = 2000 + +v.slice(2); const now = new Date();
+          return m < 1 || m > 12 ? 'เดือนต้องอยู่ระหว่าง 01–12' : y < now.getFullYear() || (y === now.getFullYear() && m < now.getMonth() + 1) ? 'บัตรหมดอายุแล้ว' : ''; } },
+      { ic: 'cvv', label: 'CVV (3 หลักหลังบัตร)', len: 3, groups: [3], mask: true },
+    ] },
+  ], ([num], ov) => {
+      later(1000, () => {
+        CARD_LAST4 = num.slice(-4);
+        ov.close();
+        otpForm({ title: 'ยืนยัน OTP จากธนาคาร', plan, logo: 'img/pay-card.svg', to: 'เบอร์ที่ลงทะเบียนกับบัตร', sub: `บัตร ${cardBrand(num)} •••• ${CARD_LAST4}`,
+          paid: () => paidBy(plan, 'cardtv') });
+      });
+  });
+}
+
 // a QR-looking pattern (not a real code), as in now-appCP: three finder squares and seeded noise
 function qrSvg(seed = 7) {
   let x = seed, cells = '';
@@ -507,7 +697,9 @@ function confetti(tier, delay = 0, n = CONFETTI) {
 function done(plan, pay) {
   SUB = plan;
   const alt = PAY_ALT.find(p => p.id === pay);
-  const how = alt ? `ชำระ ${cost(plan)} ด้วย${alt.done}แล้ว` : `${cost(plan)} รวมในบิลทรูออนไลน์รอบถัดไป`;
+  const how = pay === 'truemove' ? `${cost(plan)} รวมในบิลทรูมูฟ เอช ${TM_NUMBER} รอบถัดไป`
+    : pay === 'cardtv' ? `ชำระ ${cost(plan)} ด้วยบัตร •••• ${CARD_LAST4} แล้ว`
+    : alt ? `ชำระ ${cost(plan)} ด้วย${alt.done}แล้ว` : `${cost(plan)} รวมในบิลทรูออนไลน์รอบถัดไป`;
   const tier = tierOf(plan);
   // bought for a title: its art, blurred and dark, stays behind the celebration so the flow ends where it started
   const ov = overlay(`${BUY_FOR ? `<i class="done-bg" style="--art:url('${titleArt(BUY_FOR).art}')"></i>` : ''}<div class="done" style="--tier:${tier}">
