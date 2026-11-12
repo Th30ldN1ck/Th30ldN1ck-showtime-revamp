@@ -284,10 +284,10 @@ function pile(it) {
   const { art } = titleArt(it), wide = titleArt(it).wide;
   return `<div class="pk-stack">${stackFor(it, wide).map((a, n) => `<img class="bk f${n + 1}" src="${a}" alt="">`).join('')}<img class="front" src="${art}" alt=""></div>`;
 }
-function titleSide(it, foot = '', head = '') {
+function titleSide(it, foot = '', head = '', lead = 'สมัครเพื่อดู') {
   const { wide } = titleArt(it), more = stackFor(it, wide).length;
   return `<div class="pk-side${wide ? ' wide' : ''}">${head}${pile(it)}
-    <span>สมัครเพื่อดู</span><b>${esc(it.t).split(' ').map(w => `<span class="nw">${w}</span>`).join(' ')}</b>
+    <span>${lead}</span><b>${esc(it.t).split(' ').map(w => `<span class="nw">${w}</span>`).join(' ')}</b>
     ${more ? `<i class="pk-more">${isSport(it) ? 'พร้อมกีฬาสดอีกเพียบทุกสัปดาห์' : 'พร้อมหนังและซีรีส์อีกมากมาย'}</i>` : ''}${foot}</div>`;
 }
 // art for a live title: events have their own; channels have none in the feed, so sport channels borrow a live sport
@@ -368,7 +368,8 @@ const RENEW = '<p class="co-renew">ดูได้ทันที · ต่อ�
 const titleMode = () => SUMMARY === 'title' && BUY_FOR;
 // checkout's left side: the title (title mode), or the plan's ticket, laid on the title's pile when bought for one so the
 // story carries on from the plans page
-const coSide = plan => titleMode() ? `<div class="co-title">${titleSide(BUY_FOR)}</div>`
+// lead: the line over the title (the package page says it's ready instead)
+const coSide = (plan, lead) => titleMode() ? `<div class="co-title">${titleSide(BUY_FOR, '', '', lead)}</div>`
   : BUY_FOR ? `<div class="co-pile${titleArt(BUY_FOR).wide ? ' wide' : ''}" style="--tier:${tierOf(plan)}">${pile(BUY_FOR)}${planPass(plan)}</div>` : planPass(plan);
 // the checkout's heading; in title mode the plan and price sit right under it, unboxed (on a TV the top is read first:
 // what you pay, then how)
@@ -694,34 +695,82 @@ function confetti(tier, delay = 0, n = CONFETTI) {
       + `--c:${colors[i % colors.length]};--w:${8 + Math.round(Math.random() * 10)}px;--h:${i % 3 ? 18 : 10}px;--t:${(delay + Math.random() * .25).toFixed(2)}s;--f:${(2.2 + Math.random() * 1.4).toFixed(2)}s"></i>`;
   }).join('');
 }
+// after a purchase, one page: checkout's left side stays (`coSide`); at right two timed stages, each a spinner that
+// turns into a result: the payment (กำลังดำเนินการชำระเงิน → ชำระเงินสำเร็จ), then the package under it (กำลังเปิดใช้งาน
+// แพ็กเกจ → คุณได้รับ <plan> with the confetti and watch button). Activation can fail (test switch ?activate=ok|retry|fail,
+// demo bar เปิดแพ็กเกจ): a retry button instead of watch; after PACK_TRIES failed tries, chat with customer service (a QR). Only the
+// stage's own button is focusable, so the focus never moves on its own
+const PAY_VERIFY_MS = 1400, PACK_VERIFY_MS = 1800, PACK_TRIES = 3;   // first try + 2 retries
+const ACTIVATES = { ok: 'สำเร็จ', retry: 'ไม่สำเร็จครั้งแรก', fail: 'ไม่สำเร็จ' };
+let ACTIVATE = ACTIVATES[new URLSearchParams(location.search).get('activate')] ? new URLSearchParams(location.search).get('activate') : 'ok';
+function setActivate(v) {
+  ACTIVATE = v;
+  const u = new URL(location.href); u.searchParams.set('activate', v); history.replaceState(null, '', u);
+  document.querySelectorAll('[data-activate]').forEach(b => b.classList.toggle('on', b.dataset.activate === v));
+  toast(`เคสทดสอบ: เปิดใช้งานแพ็กเกจ${ACTIVATES[v]}`);
+}
+document.querySelectorAll('[data-activate]').forEach(b => b.classList.toggle('on', b.dataset.activate === ACTIVATE));
+const TICK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path class="tick" d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
 function done(plan, pay) {
-  SUB = plan;
-  const alt = PAY_ALT.find(p => p.id === pay);
-  const how = pay === 'truemove' ? `${cost(plan)} รวมในบิลทรูมูฟ เอช ${TM_NUMBER} รอบถัดไป`
-    : pay === 'cardtv' ? `ชำระ ${cost(plan)} ด้วยบัตร •••• ${CARD_LAST4} แล้ว`
-    : alt ? `ชำระ ${cost(plan)} ด้วย${alt.done}แล้ว` : `${cost(plan)} รวมในบิลทรูออนไลน์รอบถัดไป`;
-  const tier = tierOf(plan);
-  // bought for a title: its art, blurred and dark, stays behind the celebration so the flow ends where it started
-  const ov = overlay(`${BUY_FOR ? `<i class="done-bg" style="--art:url('${titleArt(BUY_FOR).art}')"></i>` : ''}<div class="done" style="--tier:${tier}">
-    <div class="burst">${confetti(tier)}${confetti(tier, 1.6, 40)}</div>
-    <div class="done-badge"><i class="ring"></i><i class="ring r2"></i>
-      <i class="done-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path class="tick" d="m5 12.5 4.5 4.5L19 7.5"/></svg></i></div>
-    <h2 class="rise" style="--d:.55s">ยินดีต้อนรับสู่ ${plan.name}!</h2>
-    <p class="rise" style="--d:.7s">${how}</p>
-    <div class="obtn watch rise${BUY_FOR ? ' count' : ''}" style="--d:.85s;--s:${WATCH_IN}s" data-f>${BUY_FOR
-      ? `<span>เริ่มดู ${esc(BUY_FOR.t)}</span><em class="cd">${WATCH_IN}</em>` : 'เริ่มดูเลย'}</div></div>`, 'success', {
-    ok() { go(true); },
-    back() { go(false); },
+  const tier = tierOf(plan), ref = `NOW${Date.now().toString().slice(-9)}`, ssoid = String(Date.now() * 7).slice(-8);
+  const apps = plan.apps.length ? `<div class="pr-apps"><span>แอปในแพ็กเกจ</span><div class="pk-apps">${plan.apps.map(([a, t]) => `<span><img src="/img/packages/${a}.${a === 'netflix' ? 'svg' : 'png'}" alt="${a}">${t ? `<em>${t}</em>` : ''}</span>`).join('')}</div>
+      <p>เปิดใช้งานได้ที่เมนู แพ็กเกจของฉัน</p></div>` : '';
+  // the list only beside the title: the pass at left already lists what the plan opens
+  const gets = titleMode() ? `<ul class="pr-get">${['ดูได้ไม่มีโฆษณา', ...featsOf(plan)].map(f => `<li>${check}<span>${keep(f)}</span></li>`).join('')}</ul>` : '';
+  const watch = BUY_FOR ? `<span>เริ่มดู ${esc(BUY_FOR.t)}</span><em class="cd">${WATCH_IN}</em>` : 'เริ่มดูเลย';
+  // bought for a title: its art, blurred and dark, stays behind so the flow ends where it started
+  const ov = overlay(`${BUY_FOR ? `<i class="done-bg" style="--art:url('${titleArt(BUY_FOR).art}')"></i>` : ''}<div class="done pr" style="--tier:${tier}">
+    ${coSide(plan, 'กำลังเปิดให้ดู')}
+    <div class="pr-text">
+      <div class="rc-head"><i class="rc-badge wait"><i class="spin"></i><i class="done-ic">${TICK_SVG}</i></i><h2>กำลังดำเนินการชำระเงิน</h2></div>
+      <div class="pr-after"></div></div></div>`, 'success', {
+    ok() { if (mode === 'ready') go(true); else if (mode === 'retry') activate(); else if (mode === 'cs') go(false); },
+    back() { if (mode !== 'wait') go(false); },
   });
-  // bought for a title: the button counts down and the title starts playing on OK or when it reaches 0; Back just closes
-  const it = BUY_FOR;
-  let left = WATCH_IN, tick = 0;
+  const it = BUY_FOR, after = ov.el.querySelector('.pr-after');
+  let left = WATCH_IN, tick = 0, tries = 0, mode = 'wait';
   const go = play => { clearInterval(tick); finished(); if (play && it) player(it); };
-  if (it) tick = setInterval(() => {
-    const cd = ov.el.querySelector('.cd');
-    if (--left <= 0) return go(true);
-    if (cd) cd.textContent = left;
-  }, 1000);
+  // the line over the title on the left follows the package: getting it ready, ready, or waiting on a fix
+  const lead = t => { const l = ov.el.querySelector('.pk-side > span'); if (l) l.textContent = t; };
+  const show = (m, html) => { mode = m; after.innerHTML = html; ov.i = 0; ov.paint(); lead(m === 'ready' ? 'พร้อมดูแล้ว' : m === 'wait' ? 'กำลังเปิดให้ดู' : 'รอเปิดใช้งาน'); };
+  const stage = (cls, text) => `<div class="pr-stage ${cls}"><i class="rc-badge sm${cls === 'wait' ? ' wait' : ''}"><i class="spin"></i><i class="done-ic">${cls === 'bad' ? '!' : TICK_SVG}</i></i><h3>${text}</h3></div>`;
+  function activate() {
+    tries++;
+    show('wait', stage('wait', `กำลังเปิดใช้งานแพ็กเกจ ${plan.name}`));
+    later(PACK_VERIFY_MS, () => {
+      if (OV !== ov) return;
+      if (ACTIVATE === 'ok' || (ACTIVATE === 'retry' && tries > 1)) return ready();
+      if (tries < PACK_TRIES) return show('retry', `${stage('bad', 'เปิดใช้งานแพ็กเกจไม่สำเร็จ')}
+        <p class="pr-note">ชำระเงินเรียบร้อยแล้ว ไม่มีการเรียกเก็บเงินซ้ำ · ลองเปิดใช้งานอีกครั้ง</p>
+        <div class="obtn watch pr-btn" data-f>ลองอีกครั้ง</div>`);
+      // out of retries: customer service finishes it (the payment is safe, the reference finds it)
+      show('cs', `${stage('bad', 'ยังเปิดใช้งานแพ็กเกจไม่ได้')}
+        <p class="pr-note">ไม่ต้องกังวล ชำระเงินเรียบร้อยแล้ว เจ้าหน้าที่จะช่วยเปิดใช้งานให้</p>
+        <div class="pr-cs"><div class="qrp-code">${qrSvg(9)}</div><div>
+          <b>สแกนเพื่อแชทกับเจ้าหน้าที่</b><span>แจ้งเลขที่รายการ <em>${ref}</em></span><span>SSOID <em>${ssoid}</em></span></div></div>
+        <div class="obtn watch pr-btn" data-f>กลับหน้าหลัก</div>`);
+    });
+  }
+  function ready() {
+    SUB = plan;
+    show('ready', `<div class="pr-pack">
+        <p class="pr-on"><i></i>เปิดใช้งานแล้ว · ดูได้ทันที</p>
+        <h3>คุณได้รับ <b>${plan.name}</b></h3>${gets}${apps}
+        <div class="obtn watch pr-btn${it ? ' count' : ''}" style="--s:${WATCH_IN}s" data-f>${watch}</div></div>`);
+    ov.el.querySelector('.rc-head .rc-badge').insertAdjacentHTML('afterbegin', `<div class="burst">${confetti(tier, .1)}${confetti(tier, 1.4, 40)}</div>`);
+    // bought for a title: the button counts down and the title starts on OK or at 0; Back just closes
+    if (it) tick = setInterval(() => {
+      const cd = ov.el.querySelector('.cd');
+      if (--left <= 0) return go(true);
+      if (cd) cd.textContent = left;
+    }, 1000);
+  }
+  later(PAY_VERIFY_MS, () => {
+    if (OV !== ov) return;
+    ov.el.querySelector('.rc-head .rc-badge').classList.remove('wait');
+    ov.el.querySelector('.rc-head h2').textContent = 'ชำระเงินสำเร็จ';
+    activate();
+  });
 }
 // back to where the flow started; a detail page underneath redraws so its watch button no longer asks to subscribe
 function finished() {

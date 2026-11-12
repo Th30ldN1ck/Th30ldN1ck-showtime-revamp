@@ -990,3 +990,53 @@ body.clean .demo { display: none !important; }
 .nf .nf-val i { flex: 0 1 38px; width: auto; min-width: 0; }
 .nf .nf-field.long .nf-val { gap: 14px; }
 .nf .nf-field.long .nf-val i { font-size: 36px; }
+
+/* after checkout, one page: checkout's left side, at right the payment status (processing, then success) with the package rising in under it */
+.done.pr { flex-direction: row; align-items: center; gap: 120px; text-align: left; }
+/* confetti bursts from the tick, behind the copy */
+.done.pr .burst { left: 50%; top: 50%; z-index: -1; }
+.rc-badge { z-index: 0; }
+.pr-text { display: flex; flex-direction: column; align-items: flex-start; width: 760px; }
+.rc-head { display: flex; align-items: center; gap: 24px; }
+.rc-head h2 { margin: 0; font-size: 52px; line-height: 72px; font-weight: 700; }
+.rc-badge { position: relative; flex: none; width: 72px; height: 72px; }
+.rc-badge .spin { position: absolute; inset: 0; width: 72px; height: 72px; margin: 0; border-width: 6px; }
+.rc-badge .done-ic { box-shadow: 0 10px 30px rgba(251, 0, 141, .35); }
+.rc-badge .done-ic svg { width: 40px; height: 40px; }
+.rc-badge.wait .done-ic, .rc-badge:not(.wait) .spin { display: none; }
+.pr-after > * { animation: rise .4s ease-out both; }
+.pr-pack { margin-top: 36px; }
+.pr-pack h3 { margin: 8px 0 24px; font-size: 40px; line-height: 56px; font-weight: 700; }
+.pr-on { display: flex; align-items: center; gap: 12px; margin: 0; font-size: 22px; line-height: 32px; color: #fff; font-weight: 500; }
+.pr-on i { width: 12px; height: 12px; border-radius: 50%; background: #2bd576; box-shadow: 0 0 0 6px rgba(43, 213, 118, .2); }
+.pr-apps { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 20px; margin-bottom: 32px; }
+.pr-apps > span { font-size: 22px; line-height: 32px; color: var(--text-2); }
+.pr-apps .pk-apps { margin: 0; min-height: 0; }
+.pr-apps p { flex-basis: 100%; margin: 0; font-size: 20px; line-height: 30px; color: var(--text-2); }
+@media (prefers-reduced-motion: reduce) { .rc-badge .spin { animation: none; } .pr-after > * { animation: none; } }
+.pr-pack { display: flex; flex-direction: column; align-items: flex-start; }
+.pr-pack .obtn { min-width: 360px; }
+/* "you get": the plan in its colour, then what it opens as a tick list */
+.pr-pack h3 { margin: 8px 0 16px; }
+.pr-pack h3 b { color: var(--tier); }
+.pr.ent .pr-pack h3 b, .pr-pack h3 b { font-weight: 700; }
+.pr-get { list-style: none; margin: 0 0 28px; padding: 0; display: grid; grid-template-columns: repeat(2, auto); gap: 10px 40px; font-size: 24px; line-height: 34px; }
+.pr-get li { display: flex; gap: 12px; align-items: flex-start; }
+.pr-get svg { flex: none; margin-top: 5px; color: var(--tier); }
+/* the package stage under the payment: a smaller spinner/tick row; failed = a "!" in amber, then retry or customer service */
+.pr-after { min-height: 420px; }
+.pr-stage { display: flex; align-items: center; gap: 18px; margin-top: 36px; }
+.pr-stage h3 { margin: 0; font-size: 34px; line-height: 48px; font-weight: 700; }
+.rc-badge.sm { width: 48px; height: 48px; }
+.rc-badge.sm .spin { width: 48px; height: 48px; border-width: 5px; }
+.rc-badge.sm .done-ic { font-size: 30px; font-weight: 700; box-shadow: none; }
+.rc-badge.sm .done-ic svg { width: 28px; height: 28px; }
+.pr-stage.bad .done-ic { background: #ffb020; color: #111; }
+.pr-note { margin: 14px 0 32px; font-size: 24px; line-height: 36px; color: var(--text-2); }
+.pr-btn { min-width: 360px; }
+.pr-cs { display: flex; align-items: center; gap: 28px; margin-bottom: 32px; }
+.pr-cs .qrp-code { width: 180px; height: 180px; padding: 12px; }
+.pr-cs div:last-child { display: flex; flex-direction: column; gap: 4px; font-size: 22px; line-height: 32px; color: var(--text-2); }
+.pr-cs b { font-size: 30px; line-height: 44px; color: #fff; }
+.pr-cs em { font-style: normal; color: #fff; font-weight: 500; }
+.pr-after { display: flex; flex-direction: column; align-items: flex-start; }

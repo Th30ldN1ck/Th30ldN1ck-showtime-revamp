@@ -237,7 +237,7 @@ const CODES = { 10009: back, 461: back };
 // screen captures: ?clean hides the demo bar, H toggles it (and the setting sticks in the URL)
 if (new URLSearchParams(location.search).has('clean')) document.body.classList.add('clean');
 document.addEventListener('keydown', e => {
-  if (e.key === 'h' || e.key === 'H') {
+  if (e.code === 'KeyH' && !e.metaKey && !e.ctrlKey && !e.altKey) {   // the physical key, so it also works on the Thai layout (ห)
     const on = document.body.classList.toggle('clean'), u = new URL(location.href);
     on ? u.searchParams.set('clean', '') : u.searchParams.delete('clean');
     return history.replaceState(null, '', u.toString().replace('clean=', 'clean'));
@@ -259,6 +259,8 @@ document.addEventListener('click', e => {
   if (ck) return setCheckout(ck.dataset.checkout);
   const sm = e.target.closest('[data-summary]');
   if (sm) return setSummary(sm.dataset.summary);
+  const ac = e.target.closest('[data-activate]');
+  if (ac) return setActivate(ac.dataset.activate);
   const bd = e.target.closest('[data-bind]');
   if (bd) return setBind(bd.dataset.bind);
   if (e.target.closest('[data-restart]')) return location.reload();
