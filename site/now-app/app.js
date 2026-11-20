@@ -47,10 +47,8 @@ function hero(s) {
 }
 
 // New look hero: Netflix/Disney-style big cards built from parts: HeroArt (textless poster), HeroBadge, HeroLogo (the
-// title's own logo, large and centred), HeroMeta and HeroActions. Slides come from TMDB's trending titles
-// (api/now-hero.js: textless posters + tightly cropped logos, opening in the NOW prototype's TMDB title pages); if TMDB
-// isn't available the NOW feed's hero items are used, with their textless landscape art and title_logo. The carousel
-// loops endlessly: one clone of the last slide sits before the first and one of the first after the last, and landing
+// title's own logo, large and centred), HeroMeta and HeroActions. Slides are TMDB's trending titles, else the NOW feed's (heroSlides).
+// The carousel loops endlessly: one clone of the last slide sits before the first and one of the first after the last, and landing
 // on a clone jumps silently to the real slide.
 const NEW_DAYS = 21;
 let TMDB_HERO = [];
@@ -72,39 +70,87 @@ function liveHero(shelves) {
   const next = shelves.filter(isLive).flatMap(s => s.items).filter(it => it.type === 'tvs-live' && it.start > now)
     .sort((a, b) => a.start - b.start).filter(fresh).slice(0, LIVE_UPCOMING);
   return [...live, ...next].map(it => ({
-    art: it.poster, bg: it.land || it.poster, t: it.t, href: link(it), cls: 'hc-live', noTitle: true, start: it.start, end: it.end,
+    art: it.poster, bg: it.land || it.poster, t: it.t, href: link(it), cls: 'hc-live', match: matchOf(it.t), start: it.start, end: it.end,
     ch: it.ch,
   }));
 }
-// VOD slides (TMDB, or the feed's hero if TMDB isn't available) with a live slide after every two of them
+// Sport card built from parts (MONOMAX-style): competition, the two sides with their crests, the date and kick-off in
+// the middle. The feed has no team data or logos, so the sides come from the event title ("2027 AOFC WFCQ : Australia
+// vs New Zealand") and each side gets its flag, or a monogram crest in a colour of its own; titles that aren't a match
+// show the competition and the event name instead.
+function matchOf(t) {
+  const [comp, rest] = t.includes(' : ') ? t.split(' : ', 2) : ['', t];
+  const sides = rest.split(/\s+(?:vs\.?|v\.?)\s+/i);
+  return sides.length === 2 ? { comp: comp.trim(), sides: sides.map(x => x.trim()) } : { comp: comp.trim(), event: rest.trim() };
+}
+// national teams get their flag (flagcdn.com); clubs and anything unknown keep the monogram
+const FLAGS = {
+  thailand: 'th', vietnam: 'vn', malaysia: 'my', indonesia: 'id', philippines: 'ph', singapore: 'sg', myanmar: 'mm', cambodia: 'kh',
+  laos: 'la', japan: 'jp', 'south korea': 'kr', korea: 'kr', 'korea republic': 'kr', 'north korea': 'kp', china: 'cn', 'chinese taipei': 'tw',
+  taiwan: 'tw', 'hong kong': 'hk', india: 'in', iran: 'ir', iraq: 'iq', 'saudi arabia': 'sa', qatar: 'qa', uae: 'ae',
+  'united arab emirates': 'ae', jordan: 'jo', uzbekistan: 'uz', kazakhstan: 'kz', australia: 'au', 'new zealand': 'nz', 'united states': 'us',
+  usa: 'us', canada: 'ca', mexico: 'mx', brazil: 'br', argentina: 'ar', uruguay: 'uy', colombia: 'co', chile: 'cl', peru: 'pe',
+  england: 'gb-eng', scotland: 'gb-sct', wales: 'gb-wls', 'great britain': 'gb', 'united kingdom': 'gb', ireland: 'ie', france: 'fr',
+  germany: 'de', spain: 'es', italy: 'it', portugal: 'pt', netherlands: 'nl', belgium: 'be', switzerland: 'ch', austria: 'at',
+  denmark: 'dk', sweden: 'se', norway: 'no', finland: 'fi', poland: 'pl', 'czech republic': 'cz', czechia: 'cz', croatia: 'hr',
+  serbia: 'rs', slovenia: 'si', slovakia: 'sk', hungary: 'hu', romania: 'ro', bulgaria: 'bg', greece: 'gr', turkey: 'tr', turkiye: 'tr',
+  ukraine: 'ua', russia: 'ru', morocco: 'ma', egypt: 'eg', nigeria: 'ng', senegal: 'sn', 'south africa': 'za', cameroon: 'cm', ghana: 'gh',
+};
+const crest = name => {
+  const flag = FLAGS[name.toLowerCase().replace(/\s+(u\d+|women|men)$/i, '')];
+  if (flag) return `<img class="hm-flag" src="https://flagcdn.com/w320/${flag}.png" alt="">`;
+  const w = name.replace(/[^\p{L}\p{N} ]/gu, '').split(/\s+/).filter(Boolean);
+  const mono = (w.length > 1 ? w[0][0] + w[1][0] : (w[0] || '?').slice(0, 2)).toUpperCase();
+  const hue = [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
+  return `<i class="hm-crest" style="--hue:${hue}">${esc(mono)}</i>`;
+};
+const dmy = t => {
+  const day = x => new Date(x).toLocaleDateString('en-GB', { timeZone: TZ, day: '2-digit', month: '2-digit' });
+  return day(t) === day(Date.now()) ? 'วันนี้' : day(t) === day(Date.now() + 864e5) ? 'พรุ่งนี้' : day(t);
+};
+function HeroMatch(h) {
+  const m = h.match, onAir = h.start <= Date.now();
+  const mid = onAir ? '<span class="hm-when"><i class="hm-live">LIVE</i></span>'
+    : `<span class="hm-when"><small>${dmy(h.start)}</small><b>${hhmm(h.start)}</b></span>`;
+  return `<div class="hm">${m.comp ? `<span class="hm-comp">${esc(m.comp)}</span>` : ''}${m.sides
+    ? `<div class="hm-teams"><span class="hm-side">${crest(m.sides[0])}<b>${esc(m.sides[0])}</b></span>${mid}<span class="hm-side">${crest(m.sides[1])}<b>${esc(m.sides[1])}</b></span></div>`
+    : `<div class="hm-teams hm-solo"><b class="hm-event">${esc(m.event)}</b>${mid}</div>`}</div>`;
+}
+// VOD slides with a live slide after every two of them: TMDB's trending titles (api/now-hero.js: textless posters made
+// for portrait, so the tall hero stays sharp), or if TMDB isn't available the NOW feed's own hero titles, their wide
+// textless art cropped tall (softer: the crop enlarges it) with their title logo
+const metaA = (series, genre, year, rate) => `${[series ? 'ซีรีส์' : 'ภาพยนตร์', genre, year].filter(Boolean).map(esc).join(' · ')}${rate ? ` <i class="rate">${esc(rate)}</i>` : ''}`;
 function heroSlides(s) {
   const vod = TMDB_HERO.length
     ? TMDB_HERO.map(h => ({ art: h.art, bg: h.bg, logo: h.logo, t: h.t, href: `href="${NOW_APP}/watch/${h.type}/${h.id}" target="_blank" rel="noopener"`,
         badge: esc(h.tag || ''), meta: metaLine(h.rate, [h.year, h.genre]), cls: 'hc-tall',
         // ใหม่ 2 (Apple-style): "ภาพยนตร์ · สยองขวัญ · 2026" then the rating chip
-        metaA: `${[h.type === 'tv' ? 'ซีรีส์' : 'ภาพยนตร์', h.genre, h.year].filter(Boolean).map(esc).join(' · ')}${h.rate ? ` <i class="rate">${esc(h.rate)}</i>` : ''}` }))
-    : s.items.filter(it => /^tvs-/.test(it.type) && it.land).slice(0, HERO_SLIDES).map(it => ({ art: it.land, bg: it.land, logo: it.logo, t: it.t,
-        href: link(it), badge: feedBadge(it), meta: exclMeta(it), cls: 'hc-feed' }));
+        metaA: metaA(h.type === 'tv', h.genre, h.year, h.rate) }))
+    : s.items.filter(it => /^tvs-(movie|series)$/.test(it.type) && it.land).slice(0, HERO_SLIDES).map(it => ({ art: it.land, bg: it.land,
+        logo: it.logo, t: it.t, href: link(it), badge: feedBadge(it), meta: exclMeta(it), cls: 'hc-feed',
+        metaA: metaA(it.type === 'tvs-series', (it.genres || []).map(g => GENRE_TH[g]).find(Boolean), it.year, it.rate) }));
   const out = [];
   vod.forEach((h, i) => { out.push(h); if (i % 2 === 0 && LIVE_HERO[i / 2]) out.push(LIVE_HERO[i / 2]); });
   return out;
 }
 
-// Live cards (Netflix live-event style): no badge, one centred status line, then two equal buttons. Live now: channel
-// and start time. Upcoming: a ticking countdown and the start day/time.
+// Live cards: no badge; the card's parts (HeroMatch) carry the day and kick-off, so the status line under them adds
+// only what they don't: the channel, and before a start within 24 hours a ticking countdown.
 const pad2 = n => String(n).padStart(2, '0');
 const hhmm = t => new Date(t).toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
 function liveStatus(h) {
-  const ms = h.start - Date.now(), ch = h.ch ? `ช่อง ${esc(h.ch)} · ` : '';
-  if (ms <= 0) return `${ch}เริ่มถ่ายทอดสดเมื่อ ${hhmm(h.start)} น.`;
-  if (ms > 864e5) return `${ch}เริ่ม${esc(when(h.start))} น.`;
+  const ms = h.start - Date.now(), ch = h.ch ? `ช่อง ${esc(h.ch)}` : '';
+  if (ms <= 0 || ms > 864e5) return ch;
   const t = Math.floor(ms / 1000);
-  return `เริ่มใน ${pad2(Math.floor(t / 3600))}:${pad2(Math.floor(t / 60) % 60)}:${pad2(t % 60)} · ${esc(when(h.start))} น.`;
+  return [`เริ่มใน ${pad2(Math.floor(t / 3600))}:${pad2(Math.floor(t / 60) % 60)}:${pad2(t % 60)}`, ch].filter(Boolean).join(' · ');
 }
 
-const HeroArt = h => `<span class="hc-art">${img(h.art, '')}</span>`;
+// live cards (MONOMAX-style): the event's landscape picture framed at the top over a blurred copy of itself, so its
+// baked-in text doesn't fight the card's own parts below
+const liveArt = h => `<img class="lv-blur" src="${esc(h.bg)}" alt="" loading="lazy"><img class="lv-frame" src="${esc(h.bg)}" alt="" loading="lazy">`;
+const HeroArt = h => h.match ? `<span class="hc-art lv">${liveArt(h)}</span>` : `<span class="hc-art">${img(h.art, '')}</span>`;
 const HeroBadge = h => h.cls === 'hc-live' || !h.badge ? '' : `<i class="hc-badge">${h.badge}</i>`;
-const HeroLogo = h => h.noTitle ? '' : h.logo ? `<img class="hc-logo" src="${esc(h.logo)}" alt="${esc(h.t)}">` : `<b class="hc-tt">${esc(h.t)}</b>`;
+const HeroLogo = h => h.match ? HeroMatch(h) : h.logo ? `<img class="hc-logo" src="${esc(h.logo)}" alt="${esc(h.t)}">` : `<b class="hc-tt">${esc(h.t)}</b>`;
 const HeroMeta = h => h.cls === 'hc-live'
   ? `<span class="hc-status" data-start="${h.start}" data-ch="${esc(h.ch || '')}">${liveStatus(h)}</span>`
   : `<span class="excl-meta">${LOOK === 'apple' && h.metaA ? h.metaA : h.meta}</span>`;
@@ -228,7 +274,7 @@ function heroFade(s) {
   if (!slides.length) return '';
   HF_SLIDES = slides;
   return `<section class="hf hc-apple">
-    ${slides.map((h, i) => `<div class="hf-art${i ? '' : ' on'}" data-watch="${esc(watchKey(h.href))}">${img(h.art, '')}</div>`).join('')}
+    ${slides.map((h, i) => `<div class="hf-art${i ? '' : ' on'}${h.match ? ' lv' : ''}" data-watch="${esc(watchKey(h.href))}">${h.match ? liveArt(h) : img(h.art, '')}</div>`).join('')}
     <div class="hf-body">
       <div class="hf-logos">${slides.map((h, i) => `<div class="hf-slide${i ? '' : ' on'}">${HeroLogo(h)}${HeroMeta(h)}</div>`).join('')}</div>
       <div class="hf-ctas">${HeroActions(slides[0])}</div>
@@ -344,6 +390,15 @@ function liveRow(s, items) {
   }));
 }
 
+// New looks: the feed's background-header shelf (today The Voice: "Presented by True 5G") as a brand band like
+// Lemino's (hub-solo): the title's logo (from the hero item that carries it, cropped by trimLogo), the shelf's line and
+// ดูทั้งหมด, scrolling out with its posters
+function headerBand(s) {
+  const logo = (s.items.map(i => TITLES.get(`${i.type}/${i.id}`)).find(t => t && t.logo) || {}).logo;
+  return `<section class="shelf hub hub-solo hub-bgh"><div class="hub-body"><div class="hub-stage">
+      <h2 class="hub-name">${logo ? `<img class="hub-logo" src="${esc(logo)}" alt="${esc(s.title)}" data-trim>` : `<span class="hub-logo wm-text">${esc(s.title)}</span>`}</h2>
+      <p>${esc(s.tag || s.title)}</p><a class="hub-btn">ดูทั้งหมด</a></div>${row(s.items, poster)}</div></section>`;
+}
 function backgroundHeader(s) {
   return `<section class="shelf bgh">${img(s.bg).replace('<img', '<img class="bgh-img"')}
     <div class="bgh-body"><div class="bgh-tag">${esc(s.tag)}</div>${head(s.title)}${row(s.items, poster)}</div></section>`;
@@ -550,6 +605,7 @@ function render(shelves) {
       if (s.kind === 'short_shelf') return shortsRow(s);
       if (s.kind === 'only_now_shelf') return onlyNowRow(s);
       if (s.kind === 'ranking_shelf') return rankingIn(s);
+      if (s.kind === 'background_header_shelf') return headerBand(s);
     }
     switch (s.kind) {
       case 'hero_banner_shelf': return hero(s);
@@ -571,14 +627,43 @@ function render(shelves) {
 
 function onScroll(screen) {
   const phone = document.querySelector('.phone');
-  let lastY = 0;
   screen.addEventListener('scroll', () => {
     const y = screen.scrollTop;
-    phone.classList.toggle('scrolled', y > 40);
-    if (y - lastY > 8 && y > 400) phone.classList.add('min');
-    else if (lastY - y > 8 || y < 400) phone.classList.remove('min');
-    lastY = y;
+    phone.classList.toggle('scrolled', y > 40);   // the tab bar stays full size (it used to fold to the selected tab)
   }, { passive: true });
+}
+
+// The feed's title logos sit flush left in a wider transparent canvas, so centred they land small and off to the left.
+// Each is read through /api/now-img (same origin, so its pixels are readable), cropped to its visible part once and
+// swapped in as a data URL; the original stays if anything fails. As the tvs-now-dazn mini app does.
+const LOGOS = new Map();
+function trimLogo(el) {
+  const url = el.getAttribute('src');
+  if (!/^https:\/\/(tvs|cms)\.dmpcdn\.com\//.test(url)) return;
+  if (!LOGOS.has(url)) LOGOS.set(url, new Promise(done => {
+    const im = new Image();
+    im.onload = () => {
+      try {
+        const w = im.naturalWidth, h = im.naturalHeight, c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        const x = c.getContext('2d', { willReadFrequently: true });
+        x.drawImage(im, 0, 0);
+        const a = x.getImageData(0, 0, w, h).data;
+        let t = h, l = w, r = -1, b = -1;
+        for (let y = 0; y < h; y++) for (let i = 0; i < w; i++) if (a[(y * w + i) * 4 + 3] > 12) {
+          if (i < l) l = i; if (i > r) r = i; if (y < t) t = y; if (y > b) b = y;
+        }
+        if (r < 0) return done(url);
+        const o = document.createElement('canvas');
+        o.width = r - l + 1; o.height = b - t + 1;
+        o.getContext('2d').drawImage(c, l, t, o.width, o.height, 0, 0, o.width, o.height);
+        done(o.toDataURL('image/png'));
+      } catch (e) { done(url); }
+    };
+    im.onerror = () => done(url);
+    im.src = `/api/now-img?u=${encodeURIComponent(url)}`;
+  }));
+  LOGOS.get(url).then(src => { if (src !== url) el.src = src; });
 }
 
 let heroTimer, countTimer;
@@ -594,6 +679,7 @@ function wire(screen) {
   }
 
   wireHub(screen);
+  screen.querySelectorAll('.hc-logo, [data-trim]').forEach(trimLogo);
   wireHeroCards(screen);
   wireHeroFade(screen);
   screen.querySelectorAll('[data-v]').forEach(a => a.addEventListener('click', () => openShorts(+a.dataset.v)));
@@ -604,12 +690,11 @@ function wire(screen) {
   });
 }
 
-// Tabs only move the selection pill (the other screens aren't built); a tap on the minimised bar expands it.
+// Tabs only move the selection pill (the other screens aren't built).
 function tabs() {
-  const bar = document.querySelector('.tabbar'), phone = document.querySelector('.phone');
+  const bar = document.querySelector('.tabbar');
   const links = [...bar.querySelectorAll('a')];
   links.forEach((a, i) => a.addEventListener('click', () => {
-    if (phone.classList.contains('min')) return phone.classList.remove('min');
     links.forEach(l => l.classList.toggle('on', l === a));
     bar.style.setProperty('--i', i);
   }));

@@ -554,12 +554,6 @@ body[data-poster="blur"] .poster.locked .pv-tag { background: rgba(0,0,0,.6); bo
 .vh-line { display: flex; gap: 0; margin: 0; padding: 0 var(--pad) 4px; list-style: none; overflow-x: auto; scrollbar-width: none; }
 .vh-line::-webkit-scrollbar { display: none; }
 .vh-row .poster { width: 130px; }
-.vh-soon { position: relative; display: flex; flex-direction: column; justify-content: flex-end; aspect-ratio: 2 / 3; padding: 12px; overflow: hidden; isolation: isolate; border-radius: 8px; background: linear-gradient(160deg, #2a0a1e, #120a2e); cursor: pointer; }
-.vh-soon .swoosh { z-index: -1; left: -30%; width: 160%; top: 30%; height: 30%; opacity: .7; }
-.vh-soon b { font-size: 17px; line-height: 1.15; }
-.vh-soon small { margin-top: 4px; font-size: 12px; color: rgba(255,255,255,.7); }
-.vh-soon em { align-self: flex-start; margin-top: 10px; padding: 3px 9px; border-radius: 999px; background: rgba(255,255,255,.16); font-style: normal; font-size: 11px; font-weight: 600; }
-.vh-soon.locked::before { display: none; }
 .vh-extras, .vh-tour { display: flex; flex-direction: column; margin: 0 var(--pad); border-radius: 14px; overflow: hidden; background: rgba(255,255,255,.06); }
 .vh-extras a, .vh-tour a { position: relative; display: flex; align-items: center; gap: 12px; padding: 13px 14px; cursor: pointer; }
 .vh-extras a + a, .vh-tour a + a { border-top: 1px solid rgba(255,255,255,.08); }
@@ -579,15 +573,8 @@ body[data-poster="blur"] .poster.locked .pv-tag { background: rgba(0,0,0,.6); bo
 body.clean .demo { display: none; }
 @media (max-width: 500px) { body.clean .phone { inset: env(safe-area-inset-top) 0 0; } }
 
-/* ---------- The Voice on home: app.js's Lemino-style brand section (.hub-solo) in The Voice's red ---------- */
-.hub-voice { position: relative; overflow: hidden; isolation: isolate; background: radial-gradient(120% 80% at 50% 0%, #e0112b, #7a0414 60%, #2a0208); }
-.hub-voice .swoosh { z-index: -1; left: -20%; width: 140%; top: 18%; height: 26%; opacity: .55; }
-.hub-voice .vh-mark { width: 180px; height: 104px; max-width: none; object-fit: cover; object-position: left center; }   /* the logo sits at the left of a wide canvas */
-.hub-voice .hub-stage p { color: #fff; }
-.hub-voice .hub-stage p small { display: block; margin-top: 3px; font-size: 13px; color: rgba(255,255,255,.75); }
-.hub-voice .hub-btn { background: rgba(255,255,255,.22); }
-.hub-voice .poster, .hub-voice .vh-soon { cursor: pointer; }
-.hub-voice .vh-soon { background: linear-gradient(160deg, #4a0612, #1a0410); }
+/* The Voice on home: app.js's brand band (.hub-solo .hub-bgh, The Voice red); everything in it opens the hub */
+.hub-voice .poster { cursor: pointer; }
 /* hub: backstage clips and the remind buttons that replaced the tick list */
 .vh-clips .vh-clip { flex: none; width: 210px; cursor: pointer; }
 .vh-clip span { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 8px; background: #222; }

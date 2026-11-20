@@ -794,53 +794,21 @@ function reveal() {   // the demo's guess at 2 wins; a real draw would pick amon
   if (VH.pick === PRED.answer) { VH.tickets.add(PRED.tour); VH.front.add(PRED.tour); }
   paintHub();
 }
-// On home: a brand section in the Lemino pattern (logo, line, ดูทั้งหมด, then the shows); everything in it opens the hub
+// On home: The Voice's brand band, Lemino's (app.js hub-solo) in its red; everything in it opens the hub
 EXTRA_SHELVES.voice_brand = () => {
   const v = voiceItems(), shows = [v.main, v.hl].filter(Boolean);
   if (!shows.length) return '';
-  const tag = voiceAll() ? 'ดูได้ทุกรายการ' : can(1) ? 'ดูรายการหลักได้' : 'ไม่ต้องย้ายค่าย ดูได้ด้วย The Voice SIM';
-  return `<section class="shelf hub hub-solo hub-voice">${swoosh('voice')}<div class="hub-body"><div class="hub-stage">
-      <h2 class="hub-name">${v.main && v.main.logo ? `<img class="hub-logo vh-mark" src="${esc(v.main.logo)}" alt="The Voice">` : '<span class="hub-logo wm-text">The Voice</span>'}</h2>
-      <p>ทั้งแฟรนไชส์ ซีซันนี้ Teens Celebrity และไลฟ์<small>${tag}</small></p>
+  // one line, like Lemino's: what the band is, or for a non-member the way in
+  const tag = can(1) ? 'ทั้งแฟรนไชส์ ทุกซีซัน และไลฟ์' : 'ไม่ต้องย้ายค่าย ดูได้ด้วย The Voice SIM';
+  return `<section class="shelf hub hub-solo hub-bgh hub-voice"><div class="hub-body"><div class="hub-stage">
+      <h2 class="hub-name">${v.main && v.main.logo ? `<img class="hub-logo" src="${esc(v.main.logo)}" alt="The Voice" data-trim>` : '<span class="hub-logo wm-text">The Voice</span>'}</h2>
+      <p>${tag}</p>
       <a class="hub-btn" data-voice>ดูทั้งหมด</a></div>
-      ${row([...shows, { soon: 'The Voice Teens', when: 'เม.ย.' }, { soon: 'The Voice Celebrity', when: 'มิ.ย.' }], it => it.soon
-        ? `<a class="poster vh-soon" data-voice>${swoosh('soon')}<b>${it.soon}</b><small>เริ่ม ${it.when}</small></a>`
-        : `<a class="poster${can(1) ? '' : ' locked'}" data-voice>${img(it.poster, it.t)}${can(1) ? '' : lockMark}</a>`)}
+      ${row(shows, it => `<a class="poster${can(1) ? '' : ' locked'}" data-voice>${img(it.poster, it.t)}${can(1) ? '' : lockMark}</a>`)}
     </div></section>`;
 };
-function voiceHub() {
-  let el = document.querySelector('.vh');
-  if (!el) {
-    el = document.createElement('div');
-    el.className = 'vh';
-    el.addEventListener('click', e => {
-      const t = e.target, at = sel => t.closest(sel);
-      if (at('[data-vh-x]')) return el.remove();
-      if (at('[data-pred-reveal]')) return reveal();
-      const pr = at('[data-pred]'); if (pr) return predict(+pr.dataset.pred);
-      if (at('[data-sim]')) return simSheet();
-      const j = at('[data-join]'); if (j) return join(j.dataset.join);
-      const lk = at('[data-join-sheet]'); if (lk) return joinSheet(lk);
-      const rd = at('[data-round]'); if (rd) { VH.round = +rd.dataset.round; return paintHub(); }
-      const ep = at('[data-vh-ep]');
-      if (ep) return player(episode(voiceItems(), +ep.dataset.vhEp), { preview: false, sub: `Blind Auditions · ตอนที่ ${ep.dataset.vhEp}` });
-      const tm = at('[data-team]'); if (tm) return teamSheet(+tm.dataset.team);
-      const sg = at('[data-singer]'); if (sg) return singerSheet(+sg.dataset.singer);
-      const sh = at('[data-short]'); if (sh) return voiceShorts(+sh.dataset.short);
-      if (at('[data-live-vote]')) return liveVote();
-      const c = at('[data-vh-clip]');
-      if (c) return player(clips(voiceItems())[+c.dataset.vhClip], { preview: false, sub: 'หลังเวที' });
-      const ps = at('[data-past]');
-      if (ps) { const v = voiceItems(); return player({ t: `The Voice ${ps.dataset.past}`, poster: (v.main || {}).poster }, { preview: false, sub: `ซีซัน ${ps.dataset.past} · ตอนที่ 1` }); }
-      const to = at('[data-tour]'); if (to) return tourSheet(+to.dataset.tour);
-    });
-    document.querySelector('.phone').appendChild(el);
-  }
-  VH.round = VOICE_STAGES.findIndex(st => st[2]);
-  el.innerHTML = voiceHubHtml();
-  el.scrollTop = 0;
-}
-const paintHub = () => { const el = document.querySelector('.vh'); if (el) { const y = el.scrollTop; el.innerHTML = voiceHubHtml(); el.scrollTop = y; } };
+// the feed's own The Voice shelf would be a second Voice band; this page's (above) ties into the hub
+EXTRA_SHELVES.background_header_shelf = s => /voice/i.test(s.title) ? '' : headerBand(s);
 
 // ---------- the 7-Eleven loop: an ad in store → scan → claim → pay if needed → play ----------
 // The in-store poster (beside the phone in the demo panel) advertises the rail's first premium title. Scanning it gives
@@ -1132,7 +1100,7 @@ function paintAs() {
   const tx = document.querySelector('.tx');
   if (tx && RAIL) tx.outerHTML = EXTRA_SHELVES.true_exclusive(RAIL);
   const vb = document.querySelector('.hub-voice');
-  if (vb) vb.outerHTML = EXTRA_SHELVES.voice_brand();
+  if (vb) { vb.outerHTML = EXTRA_SHELVES.voice_brand(); document.querySelectorAll('.hub-voice [data-trim]').forEach(trimLogo); }
   paintHub();
 }
 
