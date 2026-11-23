@@ -79,8 +79,9 @@ function liveHero(shelves) {
 // vs New Zealand") and each side gets its flag, or a monogram crest in a colour of its own; titles that aren't a match
 // show the competition and the event name instead.
 function matchOf(t) {
-  const [comp, rest] = t.includes(' : ') ? t.split(' : ', 2) : ['', t];
-  const sides = rest.split(/\s+(?:vs\.?|v\.?)\s+/i);
+  // "competition : event", or "competition: event" as the Thai titles write it
+  const cm = t.match(/^(.+?)\s?:\s(.+)$/), [comp, rest] = cm ? [cm[1], cm[2]] : ['', t];
+  const sides = rest.split(/\s+(?:vs\.?|v\.?|พบ)\s+/i);   // Thai titles write "อิหร่าน พบ เลบานอน"
   return sides.length === 2 ? { comp: comp.trim(), sides: sides.map(x => x.trim()) } : { comp: comp.trim(), event: rest.trim() };
 }
 // national teams get their flag (flagcdn.com); clubs and anything unknown keep the monogram
@@ -95,13 +96,32 @@ const FLAGS = {
   denmark: 'dk', sweden: 'se', norway: 'no', finland: 'fi', poland: 'pl', 'czech republic': 'cz', czechia: 'cz', croatia: 'hr',
   serbia: 'rs', slovenia: 'si', slovakia: 'sk', hungary: 'hu', romania: 'ro', bulgaria: 'bg', greece: 'gr', turkey: 'tr', turkiye: 'tr',
   ukraine: 'ua', russia: 'ru', morocco: 'ma', egypt: 'eg', nigeria: 'ng', senegal: 'sn', 'south africa': 'za', cameroon: 'cm', ghana: 'gh',
+  lebanon: 'lb', oman: 'om', afghanistan: 'af', bahrain: 'bh', kuwait: 'kw', syria: 'sy', palestine: 'ps', yemen: 'ye',
+  kyrgyzstan: 'kg', tajikistan: 'tj', turkmenistan: 'tm', mongolia: 'mn', bangladesh: 'bd', 'sri lanka': 'lk', nepal: 'np', 'timor-leste': 'tl',
+  brunei: 'bn', guam: 'gu', fiji: 'fj', tahiti: 'pf', 'solomon islands': 'sb',
+  // the same countries as the Thai feed writes them
+  'ไทย': 'th', 'เวียดนาม': 'vn', 'มาเลเซีย': 'my', 'อินโดนีเซีย': 'id', 'ฟิลิปปินส์': 'ph', 'สิงคโปร์': 'sg', 'เมียนมา': 'mm', 'กัมพูชา': 'kh',
+  'ลาว': 'la', 'สปป.ลาว': 'la', 'บรูไน': 'bn', 'ติมอร์-เลสเต': 'tl', 'ญี่ปุ่น': 'jp', 'เกาหลีใต้': 'kr', 'เกาหลีเหนือ': 'kp', 'จีน': 'cn',
+  'จีนไทเป': 'tw', 'ฮ่องกง': 'hk', 'อินเดีย': 'in', 'อิหร่าน': 'ir', 'อิรัก': 'iq', 'ซาอุดีอาระเบีย': 'sa', 'กาตาร์': 'qa', 'ยูเออี': 'ae',
+  'สหรัฐอาหรับเอมิเรตส์': 'ae', 'จอร์แดน': 'jo', 'อุซเบกิสถาน': 'uz', 'คาซัคสถาน': 'kz', 'คีร์กีซสถาน': 'kg', 'ทาจิกิสถาน': 'tj',
+  'เติร์กเมนิสถาน': 'tm', 'ออสเตรเลีย': 'au', 'นิวซีแลนด์': 'nz', 'เลบานอน': 'lb', 'โอมาน': 'om', 'อัฟกานิสถาน': 'af', 'บาห์เรน': 'bh',
+  'คูเวต': 'kw', 'ซีเรีย': 'sy', 'ปาเลสไตน์': 'ps', 'เยเมน': 'ye', 'มองโกเลีย': 'mn', 'บังกลาเทศ': 'bd', 'ศรีลังกา': 'lk', 'เนปาล': 'np',
+  'สหรัฐอเมริกา': 'us', 'สหรัฐฯ': 'us', 'แคนาดา': 'ca', 'เม็กซิโก': 'mx', 'บราซิล': 'br', 'อาร์เจนตินา': 'ar', 'อุรุกวัย': 'uy',
+  'โคลอมเบีย': 'co', 'ชิลี': 'cl', 'เปรู': 'pe', 'อังกฤษ': 'gb-eng', 'สกอตแลนด์': 'gb-sct', 'เวลส์': 'gb-wls', 'ไอร์แลนด์': 'ie',
+  'ฝรั่งเศส': 'fr', 'เยอรมนี': 'de', 'สเปน': 'es', 'อิตาลี': 'it', 'โปรตุเกส': 'pt', 'เนเธอร์แลนด์': 'nl', 'เบลเยียม': 'be',
+  'สวิตเซอร์แลนด์': 'ch', 'ออสเตรีย': 'at', 'เดนมาร์ก': 'dk', 'สวีเดน': 'se', 'นอร์เวย์': 'no', 'ฟินแลนด์': 'fi', 'โปแลนด์': 'pl',
+  'เช็กเกีย': 'cz', 'สาธารณรัฐเช็ก': 'cz', 'โครเอเชีย': 'hr', 'เซอร์เบีย': 'rs', 'สโลวีเนีย': 'si', 'สโลวาเกีย': 'sk', 'ฮังการี': 'hu',
+  'โรมาเนีย': 'ro', 'บัลแกเรีย': 'bg', 'กรีซ': 'gr', 'ตุรกี': 'tr', 'ยูเครน': 'ua', 'รัสเซีย': 'ru', 'โมร็อกโก': 'ma', 'อียิปต์': 'eg',
+  'ไนจีเรีย': 'ng', 'เซเนกัล': 'sn', 'แอฟริกาใต้': 'za', 'แคเมอรูน': 'cm', 'กานา': 'gh', 'ตาฮีตี': 'pf', 'ฟิจิ': 'fj',
 };
 const crest = name => {
-  const flag = FLAGS[name.toLowerCase().replace(/\s+(u\d+|women|men)$/i, '')];
+  const flag = FLAGS[name.toLowerCase().replace(/\s*\((?:หญิง|ชาย)\)$|\s+(u\d+|women|men|หญิง|ชาย)$/i, '').trim()];
   if (flag) return `<img class="hm-flag" src="https://flagcdn.com/w320/${flag}.png" alt="">`;
+  const hue = [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
+  // Thai initials don't make a badge: a Thai name gets a plain shield in its colour instead of letters
+  if (/[\u0E00-\u0E7F]/.test(name)) return `<i class="hm-crest hm-shield" style="--hue:${hue}"><svg width="44%" height="44%" viewBox="0 0 24 24" fill="rgba(255,255,255,.85)"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5z"/></svg></i>`;
   const w = name.replace(/[^\p{L}\p{N} ]/gu, '').split(/\s+/).filter(Boolean);
   const mono = (w.length > 1 ? w[0][0] + w[1][0] : (w[0] || '?').slice(0, 2)).toUpperCase();
-  const hue = [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
   return `<i class="hm-crest" style="--hue:${hue}">${esc(mono)}</i>`;
 };
 const dmy = t => {
@@ -484,6 +504,7 @@ const SPORT_IC = {
   'มอเตอร์สปอร์ต': '<path d="M5 21V4"/><path d="M5 4h14v9H5"/><path d="M5 8.5h14M9.7 4v9M14.3 4v9"/><path d="M5 4h4.7v4.5H5zM14.3 4H19v4.5h-4.7zM9.7 8.5h4.6V13H9.7z" fill="currentColor"/>',
   'เทนนิส': '<circle cx="12" cy="12" r="8.5"/><path d="M5 6.5c3.5 3 3.5 8 0 11M19 6.5c-3.5 3-3.5 8 0 11"/>',
   'สนุกเกอร์': '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="11" r="3.2"/><path d="M12 9.6v.01M12 12.4v.01"/>',
+  'ฟุตซอล': '<circle cx="12" cy="12" r="8.5"/><path d="m12 7.5 3.2 2.3-1.2 3.8h-4l-1.2-3.8zM12 7.5V3.5M15.2 9.8l3.9-1.3M14 13.6l2.4 3.3M10 13.6l-2.4 3.3M8.8 9.8 4.9 8.5"/>',
   'บันเทิง': '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/>',
   'กีฬาอื่นๆ': '<path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1.5A3.5 3.5 0 0 0 7.5 11M17 6h3v1.5a3.5 3.5 0 0 1-3.5 3.5M12 14v4M8 21h8l-1-3H9z"/>',
 };
@@ -501,7 +522,7 @@ function schedRow(e, comp) {
       ? `<a class="sc-ic" data-play="${esc(e.id)}" aria-label="ดูสด">${scIc('play')}</a>`
       : `<button class="sc-ic${REMINDERS.has(e.id) ? ' on' : ''}" data-bell="${esc(e.id)}" aria-pressed="${REMINDERS.has(e.id)}" aria-label="ตั้งเตือน">${scIc('bell')}</button>`}</div>`;
 }
-function openSchedule() {
+function openSchedule(preset = '') {
   const el = document.createElement('section');
   el.className = 'mpage sched';
   el.innerHTML = `<header class="sc-top"><button class="sc-back" aria-label="กลับ">${scIc('back')}</button><h1>ตารางถ่ายทอดสด</h1></header>
@@ -525,7 +546,7 @@ function openSchedule() {
     settle = setTimeout(() => { if (off && off < h) { off = off > h / 2 && y > h ? h : 0; place(true); } }, 120);
   }, { passive: true });
   const today = DAY_KEY(Date.now()), dayOf = e => DAY_KEY(Math.max(e.start, Date.now()));
-  let cat = '', day = today;
+  let cat = preset, day = today;
   const label = k => k === today ? 'วันนี้' : `${wdOf(dayDate(k))} ${thDay(k, { day: 'numeric', month: 'short' })}`;
   const draw = () => {
     const names = [...new Set(LIVE_FEED.map(e => e.sport || 'กีฬาอื่นๆ'))].sort(bySport);
@@ -564,9 +585,140 @@ function openSchedule() {
   document.querySelector('.phone').appendChild(el);
   return draw;
 }
-function openMore(page) {
+// Category pages (the header's ภาพยนตร์ / ซีรีส์ / กีฬา pills), from the NOW app's own category feeds
+// (api/now-home.js?cat=), Netflix-style without the hero: a หมวดหมู่ ▾ button under the title opens a full-screen
+// blurred list of the category's shelves (countries, genres, sports); ทั้งหมด shows every shelf as the home draws them
+// (poster rows, the Only on NOW cards, event cards for sport's live shelves), a picked one shows just that shelf as a
+// grid (or a list of event cards) and names the button. A title opens its detail page.
+const CAT_PAGES = { movie: 'ภาพยนตร์', series: 'ซีรีส์', sport: 'กีฬา' }, CAT_DATA = {};
+const caret = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 9h12l-6 7z"/></svg>';
+function catShelf(s) {
+  if (s.kind === 'only_now_shelf') return onlyNowRow(s);
+  const live = s.items.some(it => it.type === 'tvs-live');
+  return `<section class="shelf">${head(s.title)}${row(s.items, live ? evCard : poster)}</section>`;
+}
+function openCategory(cat) {
+  const el = document.createElement('section');
+  el.className = 'mpage cat';
+  el.innerHTML = `<header class="sc-top"><button class="sc-back" aria-label="กลับ">${scIc('back')}</button><h1>${CAT_PAGES[cat]}</h1></header>
+    <div class="mp-scroll"><div class="cat-pick"><button class="cat-btn" aria-haspopup="listbox"><span>หมวดหมู่</span>${caret}</button></div>
+    <div class="cat-body"><div class="loading"><i></i></div></div></div>`;
+  const body = el.querySelector('.mp-scroll'), content = el.querySelector('.cat-body'), btn = el.querySelector('.cat-btn span');
+  let shelves = [], sel = -1;
+  const draw = () => {
+    const one = shelves[sel];
+    btn.textContent = one ? one.title : 'หมวดหมู่';
+    content.innerHTML = !one ? shelves.map(catShelf).join('')
+      : one.items.some(it => it.type === 'tvs-live') ? `<div class="cat-evs">${one.items.map(evCard).join('')}</div>`
+      : `<div class="dt-grid cat-grid">${one.items.map(poster).join('')}</div>`;
+    body.scrollTop = 0;
+  };
+  const menu = () => {
+    const m = document.createElement('div');
+    m.className = 'cat-menu';
+    m.innerHTML = `<div class="cat-list" role="listbox">${['ทั้งหมด', ...shelves.map(x => x.title)].map((t, i) => `<button role="option" data-i="${i - 1}"${i - 1 === sel ? ' class="on" aria-selected="true"' : ''}>${esc(t)}</button>`).join('')}</div>
+      <button class="cat-x" aria-label="ปิด">${closeIcon}</button>`;
+    const close = () => { m.classList.add('out'); setTimeout(() => m.remove(), 200); };
+    m.addEventListener('click', e => {
+      const o = e.target.closest('[data-i]');
+      if (o) { sel = +o.dataset.i; draw(); return close(); }
+      if (e.target.closest('.cat-x') || e.target === m) close();
+    });
+    el.appendChild(m);
+    const on = m.querySelector('.on'); on && on.scrollIntoView({ block: 'center' });
+  };
+  el.addEventListener('click', e => {
+    if (e.target.closest('.sc-back')) { el.classList.add('out'); return setTimeout(() => el.remove(), 250); }
+    if (e.target.closest('.cat-btn')) return shelves.length && menu();
+    const a = e.target.closest('a[href*="/watch/"]'), d = a && TITLES.get(watchKey(a.getAttribute('href')));
+    if (d) { e.preventDefault(); openDetail(d); }
+  });
+  document.querySelector('.phone').appendChild(el);
+  const ready = sh => {
+    sh.forEach(x => x.items.forEach(it => { const k = `${it.type}/${it.id}`; if (/^tvs-/.test(it.type) && !TITLES.has(k)) TITLES.set(k, it); }));
+    shelves = sh.filter(x => x.kind !== 'hero_banner_shelf' && x.title);
+    draw();
+  };
+  if (CAT_DATA[cat]) ready(CAT_DATA[cat]);
+  else fetch(`/api/now-home?cat=${cat}`).then(r => r.json()).then(sh => { CAT_DATA[cat] = sh; ready(sh); })
+    .catch(() => { content.innerHTML = '<p class="mp-err">โหลดไม่สำเร็จ</p>'; });
+}
+// The กีฬา pill's page, after the Sport wireframes (Figma Sport, 84:3872 "Sport - Home page") without their hero:
+// ไลฟ์สดและที่กำลังมา, then a block per sport in popularity order (its logo or icon, its upcoming event cards, its
+// highlights and replays where the sport feed has them, a ตารางแข่งขัน button that opens the live schedule on that
+// sport's tab); a sport's name in its header opens the sport's own page (its events, the schedule button, its
+// replays). Continue watching, teams, standings and the ad slot have no data in the feeds, so they're left out.
+const LEAGUE_LOGO = { UCL: 'ucl.png', LaLiga: 'laliga.png', 'Serie A': 'seriea.png', 'Scottish Premiership': 'spfl.png' };
+const SPORT_VOD_KEY = n => LEAGUE_LOGO[n] ? 'football' : { 'มวยไทย': 'muay', 'มอเตอร์สปอร์ต': 'motor', 'แบดมินตัน': 'badminton', 'ฟุตซอล': 'futsal' }[n] || 'more';
+// the feed's "more sports" replays mix sports: a sport in that bucket only gets the ones whose title names it
+const VOD_WORDS = { 'วอลเลย์บอล': /volley|วอลเลย์/i, 'เทนนิส': /tennis|เทนนิส/i, 'กอล์ฟ': /golf|กอล์ฟ|lpga|pga/i, 'สนุกเกอร์': /snooker|สนุกเกอร์/i };
+const vodFor = name => { const key = SPORT_VOD_KEY(name), list = SPORT_VOD[key] || []; return key === 'more' ? (VOD_WORDS[name] ? list.filter(t => VOD_WORDS[name].test(t.t)) : []) : list; };
+const VOD_NAME = { football: 'ฟุตบอล', muay: 'มวยไทย', motor: 'มอเตอร์สปอร์ต', badminton: 'แบดมินตัน', futsal: 'ฟุตซอล', more: 'กีฬาอื่นๆ' };
+// the schedule as a small outlined pill (calendar + ตารางแข่งขัน) on the right of a sport's header
+const fixturesBtn = name => `<button class="sp-fix" data-fix="${esc(name)}">${calIc}<span>ตารางแข่งขัน</span></button>`;
+// a sport's header: its name with a chevron opens the sport's own page, the pill on the right its schedule
+const sportHead = name => `<h2 class="shelf-h sp-h"><button class="sp-name" data-hub="${esc(name)}">${esc(name)}${chev}</button>${fixturesBtn(name)}</h2>`;
+const vodRow = (title, list) => list && list.length ? `<section class="shelf">${head(title)}${row(list.slice(0, 18), poster)}</section>` : '';
+function sportData() {
+  const live = LIVE_FEED ? Promise.resolve() : fetch('/api/now-home?live=1').then(r => r.json()).catch(() => []).then(l => { if (!LIVE_FEED) liveMerge(l); });
+  const vod = SPORT_VOD ? Promise.resolve() : fetch('/api/now-home?vod=1').then(r => r.json()).catch(() => ({})).then(v => {
+    SPORT_VOD = v; Object.values(v).flat().forEach(t => { const k = `${t.type}/${t.id}`; if (!TITLES.has(k)) TITLES.set(k, t); }); });
+  return Promise.all([live, vod]);
+}
+const sportsWithEvents = () => [...new Set(LIVE_FEED.map(e => e.sport).filter(x => x && x !== 'บันเทิง'))].sort(bySport);
+function sportPageShell(title) {
+  const el = document.createElement('section');
+  el.className = 'mpage cat sport-pg';
+  el.innerHTML = `<header class="sc-top"><button class="sc-back" aria-label="กลับ">${scIc('back')}</button><h1>${esc(title)}</h1></header>
+    <div class="mp-scroll"><div class="loading"><i></i></div></div>`;
+  el.addEventListener('click', e => {
+    if (e.target.closest('.sc-back')) { el.classList.add('out'); return setTimeout(() => el.remove(), 250); }
+    const fix = e.target.closest('[data-fix]');
+    if (fix) return openMore('live', fix.dataset.fix === 'ทั้งหมด' ? '' : fix.dataset.fix);
+    const hub = e.target.closest('[data-hub]');
+    if (hub) return openSportHub(hub.dataset.hub);
+    const more = e.target.closest('[data-more]');
+    if (more) return openMore(more.dataset.more);
+    const a = e.target.closest('a[href*="/watch/"]'), d = a && TITLES.get(watchKey(a.getAttribute('href')));
+    if (d) { e.preventDefault(); openDetail(d); }
+  });
+  document.querySelector('.phone').appendChild(el);
+  return el.querySelector('.mp-scroll');
+}
+function openSportPage() {
+  const body = sportPageShell('กีฬา');
+  sportData().then(() => {
+    const now = Date.now(), live = LIVE_FEED.filter(e => e.sport !== 'บันเทิง'), shown = new Set();
+    const sports = sportsWithEvents();
+    const blocks = sports.map(name => {
+      const evs = live.filter(e => e.sport === name), key = SPORT_VOD_KEY(name), own = key === 'more';
+      const vod = own ? vodFor(name) : !shown.has(key) && SPORT_VOD[key]; if (vod && !own) shown.add(key);
+      return `<div class="sp-block">${sportHead(name)}${row(evs.slice(0, 10), evCard)}
+        ${vod && vod.length ? vodRow(`ไฮไลท์และย้อนหลัง · ${own ? name : VOD_NAME[key]}`, vod) : ''}</div>`;
+    }).join('');
+    // replay shelves no block showed (a sport with nothing on, futsal)
+    const rest = Object.keys(SPORT_VOD).filter(k => !shown.has(k)).map(k => vodRow(VOD_NAME[k], SPORT_VOD[k])).join('');
+    // the top shelf wears the same header as the sport blocks: its title, and the pill for the whole schedule
+    body.innerHTML = `<section class="shelf"><h2 class="shelf-h sp-h"><span>ไลฟ์สดและที่กำลังมา</span>${fixturesBtn('ทั้งหมด')}</h2>${row(live.filter(e => !e.end || e.end > now).slice(0, 10), evCard)}</section>
+      ${blocks}${rest}`;
+  });
+}
+// one sport's own page (the wireframes' "Sport - Hub"): its events, the schedule button, its replays
+function openSportHub(name) {
+  const body = sportPageShell(name);
+  sportData().then(() => {
+    const evs = LIVE_FEED.filter(e => e.sport === name), vod = vodFor(name);
+    const hl = vod.filter(t => /ไฮไลท์|highlight/i.test(t.t)), full = vod.filter(t => !hl.includes(t));
+    body.innerHTML = `${evs.length ? `<section class="shelf"><h2 class="shelf-h sp-h"><span>ไลฟ์สดและที่กำลังมา</span>${fixturesBtn(name)}</h2>${row(evs, evCard)}</section>` : ''}
+      ${hl.length && full.length ? vodRow('ไฮไลท์', hl) + vodRow('ย้อนหลังเต็มแมตช์', full) : vodRow('ไฮไลท์และย้อนหลัง', vod)}
+      ${!evs.length && !vod.length ? '<p class="mp-err">ยังไม่มีรายการ</p>' : ''}`;
+  });
+}
+function openMore(page, preset = '') {
+  if (page === 'sport') return openSportPage();
+  if (CAT_PAGES[page]) return openCategory(page);
   if (page === 'live' && LOOK === 'apple') {
-    const draw = openSchedule();
+    const draw = openSchedule(preset);
     if (LIVE_FEED) return draw();
     return fetch('/api/now-home?live=1').then(r => r.json()).then(list => { liveMerge(list); draw(); }).catch(() => { liveMerge([]); draw(); });
   }
@@ -577,9 +729,9 @@ function openMore(page) {
     <div class="mp-scroll">${page === 'tv' && CHANNEL_GROUPS ? tvGroups() : page === 'live' && LIVE_FEED ? '' : '<div class="loading"><i></i></div>'}</div>`;
   const body = el.querySelector('.mp-scroll'), bar = el.querySelector('.mp-bar');
   const fill = () => { body.querySelectorAll('[data-trim]').forEach(trimLogo); tvTick(body); };
-  let sport = '', day = '';
+  let sport = preset, day = '';
   // scroll-spy, as in the mini app: the day whose section sits at the top of the list is the current day; the
-  // calendar button turns white once that's past today, and back at the top it returns to today
+  // calendar button turns white whenever that's past today (scrolled down, or a tab whose events start later)
   const spy = () => {
     const calb = bar && bar.querySelector('.mp-calb');
     if (!calb) return;
@@ -596,6 +748,7 @@ function openMore(page) {
     bar.querySelector('.mp-calb').classList.toggle('on', !!day && day !== DAY_KEY(Date.now()));
     body.innerHTML = `<div class="mp-live">${liveDays(evs)}</div>`; body.scrollTop = 0;
     const on = bar.querySelector('.mp-chips .on'); on && on.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+    spy();   // a tab whose first event is after today (UCL on Wednesday) lights the calendar button straight away
   };
   const calendar = () => {
     const old = el.querySelector('.mp-cal');
@@ -1025,16 +1178,17 @@ const navIcon = d => `<svg width="18" height="18" viewBox="0 0 24 24" fill="none
 const NAV = {
   classic: [['ภาพยนตร์'], ['ซีรีส์'], ['กีฬา']],
   new: [
-    ['ภาพยนตร์', navIcon('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>')],
-    ['ซีรีส์', navIcon('<rect x="3" y="7" width="18" height="13" rx="2"/><path d="m8 3 4 4 4-4"/>')],
-    ['กีฬา', navIcon('<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/>')],
-    ['ไลฟ์สด', navIcon('<circle cx="12" cy="12" r="2.5" fill="currentColor"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/>')],
-    ['ออริจินัล', navIcon('<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>')],
-    ['เด็ก', navIcon('<path d="M12 3a6 6 0 0 0-6 6c0 3.5 3 6.5 6 7.5 3-1 6-4 6-7.5a6 6 0 0 0-6-6z"/><path d="M12 16.5V21M10.5 21h3"/>')],
+    ['ภาพยนตร์', navIcon('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>'), 'movie'],
+    ['ซีรีส์', navIcon('<rect x="3" y="7" width="18" height="13" rx="2"/><path d="m8 3 4 4 4-4"/>'), 'series'],
+    ['กีฬา', navIcon('<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/>'), 'sport'],
+    ['ไลฟ์สด', navIcon('<circle cx="12" cy="12" r="2.5" fill="currentColor"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/>'), 'live'],
   ],
 };
+// a destination with a page (third entry) opens it: ไลฟ์สด → the live & upcoming see more page (ใหม่ 2: the schedule)
 const drawNav = () => {
-  document.querySelector('.tb-pills').innerHTML = NAV[LOOK === 'classic' ? 'classic' : 'new'].map(([label, icon]) => `<a>${icon || ''}<span>${label}</span></a>`).join('');
+  const bar = document.querySelector('.tb-pills');
+  bar.innerHTML = NAV[LOOK === 'classic' ? 'classic' : 'new'].map(([label, icon, page]) => `<a${page ? ` data-nav="${page}"` : ''}>${icon || ''}<span>${label}</span></a>`).join('');
+  if (!bar.wired) { bar.wired = true; bar.addEventListener('click', e => { const a = e.target.closest('[data-nav]'); if (a) openMore(a.dataset.nav); }); }
 };
 
 function lookToggle(onChange) {

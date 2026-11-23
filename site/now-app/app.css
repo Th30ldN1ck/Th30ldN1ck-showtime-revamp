@@ -486,7 +486,7 @@ body.look-new .phone.scrolled .topbar { box-shadow: 0 1px 0 rgba(255,255,255,.06
 .hm-teams { display: grid; grid-template-columns: 1fr auto 1fr; grid-template-rows: auto auto; align-items: center; column-gap: 10px; row-gap: 8px; width: 100%; }
 .hm-side { display: contents; }
 .hm-side > :first-child { grid-row: 1; justify-self: center; }
-.hm-side b { grid-row: 2; align-self: start; text-align: center; font-size: 14px; font-weight: 500; line-height: 1.2; overflow-wrap: anywhere; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
+.hm-side b { grid-row: 2; align-self: start; text-align: center; font-size: 16px; font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
 .hm-side:first-child > * { grid-column: 1; }
 .hm-side:last-child > * { grid-column: 3; }
 /* the kick-off chip (or LIVE) on the flags' line, the day under it on the names' line */
@@ -500,11 +500,11 @@ body.look-new .phone.scrolled .topbar { box-shadow: 0 1px 0 rgba(255,255,255,.06
 }
 .hm-flag { width: 60px; height: 40px; border-radius: 6px; object-fit: cover; box-shadow: 0 0 0 1px rgba(255,255,255,.25), 0 4px 12px rgba(0,0,0,.35); }   /* whole flag, not a circle crop */
 .hm-when { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.hm-when small { font-size: 13px; color: rgba(255,255,255,.75); font-variant-numeric: tabular-nums; }
+.hm-when small { font-size: 14px; color: rgba(255,255,255,.75); font-variant-numeric: tabular-nums; }
 .hm-when b { padding: 3px 12px; border-radius: 10px; background: rgba(255,255,255,.16); font-size: 22px; font-variant-numeric: tabular-nums; }
 .hm-live { padding: 4px 10px; border-radius: 6px; background: #ff2a2a; font-style: normal; font-size: 14px; font-weight: 700; }
 .hm-solo { grid-template-columns: 1fr; justify-items: center; }
-.hm-event { font-size: 24px; line-height: 1.2; text-shadow: 0 2px 10px #000; }
+.hm-event { font-size: 20px; line-height: 1.25; text-shadow: 0 2px 10px #000; }
 /* live CTA variants on the standard hero buttons (.btn-play / .btn-add sizes unchanged) */
 .btn-live { background: #e50914; color: #fff; }
 .btn-live b { width: 11px; height: 11px; border-radius: 50%; background: #ffc2c5; animation: live-pulse 1.4s ease-in-out infinite; }
@@ -817,3 +817,49 @@ body:not(.look-apple) .mpage.out { transform: translateY(16px) scale(.98); opaci
 .sc-t small { display: block; font-size: 12px; font-weight: 400; line-height: 18px; color: #9ca3af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ch-day li.me { font-weight: 700; }
 .ch-me { flex: none; padding: 2px 8px; border-radius: 6px; background: #fff; color: #000; font-style: normal; font-size: 12px; font-weight: 700; }
+/* channel and event rows end up a pixel taller than their box (line-height rounding); a sideways row that can also
+   scroll down by that pixel catches the page's vertical scroll, so these rows never scroll vertically */
+.row:has(> .tv-card), .row:has(> .ev-card) { overflow-y: hidden; }
+/* one type scale on every live slide: competition 15 bold, the main line (teams 16 semibold, or the event name 20
+   bold when it isn't a match), kick-off 22 bold, its day 14. A slide that isn't a match (fight nights, a race) puts
+   the kick-off chip and its day on one line under the event name */
+.hm-solo > .hm-when { flex-direction: row; gap: 8px; }
+.tb-pills [data-nav] { cursor: pointer; }
+
+/* ---------- category pages (ภาพยนตร์ / ซีรีส์ / กีฬา pills), Netflix-style: a หมวดหมู่ button, a blurred list ---------- */
+.cat-pick { display: flex; justify-content: center; padding: 14px var(--pad) 18px; }
+.cat-btn { display: flex; align-items: center; gap: 10px; max-width: 100%; height: 40px; padding: 0 16px; border: 0; border-radius: 8px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.18); background: rgba(255,255,255,.08); color: #fff; font: inherit; font-size: 16px; font-weight: 500; cursor: pointer; }
+.cat-btn span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cat-btn svg { flex: none; }
+.cat .shelf { margin-bottom: 26px; }
+.cat-grid { padding-top: 0; }
+.cat-evs { display: grid; gap: 20px; padding: 0 var(--pad); }
+.cat-evs .ev-card { width: auto; }
+.cat-evs .ev-pic { border-radius: 12px; }
+/* the category list: full screen over a blur of the page, names centred, the current one bold white, ✕ at the bottom */
+.cat-menu { position: absolute; z-index: 6; inset: 0; display: flex; flex-direction: column; background: rgba(20,20,22,.72);
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); animation: iap-fade .2s ease-out; transition: opacity .2s; }
+.cat-menu.out { opacity: 0; }
+.cat-list { flex: 1; overflow-y: auto; scrollbar-width: none; display: flex; flex-direction: column; align-items: center; padding: 60px var(--pad) 20px;
+  -webkit-mask-image: linear-gradient(transparent, #000 60px, #000 calc(100% - 80px), transparent); mask-image: linear-gradient(transparent, #000 60px, #000 calc(100% - 80px), transparent); }
+.cat-list::-webkit-scrollbar { display: none; }
+.cat-list button { flex: none; padding: 16px 10px; border: 0; background: none; color: rgba(255,255,255,.7); font: inherit; font-size: 18px; text-align: center; cursor: pointer; }
+.cat-list button.on { color: #fff; font-weight: 700; }
+.cat-x { flex: none; display: grid; place-items: center; width: 56px; height: 56px; margin: 6px auto 34px; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; }
+.cat-x svg { width: 34px; height: 34px; }
+
+/* ---------- the กีฬา page and a sport's own page (Sport wireframes without the hero) ---------- */
+.sp-block { margin-bottom: 30px; }
+.sp-block > .row { margin-bottom: 22px; }
+.sp-block .shelf { margin-bottom: 14px; }
+.sp-h { gap: 10px; }
+.sp-h > span { flex: 1; min-width: 0; font-weight: 600; }
+.sp-name { flex: 1; min-width: 0; display: flex; align-items: center; gap: 2px; padding: 0; border: 0; background: none; color: #fff;
+  font: inherit; font-weight: 600; text-align: left; cursor: pointer; }
+.sp-name .chev { flex: none; width: 20px; height: 20px; margin: 0; }
+.sp-fix { flex: none; display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px 0 10px; border: 0; border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.28); background: none; color: #fff; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
+.sp-fix svg { width: 15px; height: 15px; }
+.sp-fix:active { background: rgba(255,255,255,.1); }
+.hm-shield { font-size: 0; }

@@ -143,11 +143,28 @@ async function channelDay(num) {
     still: p.thumbnailUrl || '' })).filter(p => p.t && p.start);
 }
 
+// ?cat=movie|series|sport: a category page (the header's ภาพยนตร์ / ซีรีส์ / กีฬา pills), from the NOW app's own
+// category feed: its hero, then every shelf that has titles, trimmed like the home
+const CATS = { movie: 'movie', series: 'series', sport: 'sport' };
+async function category(name) {
+  const shelves = await (await fetch(`https://tvs.dmpcdn.com/mobile/v1/th/${CATS[name]}_category_adult_th.json`)).json(), now = Date.now();
+  const out = [];
+  for (const s of shelves) {
+    const st = s.style || {}, h = s.header || {};
+    let items = (s.items || []).map(e => item(e.data || {}, st.type)).filter(x => x.id);
+    if (items.some(i => i.type === 'tvs-live')) items = items.filter(i => i.type !== 'tvs-live' || !i.end || i.end > now);   // events still to come
+    if (!items.length) continue;
+    out.push({ kind: st.type, title: (h.title_th || st.title_th || '').trim(), items: items.slice(0, st.type === 'hero_banner_shelf' ? 8 : 24) });
+  }
+  return out;
+}
+
 module.exports = async (req, res) => {
   try {
     const q = new URL(req.url || '/', 'http://x').searchParams;
-    if (q.has('channels') || q.has('live') || q.has('vod') || q.has('ch')) {
-      const groups = q.has('live') ? await liveEvents() : q.has('vod') ? await sportVod() : q.has('ch') ? await channelDay(q.get('ch')) : await channelGroups();
+    if (q.has('channels') || q.has('live') || q.has('vod') || q.has('ch') || CATS[q.get('cat')]) {
+      const groups = q.has('live') ? await liveEvents() : q.has('vod') ? await sportVod() : q.has('ch') ? await channelDay(q.get('ch'))
+        : CATS[q.get('cat')] ? await category(q.get('cat')) : await channelGroups();
       res.statusCode = 200;
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
       res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
