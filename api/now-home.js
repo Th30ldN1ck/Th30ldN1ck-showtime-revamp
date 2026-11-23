@@ -28,7 +28,12 @@ function item(d, shelfType) {
     out.start = Date.parse(d.start_date) || 0; out.end = Date.parse(d.end_date) || 0;
     out.ch = d.digital_no || ''; out.logo = d.thumb || '';
     if (!(d.subscription_tiers || []).includes('basic')) out.pay = 1; // needs a package: the TV design's crown
+    // a live event that isn't sport (concerts, award shows like MAMA): the live page files it under บันเทิง
+    if (shelfType !== 'livetv_shelf' && d.article_category && !d.article_category.includes('sports')) out.ent = 1;
     out.land = tl.landscape_image || tl.poster || d.thumb || '';
+    // a channel's programme on air now (the Live TV cards): its name, slot and picture (often just the logo again)
+    if (shelfType === 'livetv_shelf' && d.epg_title) Object.assign(out, { prog: d.epg_title.trim(),
+      ps: Date.parse(d.epg_start_date) || 0, pe: Date.parse(d.eng_end_date) || 0, still: d.epg_thumb !== d.thumb ? d.epg_thumb || '' : '' });
   }
   if (d.enable_date) out.start = Date.parse(d.enable_date) || 0;
   return out;
@@ -43,10 +48,113 @@ function details(d) {
     aud: (d.audio || []).filter(Boolean), sub: (d.subtitle || []).filter(Boolean) };
 }
 
+// The TV guide (epg.truevisions.co.th, as the TVS NOW mini app uses it) knows what's on more exactly than the feed and
+// has a real frame from each programme: channel number -> { prog, ps, pe, still }. Its page carries the data in the
+// Next.js payload, JSON inside a JS string (quotes escaped). Best effort: no guide, the feed's own epg_* fields stay.
+function payloadArray(html, key) {
+  const marker = `\\"${key}\\":`, at = html.indexOf(marker);
+  if (at < 0) return [];
+  const from = at + marker.length;
+  for (let i = from, depth = 0; i < html.length; i++) {
+    if (html[i] === '[') depth++;
+    else if (html[i] === ']' && --depth === 0) return JSON.parse(JSON.parse(`"${html.slice(from, i + 1)}"`));
+  }
+  return [];
+}
+const GUIDE = 'https://epg.truevisions.co.th/th/channel';
+const guideList = async () => payloadArray(await (await fetch(GUIDE, { signal: AbortSignal.timeout(4000) })).text(), 'channels');
+async function guide() {
+  const list = await guideList(), map = new Map();
+  for (const c of list) {
+    const n = c.nowPlaying, start = n && n.startTime;
+    if (!start) continue;
+    const day = start.slice(0, 10).replace(/-/g, ''), time = start.slice(11, 19).replace(/:/g, '');
+    map.set(String(c.number), { prog: ((n.title || {}).th || (n.title || {}).default || '').trim(), ps: Date.parse(start), pe: Date.parse(n.endTime),
+      still: `https://epgthumb.stm.trueid.net/thumbnail_large/${c.id}/${day}/${day}_${time}.jpg` });
+  }
+  return map;
+}
+
+// ?channels=1: the Live TV page (see more): every channel in the app's own Live TV groups (ดิจิทัลทีวี, ฟรีทีวี, beIN…),
+// a channel counting in the first group it's in, with what's on now
+const CHANNELS = 'https://tvs.dmpcdn.com/tvapp/v1/th/livetv_adult_th.json';
+async function channelGroups() {
+  const [shelves, g] = await Promise.all([fetch(CHANNELS).then(r => r.json()), guide().catch(() => new Map())]);
+  const seen = new Set(), out = [];
+  for (const s of shelves) {
+    const items = (s.items || []).map(e => e.data || {}).filter(d => d.id && d.digital_no && !seen.has(d.id) && seen.add(d.id))
+      .map(d => Object.assign(item(d, 'livetv_shelf'), g.get(String(d.digital_no)) || {}))
+      .sort((a, b) => a.ch - b.ch);
+    if (items.length) out.push({ title: ((s.header || {}).title_th || '').trim(), items });
+  }
+  return out;
+}
+
+// ?live=1: the ไลฟ์สดและที่กำลังมา page (see more), from the NOW sport feed as the TVS NOW mini app reads it: each
+// "Live Upcoming <sport>" shelf is one sport, named in the shelf's name; events in the catch-all shelves (Free, Special
+// Event, Live NOW) take the sport whose tag they carry, else none (they show under กีฬาทั้งหมด only)
+const SPORT_FEED = 'https://tvs.dmpcdn.com/tvapp/v1/th/sport_category_adult_th.json';
+const SPORT_TH = { 'muay thai': 'มวยไทย', volleyball: 'วอลเลย์บอล', tennis: 'เทนนิส', 'table tennis': 'เทเบิลเทนนิส', golf: 'กอล์ฟ',
+  motorsports: 'มอเตอร์สปอร์ต', badminton: 'แบดมินตัน', snooker: 'สนุกเกอร์', takraw: 'ตะกร้อ', futsal: 'ฟุตซอล', boxing: 'มวยสากล',
+  rugby: 'รักบี้', athletics: 'กรีฑา', baseball: 'เบสบอล', 'calcio serie a': 'Serie A' };
+const GENERIC = /^(free|special event)$/i;
+const slug = x => x.toLowerCase().replace(/[^a-z0-9]/g, '');
+async function liveEvents() {
+  const shelves = await (await fetch(SPORT_FEED)).json(), now = Date.now();
+  const sportOf = n => (n.match(/live upcoming\s+(.+)/i) || [])[1];
+  const named = shelves.map(s => sportOf(s.name || '')).filter(Boolean).map(n => n.replace(/\(edit\)/i, '').trim()).filter(n => !GENERIC.test(n));
+  const bySlug = new Map(named.map(n => [slug(n), n]));
+  const events = new Map();
+  for (const s of shelves) {
+    const raw = sportOf(s.name || ''), own = raw && raw.replace(/\(edit\)/i, '').trim();
+    if (!own && !/live now/i.test(s.name || '')) continue;
+    for (const e of s.items || []) {
+      const d = e.data || {};
+      if (d.content_type !== 'livetv' || !d.id || !(Date.parse(d.end_date) > now)) continue;
+      const sport = own && !GENERIC.test(own) ? own : bySlug.get((d.article_category || []).map(slug).find(c => bySlug.has(c)));
+      if (events.has(d.id) && (events.get(d.id).sport || !sport)) continue;
+      events.set(d.id, { ...item(d, 'coming_shelf'), sport: sport ? SPORT_TH[sport.toLowerCase()] || sport : '' });
+    }
+  }
+  return [...events.values()].sort((a, b) => a.start - b.start);
+}
+
+// ?vod=1: the sport feed's replay shelves (highlights, full matches, past fight nights…) by sport, for a live event's
+// ไฮไลท์และย้อนหลัง tab
+const VOD_SHELVES = [[/muay thai/i, 'muay'], [/football/i, 'football'], [/motorsport/i, 'motor'], [/futsal/i, 'futsal'],
+  [/badminton/i, 'badminton'], [/more sports/i, 'more']];
+async function sportVod() {
+  const shelves = await (await fetch(SPORT_FEED)).json(), out = {};
+  for (const s of shelves) {
+    if ((s.style || {}).type !== 'base_shelf') continue;
+    const key = (VOD_SHELVES.find(([re]) => re.test(s.name || '')) || [])[1];
+    if (!key) continue;
+    const seen = new Set((out[key] || []).map(i => i.id));
+    out[key] = [...(out[key] || []), ...(s.items || []).map(e => item(e.data || {}, 'base_shelf')).filter(i => i.id && !seen.has(i.id))];
+  }
+  return out;
+}
+// ?ch=626: that channel's programmes today from the TV guide, for a live event's channel tab
+async function channelDay(num) {
+  const c = (await guideList()).find(x => String(x.number) === String(num));
+  if (!c) return [];
+  const items = payloadArray(await (await fetch(`${GUIDE}/${c.id}`, { signal: AbortSignal.timeout(4000) })).text(), 'initialItems');
+  return items.map(p => ({ t: ((p.title || {}).th || (p.title || {}).default || '').trim(), start: Date.parse(p.startTime), end: Date.parse(p.endTime),
+    still: p.thumbnailUrl || '' })).filter(p => p.t && p.start);
+}
+
 module.exports = async (req, res) => {
   try {
+    const q = new URL(req.url || '/', 'http://x').searchParams;
+    if (q.has('channels') || q.has('live') || q.has('vod') || q.has('ch')) {
+      const groups = q.has('live') ? await liveEvents() : q.has('vod') ? await sportVod() : q.has('ch') ? await channelDay(q.get('ch')) : await channelGroups();
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
+      return res.end(JSON.stringify(groups));
+    }
     const shelves = await (await fetch(FEED)).json();
-    const wantDetails = new URL(req.url || '/', 'http://x').searchParams.has('details'), more = {};
+    const wantDetails = q.has('details'), more = {};
     const out = [];
     for (const s of shelves) {
       const st = s.style || {}, h = s.header || {}, bg = st.background || {};
@@ -64,6 +172,11 @@ module.exports = async (req, res) => {
         bg: bg.image_url_portrait || '',
         items: items.slice(0, 30),
       });
+    }
+    const tv = out.filter(s => s.kind === 'livetv_shelf');
+    if (tv.length && !wantDetails) {
+      const g = await guide().catch(() => new Map());
+      tv.forEach(s => s.items.forEach(it => { const n = g.get(String(it.ch)); if (n && n.prog) Object.assign(it, n); }));
     }
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json; charset=utf-8');

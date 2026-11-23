@@ -111,7 +111,7 @@ const dmy = t => {
 function HeroMatch(h) {
   const m = h.match, onAir = h.start <= Date.now();
   const mid = onAir ? '<span class="hm-when"><i class="hm-live">LIVE</i></span>'
-    : `<span class="hm-when"><small>${dmy(h.start)}</small><b>${hhmm(h.start)}</b></span>`;
+    : `<span class="hm-when"><b>${hhmm(h.start)}</b><small>${dmy(h.start)}</small></span>`;
   return `<div class="hm">${m.comp ? `<span class="hm-comp">${esc(m.comp)}</span>` : ''}${m.sides
     ? `<div class="hm-teams"><span class="hm-side">${crest(m.sides[0])}<b>${esc(m.sides[0])}</b></span>${mid}<span class="hm-side">${crest(m.sides[1])}<b>${esc(m.sides[1])}</b></span></div>`
     : `<div class="hm-teams hm-solo"><b class="hm-event">${esc(m.event)}</b>${mid}</div>`}</div>`;
@@ -161,10 +161,24 @@ const bellIcon = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" st
 const addBtn = '<a class="btn-add" aria-label="เพิ่มในรายการของฉัน"><svg width="22" height="22" viewBox="0 0 24 24" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 4v16M4 12h16"/></svg></a>';
 // Live cards keep the same CTA pair and sizes as the other hero cards (main button + square add): the main button is
 // red ● ดูสด while on air, or the white ตั้งเตือน reminder toggle before it starts.
+// reminders are one list (REMINDERS) shared by the hero, the schedule's bells and the detail page
+const heroId = h => watchKey(h.href).split('/')[1];
+// after the detail page changes a reminder, bring the bells and hero buttons already on screen in line
+function syncReminders() {
+  document.querySelectorAll('[data-bell]').forEach(b => { const on = REMINDERS.has(b.dataset.bell); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+  document.querySelectorAll('.hc-card [data-remind]').forEach(b => {
+    const on = REMINDERS.has(b.closest('.hc-card').dataset.watch.split('/')[1]);
+    b.classList.toggle('set', on); b.querySelector('span').textContent = on ? 'ตั้งเตือนแล้ว' : 'ตั้งเตือน';
+  });
+  const hf = document.querySelector('.hf-ctas [data-remind]');
+  if (hf) { const id = heroId(HF_SLIDES[[...document.querySelectorAll('.hf-art')].findIndex(a => a.classList.contains('on'))] || {});
+    if (id) { const on = REMINDERS.has(id); hf.classList.toggle('set', on); hf.querySelector('span').textContent = on ? 'ตั้งเตือนแล้ว' : 'ตั้งเตือน'; } }
+}
 function HeroActions(h) {
   if (h.cls === 'hc-live') {
     const main = h.start <= Date.now()
       ? `<a class="btn-play btn-live" ${h.href}><b></b>ดูสด</a>`
+      : REMINDERS.has(heroId(h)) ? `<a class="btn-play btn-remind set" data-remind>${bellIcon}<span>ตั้งเตือนแล้ว</span></a>`
       : `<a class="btn-play btn-remind" data-remind>${bellIcon}<span>ตั้งเตือน</span></a>`;
     return `<span class="hero-ctas">${main}${addBtn}</span>`;
   }
@@ -251,7 +265,8 @@ function wireHeroCards(screen) {
     if (!r) return;
     const on = r.classList.toggle('set');
     // clones mirror their slide, so update every copy of this reminder
-    const card = r.closest('.hc-card'), bg = card.dataset.bg;
+    const card = r.closest('.hc-card'), bg = card.dataset.bg, id = card.dataset.watch.split('/')[1];
+    on ? REMINDERS.add(id) : REMINDERS.delete(id);
     cards.filter(c => c.dataset.bg === bg).forEach(c => {
       const b = c.querySelector('[data-remind]'); b.classList.toggle('set', on); b.querySelector('span').textContent = on ? 'ตั้งเตือนแล้ว' : 'ตั้งเตือน';
     });
@@ -288,13 +303,8 @@ function wireHeroFade(screen) {
   if (!sec) return;
   const arts = [...sec.querySelectorAll('.hf-art')], logos = [...sec.querySelectorAll('.hf-slide')];
   const dots = [...sec.querySelectorAll('.dots i')], ctas = sec.querySelector('.hf-ctas'), n = arts.length;
-  const reminded = new Set();
   let cur = 0, idle;
-  const drawCtas = () => {
-    ctas.innerHTML = HeroActions(HF_SLIDES[cur]);
-    const r = ctas.querySelector('[data-remind]');
-    if (r && reminded.has(cur)) { r.classList.add('set'); r.querySelector('span').textContent = 'ตั้งเตือนแล้ว'; }
-  };
+  const drawCtas = () => { ctas.innerHTML = HeroActions(HF_SLIDES[cur]); };
   // dir 1 = next (new logo comes in from the right), -1 = previous
   const show = (to, dir) => {
     to = (to + n) % n;
@@ -339,7 +349,8 @@ function wireHeroFade(screen) {
   sec.addEventListener('click', e => {
     const r = e.target.closest('[data-remind]');
     if (!r) return;
-    reminded.has(cur) ? reminded.delete(cur) : reminded.add(cur);
+    const id = heroId(HF_SLIDES[cur]);
+    REMINDERS.has(id) ? REMINDERS.delete(id) : REMINDERS.add(id);
     drawCtas();
   });
   clearInterval(countTimer);
@@ -372,13 +383,251 @@ function live(s, onAir) {
   const now = Date.now();
   return liveRow(s, s.items.filter(it => it.type !== 'tvs-live' || (onAir ? it.start <= now && it.end > now : it.end > now)));
 }
-// New look: one live row, what's on air first, then upcoming in start order (the feed splits these into two shelves).
-function liveMerged(s, upcoming) {
+// New looks: one live row, what's on air first, then upcoming in start order (the feed splits these into two shelves;
+// with nothing on air there's only the upcoming one). Cards as the TVS NOW mini app draws them (LiveRail): the event's
+// picture with a Live pill or its day and kick-off, then the competition and the event name.
+function liveMerged(live, upcoming) {
   const now = Date.now(), seen = new Set();
-  const onAir = s.items.filter(it => it.start <= now && it.end > now);
+  const onAir = (live ? live.items : []).filter(it => it.start <= now && it.end > now);
   const next = (upcoming ? upcoming.items : []).filter(it => it.start > now).sort((a, b) => a.start - b.start);
-  const items = [...onAir, ...next].filter(it => !seen.has(it.id) && seen.add(it.id));
-  return liveRow({ ...s, title: 'ไลฟ์สดและที่กำลังมา' }, items);
+  LIVE_EVENTS = [...onAir, ...next].filter(it => !seen.has(it.id) && seen.add(it.id));
+  if (!LIVE_EVENTS.length) return '';
+  return `<section class="shelf">${moreHead('ไลฟ์สดและที่กำลังมา', 'live')}${row(LIVE_EVENTS.slice(0, 10), evCard)}</section>`;
+}
+let LIVE_EVENTS = [];
+// a row heading that opens the row's see more page (the whole heading, not only the chevron, as in the mini app)
+const moreHead = (title, page) => `<h2 class="shelf-h"><button class="more-h" data-more="${page}">${esc(title)}<span>ดูเพิ่มเติม${chev}</span></button></h2>`;
+// "competition : event" (or "competition: event", as the Thai titles write it)
+const evTitle = it => { const m = it.t.match(/^(.+?)\s?:\s(.+)$/); return m ? [m[1], m[2]] : ['', it.t]; };
+function evCard(it) {
+  const [c, t] = evTitle(it), comp = c || it.sport, onNow = it.start <= Date.now();
+  return `<a class="ev-card" ${link(it)}><span class="ev-pic">${img(it.land || it.poster, '')}${onNow ? liveBadge : `<i class="ev-time">${dayTime(it.start)}</i>`}</span>
+    ${comp ? `<span class="ev-comp">${esc(comp)}</span>` : ''}<span class="ev-t">${esc(t)}</span></a>`;
+}
+const liveBadge = '<i class="live-b"><b></b>Live</i>';
+// "วันนี้ 13:50", "พรุ่งนี้ 09:00", "ศ. 21:30": an upcoming event's day and kick-off
+const dayTime = t => `${/\//.test(dmy(t)) ? new Date(t).toLocaleDateString('th-TH', { timeZone: TZ, weekday: 'short' }) : dmy(t)} ${hhmm(t)}`;
+// New looks' Live TV row, the mini app's ChannelCard: what's on each channel now (api/now-home.js: the TV guide's frame
+// from the programme, or the feed's picture) with a Live pill, a lock on channels that need a package, minutes left
+// and a progress bar; under it the round channel logo, the programme, the channel and number, and the time slot. A
+// channel with no picture shows its logo on a dark tile.
+const liveTv = s => `<section class="shelf">${moreHead('ทีวีสด', 'tv')}${row(s.items, tvCard)}</section>`;
+function tvCard(it) {
+  const name = it.t.replace(/\s*-\s*Now$/i, '').trim();
+  return `<a class="tv-card" ${link(it)}><span class="tv-pic">${it.still ? img(it.still, '') : `<span class="tv-tile"><img src="${esc(it.logo)}" alt="" data-trim></span>`}
+    ${liveBadge}${it.pay ? `<i class="tv-lock" role="img" aria-label="สำหรับสมาชิก">${lockIc}</i>` : ''}<span class="tv-left" data-ps="${it.ps || 0}" data-pe="${it.pe || 0}"></span></span>
+    <span class="tv-info"><span class="tv-logo"><img src="${esc(it.logo)}" alt="" data-trim></span><span>
+    <b>${esc(it.prog || name)}</b><small>${esc(name)} · ช่อง ${esc(it.ch)}</small>${it.ps && it.pe ? `<small>${hhmm(it.ps)}–${hhmm(it.pe)}</small>` : ''}</span></span></a>`;
+}
+
+// See more pages (new looks), pushed over the home like the mini app's: ทีวีสด = every channel in the app's own Live TV
+// groups (api/now-home.js?channels=1, fetched on first open), a row each with its count; ไลฟ์สดและที่กำลังมา = the
+// events by day, the day pinned at the left as the list scrolls, full-width event cards. A card opens the detail page.
+let CHANNEL_GROUPS, LIVE_FEED;
+const DAY_KEY = t => new Date(t).toLocaleDateString('en-CA', { timeZone: TZ });
+const dayDate = k => new Date(Date.parse(`${k}T12:00:00+07:00`));
+const thDay = (k, o) => dayDate(k).toLocaleDateString('th-TH', { timeZone: TZ, ...o });
+function liveDays(events) {
+  const days = new Map(), now = Date.now();
+  events.forEach(it => { const k = DAY_KEY(Math.max(it.start, now)); days.set(k, [...(days.get(k) || []), it]); });
+  if (!days.size) return '<p class="mp-err">ไม่มีรายการในหมวดนี้</p>';
+  return [...days].map(([k, list]) => {
+    const lbl = dmy(dayDate(k).getTime());
+    return `<section class="mp-day" data-day="${k}"><div class="mp-date"><span><small>${/\//.test(lbl) ? thDay(k, { weekday: 'short' }) : lbl}</small><b>${thDay(k, { day: 'numeric' })}</b><small>${thDay(k, { month: 'short' })}</small></span></div>
+      <div class="mp-evs">${list.map(evCard).join('')}</div></section>`;
+  }).join('');
+}
+// the live page's filter bar, as in the mini app (SportFilters): a round calendar button, then the sport tabs; the
+// calendar lists the next 7 days (days with nothing on are grey) and scrolls the list to the one picked
+const calIc = '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>';
+function liveFilters(events, sport) {
+  const sports = [...new Set(events.map(e => e.sport).filter(Boolean))].sort((a, b) => (b === 'บันเทิง') - (a === 'บันเทิง') || a.localeCompare(b, 'th'));
+  return `<div class="mp-filters"><button class="mp-calb" aria-label="เลือกวันที่">${calIc}</button><div class="mp-chips" role="tablist">${['', ...sports]
+    .map(x => `<button role="tab" data-sport="${esc(x)}" aria-selected="${x === sport}"${x === sport ? ' class="on"' : ''}>${esc(x || 'ทั้งหมด')}</button>`).join('')}</div></div>`;
+}
+const tvGroups = () => CHANNEL_GROUPS.map(g => `<section class="shelf"><h2 class="shelf-h">${esc(g.title)} <small class="mp-n">${g.items.length}</small></h2>${row(g.items, tvCard)}</section>`).join('');
+// ใหม่ 2's live page: ตารางถ่ายทอดสด from the Figma (Fix issues, Live detail 1250:18970): category tabs, a date strip
+// (one day at a time), then a section per category (round picture, name, chevron that picks its tab) listing that
+// day's events as compact rows: picture with the time or Live, the event, a bell to be reminded or play when on air
+const REMINDERS = new Set();
+function liveMerge(list) {
+  const ids = new Set(list.map(e => e.id)), now = Date.now();
+  LIVE_FEED = [...list, ...LIVE_EVENTS.filter(e => !ids.has(e.id)).map(e => ({ ...e, sport: e.ent ? 'บันเทิง' : '' }))]
+    .filter(e => e.end > now || !e.end).sort((a, b) => a.start - b.start);
+  LIVE_FEED.forEach(it => { const k = `${it.type}/${it.id}`; if (!TITLES.has(k)) TITLES.set(k, it); });
+}
+// short Thai weekdays as the design writes them ("จ. 8 ธ.ค.", "อ. 20:30"); the browser's Thai dates spell them out
+const TH_WD = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
+const wdOf = t => TH_WD[new Date(new Date(t).toLocaleString('en-US', { timeZone: TZ })).getDay()];
+// competitions with a real logo get a section of their own (as in the design); the rest stay under their sport with
+// its initial. Logos in img/live/logos/ (Wikimedia Commons / Wikipedia; the feed carries none)
+const COMPS = [
+  [/แชมเปียนส์ ลีก|champions league/i, 'UEFA Champions League', 'ucl.png'], [/ลา ลีกา|laliga/i, 'LaLiga', 'laliga.png'],
+  [/เซเรีย อา|serie a/i, 'Serie A', 'seriea.png'], [/สกอตติช|scottish/i, 'Scottish Premiership', 'spfl.png'],
+  [/^F1\b|formula 1/i, 'Formula 1', 'f1.svg'], [/^F2\b|formula 2/i, 'Formula 2', 'f2.png'], [/moto ?gp/i, 'MotoGP', 'motogp.svg'],
+  [/uk championship/i, 'UK Championship', 'uk-snooker.png'], [/^LET\b|ladies european/i, 'Ladies European Tour', 'let.png'],
+  [/davis cup/i, 'Davis Cup', 'davis.svg'],
+];
+// sections with no logo get their sport's icon (line icons, white on the grey circle)
+const SPORT_IC = {
+  'กอล์ฟ': '<circle cx="12" cy="8.5" r="5.5"/><path d="M10 7h.01M13 6h.01M14 9h.01M11 10h.01M12 14v6M9 20h6"/>',
+  'มวยไทย': '<path d="M7 11V7.5A3.5 3.5 0 0 1 10.5 4H14a4 4 0 0 1 4 4v5a4 4 0 0 1-4 4H9.5A2.5 2.5 0 0 1 7 14.5V11z"/><path d="M7 11h4.5a1.5 1.5 0 0 1 0 3H9"/><path d="M8.5 17v3h8v-3.6"/>',
+  'วอลเลย์บอล': '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5c1.5 3 1.5 6 0 8.5M12 12c-3 .5-6 2-7.4 4.3M12 12c2.6 1.7 5.7 2 8.3 1.2"/>',
+  'แบดมินตัน': '<path d="M8 16l-2.5 2.5a2 2 0 1 0 2.8 2.8L10.8 19"/><path d="M8 16l2.8 3L20 9.8 14.2 4z"/><path d="M11 8.5l4.5 4.5M13 6.5l4.5 4.5"/>',
+  'มอเตอร์สปอร์ต': '<path d="M5 21V4"/><path d="M5 4h14v9H5"/><path d="M5 8.5h14M9.7 4v9M14.3 4v9"/><path d="M5 4h4.7v4.5H5zM14.3 4H19v4.5h-4.7zM9.7 8.5h4.6V13H9.7z" fill="currentColor"/>',
+  'เทนนิส': '<circle cx="12" cy="12" r="8.5"/><path d="M5 6.5c3.5 3 3.5 8 0 11M19 6.5c-3.5 3-3.5 8 0 11"/>',
+  'สนุกเกอร์': '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="11" r="3.2"/><path d="M12 9.6v.01M12 12.4v.01"/>',
+  'บันเทิง': '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/>',
+  'กีฬาอื่นๆ': '<path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1.5A3.5 3.5 0 0 0 7.5 11M17 6h3v1.5a3.5 3.5 0 0 1-3.5 3.5M12 14v4M8 21h8l-1-3H9z"/>',
+};
+const sportIc = name => `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${SPORT_IC[name] || SPORT_IC['กีฬาอื่นๆ']}</svg>`;
+const compOf = e => { const c = COMPS.find(([re]) => re.test(e.t)); return c ? { name: c[1], logo: c[2] } : { name: e.sport || 'กีฬาอื่นๆ' }; };
+const scIc = n => `<img src="/now-app/img/live/${n}.svg" alt="" width="${n === 'back' ? 20 : 24}" height="${n === 'back' ? 20 : 24}">`;
+// under a competition's own heading the row drops the competition ("ยูฟา แชมเปียนส์ ลีก 26/27: …"); under a sport
+// heading it keeps it as a small grey line over the event, else "JLPGA …: Day 3" would read just "Day 3"
+function schedRow(e, comp) {
+  const onNow = e.start <= Date.now(), [c, rest] = evTitle(e);
+  const t = comp || !c ? `<span>${esc(comp ? rest : e.t)}</span>` : `<small>${esc(c)}</small><span>${esc(rest)}</span>`;
+  return `<div class="sc-row"><a class="sc-pic${onNow ? ' on' : ''}" ${link(e)}>${img(e.land || e.poster, '')}
+    <i class="sc-badge">${onNow ? `${scIc('red-dot').replace(/width="24" height="24"/, 'width="5" height="5"')}Live` : `${wdOf(e.start)} ${hhmm(e.start)}`}</i></a>
+    <a class="sc-t" ${link(e)}>${t}</a>${onNow
+      ? `<a class="sc-ic" data-play="${esc(e.id)}" aria-label="ดูสด">${scIc('play')}</a>`
+      : `<button class="sc-ic${REMINDERS.has(e.id) ? ' on' : ''}" data-bell="${esc(e.id)}" aria-pressed="${REMINDERS.has(e.id)}" aria-label="ตั้งเตือน">${scIc('bell')}</button>`}</div>`;
+}
+function openSchedule() {
+  const el = document.createElement('section');
+  el.className = 'mpage sched';
+  el.innerHTML = `<header class="sc-top"><button class="sc-back" aria-label="กลับ">${scIc('back')}</button><h1>ตารางถ่ายทอดสด</h1></header>
+    <div class="sc-bars"><div class="sc-cats" role="tablist"></div><div class="sc-days" role="tablist"></div></div><div class="mp-scroll"><div class="loading"><i></i></div></div>`;
+  const body = el.querySelector('.mp-scroll'), cats = el.querySelector('.sc-cats'), days = el.querySelector('.sc-days');
+  // the category tabs and the date strip slide away with the scroll, as native apps' toolbars do: they follow the
+  // finger pixel for pixel (no timed animation while scrolling, so nothing to flicker), and when the scroll stops part
+  // way they ease to fully shown or hidden. Not on a list too short to scroll past them; the bounce at either end and
+  // the top of the list always show them.
+  const bars = el.querySelector('.sc-bars');
+  let lastY = 0, off = 0, settle;
+  const place = (snap) => { bars.style.transition = snap ? '' : 'none'; bars.style.transform = off ? `translateY(${-off}px)` : ''; };
+  el.resetBars = () => { off = 0; lastY = 0; place(true); };
+  body.addEventListener('scroll', () => {
+    const y = body.scrollTop, room = body.scrollHeight - body.clientHeight, h = bars.offsetHeight;
+    const d = y - lastY; lastY = y;
+    if (room < h + 80 || y <= 0) off = 0;
+    else if (y < room) off = Math.min(h, Math.max(0, off + d));
+    place(false);
+    clearTimeout(settle);
+    settle = setTimeout(() => { if (off && off < h) { off = off > h / 2 && y > h ? h : 0; place(true); } }, 120);
+  }, { passive: true });
+  const today = DAY_KEY(Date.now()), dayOf = e => DAY_KEY(Math.max(e.start, Date.now()));
+  let cat = '', day = today;
+  const label = k => k === today ? 'วันนี้' : `${wdOf(dayDate(k))} ${thDay(k, { day: 'numeric', month: 'short' })}`;
+  const draw = () => {
+    const names = [...new Set(LIVE_FEED.map(e => e.sport || 'กีฬาอื่นๆ'))].sort((a, b) => (b === 'บันเทิง') - (a === 'บันเทิง') || (a === 'กีฬาอื่นๆ') - (b === 'กีฬาอื่นๆ') || a.localeCompare(b, 'th'));
+    cats.innerHTML = ['', ...names].map(c => `<button role="tab" data-cat="${esc(c)}" aria-selected="${c === cat}"${c === cat ? ' class="on"' : ''}>${esc(c || 'ทั้งหมด')}</button>`).join('');
+    const pool = LIVE_FEED.filter(e => !cat || (e.sport || 'กีฬาอื่นๆ') === cat);
+    const keys = [...new Set(pool.map(dayOf))].sort();
+    if (!keys.includes(day)) day = keys.find(k => k >= today) || keys[0] || today;
+    days.innerHTML = keys.map(k => `<button role="tab" data-d="${k}" aria-selected="${k === day}"${k === day ? ' class="on"' : ''}>${label(k)}</button>`).join('');
+    // sections in kick-off order of their first event
+    const groups = new Map();
+    pool.filter(e => dayOf(e) === day).forEach(e => { const c = compOf(e), g = groups.get(c.name) || { ...c, list: [] }; g.list.push(e); groups.set(c.name, g); });
+    body.innerHTML = [...groups.values()].map(({ name, logo, list }) => `<section class="sc-sec">
+      <button class="sc-h" data-cat="${esc(list[0].sport || 'กีฬาอื่นๆ')}"><span class="sc-av${logo ? ' logo' : ''}">${logo ? `<img src="/now-app/img/live/logos/${logo}" alt="">` : sportIc(name)}</span><b>${esc(name)}</b>${scIc('chevron')}</button>
+      <div class="sc-list">${list.map(e => schedRow(e, logo)).join('')}</div></section>`).join('') || '<p class="mp-err">ไม่มีรายการในวันนี้</p>';
+    body.scrollTop = 0; el.resetBars && el.resetBars();
+    el.style.setProperty('--bars', `${el.querySelector('.sc-bars').offsetHeight}px`);
+    [cats, days].forEach(bar => { const on = bar.querySelector('.on'); on && bar.scrollTo({ left: on.offsetLeft - (bar.clientWidth - on.offsetWidth) / 2 }); });
+  };
+  el.addEventListener('click', e => {
+    if (e.target.closest('.sc-back')) { el.classList.add('out'); return setTimeout(() => el.remove(), 250); }
+    const c = e.target.closest('[data-cat]'), d = e.target.closest('[data-d]'), bell = e.target.closest('[data-bell]'), play = e.target.closest('[data-play]');
+    if (c) { cat = c.dataset.cat; return draw(); }
+    if (d) { day = d.dataset.d; return draw(); }
+    if (bell) {
+      const on = !REMINDERS.has(bell.dataset.bell);
+      on ? REMINDERS.add(bell.dataset.bell) : REMINDERS.delete(bell.dataset.bell);
+      bell.classList.toggle('on', on); bell.setAttribute('aria-pressed', on);
+      return;
+    }
+    const a = play ? play : e.target.closest('a[href*="/watch/"]');
+    const ev = play ? LIVE_FEED.find(x => x.id === play.dataset.play) : a && TITLES.get(watchKey(a.getAttribute('href')));
+    if (!ev) return;
+    e.preventDefault();
+    play && canPlayNow() ? nowPlayer(ev) : openDetail(ev);
+  });
+  document.querySelector('.phone').appendChild(el);
+  return draw;
+}
+function openMore(page) {
+  if (page === 'live' && LOOK === 'apple') {
+    const draw = openSchedule();
+    if (LIVE_FEED) return draw();
+    return fetch('/api/now-home?live=1').then(r => r.json()).then(list => { liveMerge(list); draw(); }).catch(() => { liveMerge([]); draw(); });
+  }
+  const el = document.createElement('section'), title = page === 'tv' ? 'ทีวีสด' : 'ไลฟ์สดและที่กำลังมา';
+  el.className = 'mpage';
+  // the same title bar as ใหม่ 2's schedule (Figma): grey, the design's back arrow, the title centred
+  el.innerHTML = `<header class="sc-top"><button class="sc-back" aria-label="กลับ">${scIc('back')}</button><h1>${title}</h1></header>${page === 'live' ? '<div class="mp-bar"></div>' : ''}
+    <div class="mp-scroll">${page === 'tv' && CHANNEL_GROUPS ? tvGroups() : page === 'live' && LIVE_FEED ? '' : '<div class="loading"><i></i></div>'}</div>`;
+  const body = el.querySelector('.mp-scroll'), bar = el.querySelector('.mp-bar');
+  const fill = () => { body.querySelectorAll('[data-trim]').forEach(trimLogo); tvTick(body); };
+  let sport = '', day = '';
+  const drawLive = () => {
+    const evs = LIVE_FEED.filter(e => !sport || e.sport === sport);
+    bar.innerHTML = liveFilters(LIVE_FEED, sport);
+    bar.querySelector('.mp-calb').classList.toggle('on', !!day && day !== DAY_KEY(Date.now()));
+    body.innerHTML = `<div class="mp-live">${liveDays(evs)}</div>`; body.scrollTop = 0;
+    const on = bar.querySelector('.mp-chips .on'); on && on.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+  };
+  const calendar = () => {
+    const old = el.querySelector('.mp-cal');
+    if (old) return old.remove();
+    const has = new Set([...body.querySelectorAll('.mp-day')].map(d => d.dataset.day)), today = DAY_KEY(Date.now());
+    const keys = Array.from({ length: 7 }, (_, i) => DAY_KEY(Date.now() + i * 864e5));
+    bar.insertAdjacentHTML('beforeend', `<div class="mp-cal" role="listbox" aria-label="เลือกวันที่">${keys.map(k => `<button role="option" data-day="${k}"
+      class="${k === (day || today) ? 'on' : has.has(k) ? '' : 'none'}">${k === today ? 'วันนี้' : thDay(k, { weekday: 'short', day: 'numeric', month: 'short' })}</button>`).join('')}</div>`);
+  };
+  el.addEventListener('click', e => {
+    if (e.target.closest('.sc-back')) { el.classList.add('out'); return setTimeout(() => el.remove(), 250); }
+    if (e.target.closest('.mp-calb')) return calendar();
+    const pick = e.target.closest('.mp-cal [data-day]');
+    if (pick) {
+      day = pick.dataset.day; el.querySelector('.mp-cal').remove();
+      bar.querySelector('.mp-calb').classList.toggle('on', day !== DAY_KEY(Date.now()));
+      const sec = [...body.querySelectorAll('.mp-day')].find(d => d.dataset.day >= day);
+      if (sec) body.scrollTo({ top: sec.offsetTop - 8, behavior: 'smooth' });
+      return;
+    }
+    if (el.querySelector('.mp-cal') && !e.target.closest('.mp-cal')) el.querySelector('.mp-cal').remove();
+    const tab = e.target.closest('[data-sport]');
+    if (tab) { sport = tab.dataset.sport; day = ''; return drawLive(); }
+    const a = e.target.closest('a[href*="/watch/"]'), d = a && TITLES.get(watchKey(a.getAttribute('href')));
+    if (d) { e.preventDefault(); openDetail(d); }
+  });
+  document.querySelector('.phone').appendChild(el);
+  fill();
+  const keep = list => list.forEach(it => { const k = `${it.type}/${it.id}`; if (!TITLES.has(k)) TITLES.set(k, it); });
+  if (page === 'live') {
+    // the sport feed has the sports; the home row's events it doesn't have join in (live events aren't always sport:
+    // award shows and concerts go under บันเทิง), so the page always holds everything the row showed
+    const merge = list => { liveMerge(list); drawLive(); };
+    if (LIVE_FEED) drawLive();
+    else fetch('/api/now-home?live=1').then(r => r.json()).then(merge).catch(() => merge([]));
+  }
+  if (page === 'tv' && !CHANNEL_GROUPS) fetch('/api/now-home?channels=1').then(r => r.json()).then(g => {
+    CHANNEL_GROUPS = g;
+    g.forEach(x => keep(x.items));
+    body.innerHTML = tvGroups(); fill();
+  }).catch(() => { body.innerHTML = '<p class="mp-err">โหลดช่องไม่สำเร็จ</p>'; });
+}
+const lockIc = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+// minutes left and the progress bar, kept current every 30 s
+let tvTimer;
+function tvTick(root) {
+  const now = Date.now();
+  root.querySelectorAll('.tv-left').forEach(el => {
+    const ps = +el.dataset.ps, pe = +el.dataset.pe, on = ps && pe && now >= ps && now < pe;
+    el.innerHTML = on ? `<i>เหลือ ${Math.max(1, Math.ceil((pe - now) / 6e4))} นาที</i><u><s style="width:${(now - ps) / (pe - ps) * 100}%"></s></u>` : '';
+  });
 }
 function liveRow(s, items) {
   const now = Date.now();
@@ -600,8 +849,9 @@ function render(shelves) {
     if (LOOK !== 'classic') {
       if (s.kind === 'hero_banner_shelf') return LOOK === 'apple' ? heroFade(s) : heroCards(s);
       if (s.kind === 'nest_shelf') return partner(s).own ? brandSection(s) : s === nests[0] ? partnerHub(nests) : '';
-      if (s === upcoming && hasLiveNow) return '';
+      if (s === upcoming) return hasLiveNow ? '' : liveMerged(null, upcoming);
       if (s.kind === 'title_shelf') return liveMerged(s, upcoming);
+      if (s.kind === 'livetv_shelf') return liveTv(s);
       if (s.kind === 'short_shelf') return shortsRow(s);
       if (s.kind === 'only_now_shelf') return onlyNowRow(s);
       if (s.kind === 'ranking_shelf') return rankingIn(s);
@@ -627,9 +877,15 @@ function render(shelves) {
 
 function onScroll(screen) {
   const phone = document.querySelector('.phone');
+  // the header's pill row (ใหม่ / ใหม่ 2) folds away while scrolling down and comes back on any scroll up or near the
+  // top; small jitters (under 6 px) don't count. The tab bar stays full size (it used to fold to the selected tab).
+  let lastY = 0;
   screen.addEventListener('scroll', () => {
-    const y = screen.scrollTop;
-    phone.classList.toggle('scrolled', y > 40);   // the tab bar stays full size (it used to fold to the selected tab)
+    const y = screen.scrollTop, d = y - lastY;
+    phone.classList.toggle('scrolled', y > 40);
+    if (y < 80 || d < -6) phone.classList.remove('pills-hide');
+    else if (d > 6) phone.classList.add('pills-hide');
+    if (y < 80 || Math.abs(d) > 6) lastY = y;
   }, { passive: true });
 }
 
@@ -680,6 +936,8 @@ function wire(screen) {
 
   wireHub(screen);
   screen.querySelectorAll('.hc-logo, [data-trim]').forEach(trimLogo);
+  tvTick(screen); clearInterval(tvTimer); tvTimer = setInterval(() => document.querySelectorAll('#screen, .mp-scroll').forEach(tvTick), 30000);
+  screen.querySelectorAll('[data-more]').forEach(b => b.addEventListener('click', () => openMore(b.dataset.more)));
   wireHeroCards(screen);
   wireHeroFade(screen);
   screen.querySelectorAll('[data-v]').forEach(a => a.addEventListener('click', () => openShorts(+a.dataset.v)));
@@ -821,7 +1079,10 @@ function detailHtml(d, more) {
   const x = detailOf(d, more[d.id]), live = d.type === 'tvs-live', mine = MY_LIST.has(d.id);
   const sport = live || (x.genres || []).includes('sports');
   const onAir = live && x.start <= Date.now() && (!x.end || x.end > Date.now());
-  const day = live && x.start ? new Date(x.start).toLocaleDateString('en-GB', { timeZone: TZ, day: 'numeric', month: 'long', year: 'numeric' }) : '';
+  const day = live && x.start ? new Date(x.start).toLocaleDateString('th-TH-u-ca-gregory', { timeZone: TZ, day: 'numeric', month: 'long', year: 'numeric' }) : '';
+  // a live event that hasn't started can't be watched yet: its button sets a reminder instead (shared with the
+  // schedule's bells), for free users too
+  const soon = live && x.start > Date.now(), reminded = REMINDERS.has(d.id);
   const meta = [x.rate && `<i class="dt-chip">${esc(x.rate)}</i>`, x.year && `<i class="dt-chip">${esc(x.year)}</i>`,
     live ? (x.start ? `<span>${x.ch ? `ช่อง ${esc(x.ch)} · ` : ''}${esc(when(x.start))} น.</span>` : '') : x.series ? '<span>ซีรีส์</span>' : x.dur ? `<span>${hm(x.dur)}</span>` : '',
     x.res && `<i class="dt-chip line">${esc(x.res)}</i>`].filter(Boolean).join('');
@@ -830,8 +1091,10 @@ function detailHtml(d, more) {
       ${live && day ? `<span class="dt-live">${onAir ? '<b>Live</b>' : ''}<i>${day}</i></span>` : ''}
       <h1>${esc(x.t)}</h1>
       ${meta ? `<div class="dt-meta">${meta}</div>` : ''}
-      <a class="dt-play"${sport ? ' data-kind="sport"' : ''} ${link(d) || `href="${NOW_APP}/watch/${d.type}/${d.id}" target="_blank" rel="noopener"`}>${canPlayNow()
-        ? `${playDisc}${onAir ? 'ดูสด' : 'รับชมตอนนี้'}` : `${lockIcon}เริ่มรับชมเลย`}</a>
+      ${soon ? `<button class="dt-remind${reminded ? ' on' : ''}" aria-pressed="${reminded}">${bellIcon}${reminded ? 'ตั้งเตือนแล้ว' : 'ตั้งเตือน'}</button>
+        ${reminded ? '<p class="dt-note">แจ้งเตือนก่อนเริ่ม 15 นาที</p>' : ''}`
+      : `<a class="dt-play"${sport ? ' data-kind="sport"' : ''} ${link(d) || `href="${NOW_APP}/watch/${d.type}/${d.id}" target="_blank" rel="noopener"`}>${canPlayNow()
+        ? `${playDisc}${onAir ? 'ดูสด' : 'รับชมตอนนี้'}` : `${lockIcon}เริ่มรับชมเลย`}</a>`}
       ${x.genreTh ? `<p class="dt-genre">${esc(x.genreTh)}</p>` : ''}
       ${x.syn ? `<p class="dt-syn">${esc(x.syn)}</p>` : DETAILS_DONE || x.tmdb ? '' : '<p class="dt-syn dt-wait"><i></i><i></i><i></i></p>'}
       <div class="dt-acts"><button data-mylist class="${mine ? 'on' : ''}">${mine
@@ -839,8 +1102,58 @@ function detailHtml(d, more) {
         : '<svg width="28" height="28" viewBox="0 0 24 24" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'}รายการของฉัน</button>
         <button data-share>${shareIcon}แชร์</button></div>
     </div>
-    <nav class="dt-tabs"><a class="on">คุณน่าจะชอบ</a></nav>
-    <div class="dt-grid">${likes(d, more).map(t => `<a class="poster" ${link(t)}>${nowBadge(t)}${img(t.poster, t.t)}</a>`).join('')}</div>`;
+    ${live ? liveTabs(d, x) : `<nav class="dt-tabs"><a class="on">คุณน่าจะชอบ</a></nav>
+    <div class="dt-pane"><div class="dt-grid">${likes(d, more).map(t => `<a class="poster" ${link(t)}>${nowBadge(t)}${img(t.poster, t.t)}</a>`).join('')}</div></div>`}`;
+}
+// A live event's page swaps คุณน่าจะชอบ (popular films and dramas, no use to someone waiting for a match) for its
+// tabs: แมตช์อื่น (its competition's other events, else its sport's, as schedule rows with bells), ไฮไลท์และย้อนหลัง
+// (the sport feed's replay shelves for its sport, api/now-home.js?vod=1) and its channel's day (the TV guide,
+// ?ch=N, what's on now marked). Each loads the first time it's needed; openDetail repaints when it arrives.
+let SPORT_VOD, CH_DAY = {};
+// the channel tab (['ch', 'ช่อง']) is switched off for now; its pane and api/now-home.js?ch=N stay
+const LIVE_TABS = [['more', 'แมตช์อื่น'], ['vod', 'ไฮไลท์และย้อนหลัง']];
+const vodKey = e => {
+  const t = `${e.sport || ''} ${e.t}`;
+  return /มวยไทย|muay/i.test(t) ? 'muay' : /มอเตอร์|moto|F1\b|F2\b|race|endurance/i.test(t) ? 'motor' : /ฟุตซอล|futsal/i.test(t) ? 'futsal'
+    : /แบดมินตัน|badminton|bwf/i.test(t) ? 'badminton' : /ฟุตบอล|football|ลีก|league|laliga|serie a|scottish|UCL/i.test(t) ? 'football' : 'more';
+};
+function liveTabs(d, x) {
+  const tab = LIVE_TAB.get(d.id) || 'more', tabs = LIVE_TABS.filter(([k]) => k !== 'ch' || x.ch);
+  const nav = `<nav class="dt-tabs dt-tabs3">${tabs.map(([k, l]) => `<a data-tab="${k}"${k === tab ? ' class="on"' : ''}>${k === 'ch' ? `${l} ${esc(x.ch)}` : l}</a>`).join('')}</nav>`;
+  const wait = '<p class="dt-syn dt-wait dt-pad"><i></i><i></i><i></i></p>';
+  let pane;
+  if (tab === 'more') {
+    const feed = LIVE_FEED || LIVE_EVENTS, me = feed.find(e => e.id === d.id) || d, comp = compOf(me).name, [c] = evTitle(me);
+    const others = feed.filter(e => e.id !== d.id && (!e.end || e.end > Date.now()));
+    // the same competition: its title prefix, or the same logo competition; never the catch-all buckets
+    const same = others.filter(e => (c && evTitle(e)[0] === c) || (compOf(me).logo && compOf(e).name === comp));
+    const list = (same.length ? same : others.filter(e => me.sport && e.sport === me.sport)).slice(0, 12);
+    pane = !LIVE_FEED && !list.length ? wait : list.length
+      ? `<p class="dt-sub">${same.length ? `ใน${esc(c || comp)}` : `${esc(me.sport || 'กีฬา')}อื่นๆ`}</p><div class="sc-list">${list.map(e => schedRow(e, false)).join('')}</div>`
+      : '<p class="mp-err">ยังไม่มีรายการอื่น</p>';
+  } else if (tab === 'vod') {
+    const list = SPORT_VOD && SPORT_VOD[vodKey(LIVE_FEED && LIVE_FEED.find(e => e.id === d.id) || d)] || [];
+    pane = !SPORT_VOD ? wait : list.length ? `<div class="dt-grid">${list.slice(0, 18).map(t => `<a class="poster" ${link(t)}>${img(t.poster, t.t)}</a>`).join('')}</div>`
+      : '<p class="mp-err">ยังไม่มีไฮไลท์ของรายการนี้</p>';
+  } else {
+    const day = CH_DAY[x.ch], now = Date.now();
+    pane = !day ? wait : day.length ? `<ol class="ch-day">${day.map(p => {
+      // this event's own slot (the guide may start it a few minutes off the feed) is marked รายการนี้
+      const on = p.start <= now && p.end > now, past = p.end <= now, me = x.start && Math.abs(p.start - x.start) < 15 * 6e4;
+      return `<li class="${[on && 'on', past && 'past', me && 'me'].filter(Boolean).join(' ')}"><time>${hhmm(p.start)}</time><span>${esc(p.t)}</span>${
+        on ? '<i class="live-b"><b></b>Live</i>' : me ? '<i class="ch-me">รายการนี้</i>' : ''}</li>`;
+    }).join('')}</ol>` : '<p class="mp-err">ไม่มีผังรายการของช่องนี้</p>';
+  }
+  return `${nav}<div class="dt-pane">${pane}</div>`;
+}
+const LIVE_TAB = new Map();
+// fetch what the open tab needs, then repaint
+function liveTabData(d, x, repaint) {
+  const tab = LIVE_TAB.get(d.id) || 'more';
+  if (tab === 'more' && !LIVE_FEED) fetch('/api/now-home?live=1').then(r => r.json()).catch(() => []).then(l => { if (!LIVE_FEED) liveMerge(l); repaint(); });
+  if (tab === 'vod' && !SPORT_VOD) fetch('/api/now-home?vod=1').then(r => r.json()).catch(() => ({})).then(v => {
+    SPORT_VOD = v; Object.values(v).flat().forEach(t => { const k = `${t.type}/${t.id}`; if (!TITLES.has(k)) TITLES.set(k, t); }); repaint(); });
+  if (tab === 'ch' && x.ch && !CH_DAY[x.ch]) fetch(`/api/now-home?ch=${encodeURIComponent(x.ch)}`).then(r => r.json()).catch(() => []).then(l => { CH_DAY[x.ch] = l; repaint(); });
 }
 function openDetail(d) {
   let el = document.querySelector('.phone > .detail');
@@ -851,10 +1164,17 @@ function openDetail(d) {
     el.addEventListener('click', e => {
       if (e.target.closest('.dt-x')) { el.classList.add('out'); return setTimeout(() => el.remove(), 250); }
       if (e.target.closest('[data-share]') && navigator.share) return navigator.share({ title: el.dt.t, url: `${NOW_APP}/watch/${el.dt.type}/${el.dt.id}` }).catch(() => {});
+      if (e.target.closest('.dt-remind')) { REMINDERS.has(el.dt.id) ? REMINDERS.delete(el.dt.id) : REMINDERS.add(el.dt.id); syncReminders(); return paint(true); }
       if (e.target.closest('.dt-play')) { e.preventDefault(); return nowPlayer(el.dt); }   // a free user never gets here (iap.js)
       const my = e.target.closest('[data-mylist]');
       if (my) { MY_LIST.has(el.dt.id) ? MY_LIST.delete(el.dt.id) : MY_LIST.add(el.dt.id); return paint(true); }
-      const a = e.target.closest('.dt-grid a[href]'), next = a && TITLES.get(watchKey(a.getAttribute('href')));
+      const tab = e.target.closest('[data-tab]');
+      if (tab) { LIVE_TAB.set(el.dt.id, tab.dataset.tab); return paint(true); }
+      const bell = e.target.closest('[data-bell]');
+      if (bell) { REMINDERS.has(bell.dataset.bell) ? REMINDERS.delete(bell.dataset.bell) : REMINDERS.add(bell.dataset.bell); syncReminders(); return; }
+      const play = e.target.closest('[data-play]'), live = play && (LIVE_FEED || LIVE_EVENTS).find(x => x.id === play.dataset.play);
+      if (live) { e.preventDefault(); return canPlayNow() ? nowPlayer(live) : (el.dt = live, paint(), el.firstChild.scrollTop = 0); }
+      const a = e.target.closest('.dt-pane a[href]'), next = a && TITLES.get(watchKey(a.getAttribute('href')));
       if (next) { e.preventDefault(); el.dt = next; paint(); el.firstChild.scrollTop = 0; }
     });
     document.querySelector('.phone').appendChild(el);
@@ -865,8 +1185,9 @@ function openDetail(d) {
     if (same) {
       const t = document.createElement('div');
       t.innerHTML = html;
-      ['.dt-body', '.dt-grid'].forEach(q => el.querySelector(q).replaceWith(t.querySelector(q)));
+      ['.dt-body', '.dt-tabs', '.dt-pane'].forEach(q => el.querySelector(q).replaceWith(t.querySelector(q)));
     } else el.firstChild.innerHTML = html;
+    if (d.type === 'tvs-live') liveTabData(d, detailOf(d, DETAILS_MAP[d.id]), () => { if (el.dt === d && el.isConnected) paint(true); });
     if (!DETAILS_DONE && !d.tmdb) loadDetails().then(() => { if (el.dt === d && el.isConnected) paint(true); });
   };
   el.paint = paint;   // iap.js redraws the button once a package is bought

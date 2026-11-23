@@ -1,0 +1,24 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="arrow_back_ios">
+<g clip-path="url(#clip0_0_656)">
+<g id="Vector" filter="url(#filter0_d_0_656)">
+<path d="M14.1682 2.48724C13.7599 2.07891 13.1016 2.07891 12.6932 2.48724L5.76825 9.41224C5.44325 9.73724 5.44325 10.2622 5.76825 10.5872L12.6932 17.5122C13.1016 17.9206 13.7599 17.9206 14.1682 17.5122C14.5766 17.1039 14.5766 16.4456 14.1682 16.0372L8.13491 9.99557L14.1766 3.95391C14.5766 3.55391 14.5766 2.88724 14.1682 2.48724Z" fill="white"/>
+</g>
+</g>
+</g>
+<defs>
+<filter id="filter0_d_0_656" x="1.5245" y="-1.81901" width="16.951" height="23.6375" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset/>
+<feGaussianBlur stdDeviation="2"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.2 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_656"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_0_656" result="shape"/>
+</filter>
+<clipPath id="clip0_0_656">
+<path d="M0 10C0 4.47715 4.47715 0 10 0V0C15.5228 0 20 4.47715 20 10V10C20 15.5228 15.5228 20 10 20V20C4.47715 20 0 15.5228 0 10V10Z" fill="white"/>
+</clipPath>
+</defs>
+</svg>
