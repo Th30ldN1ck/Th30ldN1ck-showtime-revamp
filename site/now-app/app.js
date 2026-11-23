@@ -578,6 +578,18 @@ function openMore(page) {
   const body = el.querySelector('.mp-scroll'), bar = el.querySelector('.mp-bar');
   const fill = () => { body.querySelectorAll('[data-trim]').forEach(trimLogo); tvTick(body); };
   let sport = '', day = '';
+  // scroll-spy, as in the mini app: the day whose section sits at the top of the list is the current day; the
+  // calendar button turns white once that's past today, and back at the top it returns to today
+  const spy = () => {
+    const calb = bar && bar.querySelector('.mp-calb');
+    if (!calb) return;
+    const top = body.getBoundingClientRect().top + 12;
+    let cur = '';
+    body.querySelectorAll('.mp-day').forEach(sec => { if (!cur || sec.getBoundingClientRect().top <= top) cur = sec.dataset.day; });
+    day = cur;
+    calb.classList.toggle('on', !!cur && cur !== DAY_KEY(Date.now()));
+  };
+  body.addEventListener('scroll', () => requestAnimationFrame(spy), { passive: true });
   const drawLive = () => {
     const evs = LIVE_FEED.filter(e => !sport || e.sport === sport);
     bar.innerHTML = liveFilters(LIVE_FEED, sport);
