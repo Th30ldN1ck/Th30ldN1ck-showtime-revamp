@@ -907,3 +907,5 @@ body.look-new #screen .hub .row > .poster { width: calc((100cqw - 2 * var(--pad)
 .ep-one { font-size: 12px; text-align: center; }
 .ep-tag { position: absolute; left: 50%; bottom: 7px; transform: translateX(-50%); padding: 1px 10px; border: 1px solid rgba(255,255,255,.9); border-radius: 2px;
   background: #0d1a5c; font-style: normal; font-size: 11px; font-weight: 800; letter-spacing: .02em; white-space: nowrap; }
+/* a club's real crest on the hero's match card (crest): a white disc like the round badges elsewhere */
+.hm-flag.hm-badge { width: 56px; height: 56px; padding: 7px; border-radius: 50%; background: #fff; object-fit: contain; }
