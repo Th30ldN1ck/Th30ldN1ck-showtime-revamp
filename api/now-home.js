@@ -159,12 +159,32 @@ async function category(name) {
   return out;
 }
 
+// ?eps=<series id>: a replay series' episodes (each a match: "ไครัต พบ เลฟสกี โซเฟีย (11 ส.ค.) …"), newest first. The
+// feeds only list the series; its public page on now.truevisions.co.th carries the episode list in its Next.js payload
+async function episodes(id) {
+  const html = await (await fetch(`https://now.truevisions.co.th/th/content/${id}`, { headers: { 'user-agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(6000) })).text();
+  // the match date is in the title ("(14 ต.ค.)"); slots for matches not played yet already exist, so those are dropped
+  const now = Date.now();
+  return payloadArray(html, 'vod_items').flatMap(season => (season.vod_items || []).map(e => ({ id: e.id, t: (e.title || '').trim(), no: +e.episode_no || 0,
+    at: matchDate(e.title) || Date.parse(e.publish_date) || 0 }))).filter(e => e.t && e.at <= now).sort((a, b) => b.at - a.at || b.no - a.no);
+}
+const TH_MON = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+function matchDate(t = '') {
+  const m = t.match(/\((\d{1,2})\s*([ก-๙.]+)\)/), mon = m ? TH_MON.indexOf(m[2]) : -1;
+  if (mon < 0) return 0;
+  const now = new Date(), d = new Date(Date.UTC(now.getUTCFullYear(), mon, +m[1], 12));
+  if (d - now > 200 * 864e5) d.setUTCFullYear(d.getUTCFullYear() - 1);
+  else if (now - d > 165 * 864e5) d.setUTCFullYear(d.getUTCFullYear() + 1);
+  return d.getTime();
+}
+
 module.exports = async (req, res) => {
   try {
     const q = new URL(req.url || '/', 'http://x').searchParams;
-    if (q.has('channels') || q.has('live') || q.has('vod') || q.has('ch') || CATS[q.get('cat')]) {
+    const eps = /^[A-Za-z0-9]{6,24}$/.test(q.get('eps') || '') && q.get('eps');
+    if (q.has('channels') || q.has('live') || q.has('vod') || q.has('ch') || CATS[q.get('cat')] || eps) {
       const groups = q.has('live') ? await liveEvents() : q.has('vod') ? await sportVod() : q.has('ch') ? await channelDay(q.get('ch'))
-        : CATS[q.get('cat')] ? await category(q.get('cat')) : await channelGroups();
+        : CATS[q.get('cat')] ? await category(q.get('cat')) : eps ? await episodes(eps) : await channelGroups();
       res.statusCode = 200;
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
       res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');

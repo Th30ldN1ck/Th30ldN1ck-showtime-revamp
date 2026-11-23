@@ -592,10 +592,12 @@ function openSchedule(preset = '') {
 // grid (or a list of event cards) and names the button. A title opens its detail page.
 const CAT_PAGES = { movie: 'ภาพยนตร์', series: 'ซีรีส์', sport: 'กีฬา' }, CAT_DATA = {};
 const caret = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 9h12l-6 7z"/></svg>';
-function catShelf(s) {
+// a rail as the mini app draws it (PosterRail): three posters across, the heading's ดูเพิ่มเติม opening the rail as a grid
+function catShelf(s, i) {
   if (s.kind === 'only_now_shelf') return onlyNowRow(s);
   const live = s.items.some(it => it.type === 'tvs-live');
-  return `<section class="shelf">${head(s.title)}${row(s.items, live ? evCard : poster)}</section>`;
+  const h = s.items.length > 3 ? `<h2 class="shelf-h"><button class="more-h" data-shelf="${i}">${esc(s.title)}<span>ดูเพิ่มเติม${chev}</span></button></h2>` : head(s.title);
+  return `<section class="shelf">${h}${row(s.items, live ? evCard : poster)}</section>`;
 }
 function openCategory(cat) {
   const el = document.createElement('section');
@@ -630,6 +632,8 @@ function openCategory(cat) {
   el.addEventListener('click', e => {
     if (e.target.closest('.sc-back')) { el.classList.add('out'); return setTimeout(() => el.remove(), 250); }
     if (e.target.closest('.cat-btn')) return shelves.length && menu();
+    const more = e.target.closest('[data-shelf]');
+    if (more) { sel = +more.dataset.shelf; return draw(); }
     const a = e.target.closest('a[href*="/watch/"]'), d = a && TITLES.get(watchKey(a.getAttribute('href')));
     if (d) { e.preventDefault(); openDetail(d); }
   });
@@ -652,7 +656,11 @@ const LEAGUE_LOGO = { UCL: 'ucl.png', LaLiga: 'laliga.png', 'Serie A': 'seriea.p
 const SPORT_VOD_KEY = n => LEAGUE_LOGO[n] ? 'football' : { 'มวยไทย': 'muay', 'มอเตอร์สปอร์ต': 'motor', 'แบดมินตัน': 'badminton', 'ฟุตซอล': 'futsal' }[n] || 'more';
 // the feed's "more sports" replays mix sports: a sport in that bucket only gets the ones whose title names it
 const VOD_WORDS = { 'วอลเลย์บอล': /volley|วอลเลย์/i, 'เทนนิส': /tennis|เทนนิส/i, 'กอล์ฟ': /golf|กอล์ฟ|lpga|pga/i, 'สนุกเกอร์': /snooker|สนุกเกอร์/i };
-const vodFor = name => { const key = SPORT_VOD_KEY(name), list = SPORT_VOD[key] || []; return key === 'more' ? (VOD_WORDS[name] ? list.filter(t => VOD_WORDS[name].test(t.t)) : []) : list; };
+// a league only gets its own competition's replays (its name in the title); the rest of football goes in one row
+const vodFor = name => { const key = SPORT_VOD_KEY(name), list = SPORT_VOD[key] || [];
+  if (LEAGUE_LOGO[name]) return list.filter(t => SPORT_WORDS[name].test(t.t)).sort((a, b) => /ไฮไลท์|highlight/i.test(b.t) - /ไฮไลท์|highlight/i.test(a.t));
+  return key === 'more' ? (VOD_WORDS[name] ? list.filter(t => VOD_WORDS[name].test(t.t)) : []) : list; };
+const footballRest = () => (SPORT_VOD.football || []).filter(t => !Object.keys(LEAGUE_LOGO).some(n => SPORT_WORDS[n].test(t.t)));
 const VOD_NAME = { football: 'ฟุตบอล', muay: 'มวยไทย', motor: 'มอเตอร์สปอร์ต', badminton: 'แบดมินตัน', futsal: 'ฟุตซอล', more: 'กีฬาอื่นๆ' };
 // the schedule as a small outlined pill (calendar + ตารางแข่งขัน) on the right of a sport's header
 const fixturesBtn = name => `<button class="sp-fix" data-fix="${esc(name)}">${calIc}<span>ตารางแข่งขัน</span></button>`;
@@ -677,6 +685,14 @@ function sportPageShell(title) {
     if (fix) return openMore('live', fix.dataset.fix === 'ทั้งหมด' ? '' : fix.dataset.fix);
     const hub = e.target.closest('[data-hub]');
     if (hub) return openSportHub(hub.dataset.hub);
+    const past = e.target.closest('[data-past]'), pv = past && PAST_EPS.get(past.dataset.past);
+    if (pv) { e.preventDefault(); return canPlayNow() ? nowPlayer(pv) : openDetail(TITLES.get(`${pv.type}/${pv.id}`) || pv); }
+    const tm = e.target.closest('[data-team]');
+    if (tm) return openTeam(tm.dataset.team, tm.dataset.league);
+    const bell = e.target.closest('[data-bell]');
+    if (bell) { const id = bell.dataset.bell, on = !REMINDERS.has(id); on ? REMINDERS.add(id) : REMINDERS.delete(id); syncReminders(); return; }
+    const play = e.target.closest('[data-play]'), ev = play && (LIVE_FEED || []).find(x => x.id === play.dataset.play);
+    if (ev) { e.preventDefault(); return canPlayNow() ? nowPlayer(ev) : openDetail(ev); }
     const more = e.target.closest('[data-more]');
     if (more) return openMore(more.dataset.more);
     const a = e.target.closest('a[href*="/watch/"]'), d = a && TITLES.get(watchKey(a.getAttribute('href')));
@@ -691,27 +707,135 @@ function openSportPage() {
     const now = Date.now(), live = LIVE_FEED.filter(e => e.sport !== 'บันเทิง'), shown = new Set();
     const sports = sportsWithEvents();
     const blocks = sports.map(name => {
-      const evs = live.filter(e => e.sport === name), key = SPORT_VOD_KEY(name), own = key === 'more';
+      const evs = live.filter(e => e.sport === name), key = SPORT_VOD_KEY(name), own = key === 'more' || LEAGUE_LOGO[name];
       const vod = own ? vodFor(name) : !shown.has(key) && SPORT_VOD[key]; if (vod && !own) shown.add(key);
       return `<div class="sp-block">${sportHead(name)}${row(evs.slice(0, 10), evCard)}
         ${vod && vod.length ? vodRow(`ไฮไลท์และย้อนหลัง · ${own ? name : VOD_NAME[key]}`, vod) : ''}</div>`;
     }).join('');
     // replay shelves no block showed (a sport with nothing on, futsal)
-    const rest = Object.keys(SPORT_VOD).filter(k => !shown.has(k)).map(k => vodRow(VOD_NAME[k], SPORT_VOD[k])).join('');
+    const rest = vodRow('ฟุตบอลรายการอื่น', footballRest()) + Object.keys(SPORT_VOD).filter(k => k !== 'football' && !shown.has(k)).map(k => vodRow(VOD_NAME[k], SPORT_VOD[k])).join('');
     // the top shelf wears the same header as the sport blocks: its title, and the pill for the whole schedule
     body.innerHTML = `<section class="shelf"><h2 class="shelf-h sp-h"><span>ไลฟ์สดและที่กำลังมา</span>${fixturesBtn('ทั้งหมด')}</h2>${row(live.filter(e => !e.end || e.end > now).slice(0, 10), evCard)}</section>
       ${blocks}${rest}`;
   });
 }
-// one sport's own page (the wireframes' "Sport - Hub"): its events, the schedule button, its replays
+// One sport's own page (the wireframes' "Sport - Hub"): a band in the sport's colour (its logo or icon, a line, the
+// channels it's on), what's on air now as big cards, ช่องที่กำลังถ่ายทอด (Live TV channels whose programme now is this
+// sport), the coming week as schedule rows by day (ไลฟ์สดและที่กำลังมา), ทีม (leagues: the clubs in its fixtures with their
+// badges, built by scripts/build_teams.mjs; a team opens its own page), its highlights / full matches, and related
+// films and series from the category feeds (only when a few really match).
+const LEAGUE_TINT = { UCL: '#14307a', LaLiga: '#a3122a', 'Serie A': '#123f9c', 'Scottish Premiership': '#3d2466', 'วอลเลย์บอล': '#9a5a00',
+  'มวยไทย': '#8a1616', 'แบดมินตัน': '#0d6b50', 'มอเตอร์สปอร์ต': '#943300', 'เทนนิส': '#4d7300', 'กอล์ฟ': '#1a5c27', 'สนุกเกอร์': '#0a5233' };
+const SPORT_DESC = { UCL: 'ศึกสโมสรยุโรป ถ่ายทอดสดทุกนัด', LaLiga: 'ฟุตบอลลีกสเปน', 'Serie A': 'ฟุตบอลลีกอิตาลี', 'Scottish Premiership': 'ฟุตบอลลีกสกอตแลนด์',
+  'วอลเลย์บอล': 'วอลเลย์บอลลีกไทยและต่างประเทศ', 'มวยไทย': 'ศึกมวยไทยจากเวทีชั้นนำ ทุกสัปดาห์', 'แบดมินตัน': 'แบดมินตันรายการระดับโลก',
+  'มอเตอร์สปอร์ต': 'F1, MotoGP และการแข่งรถในไทย', 'เทนนิส': 'เทนนิสรายการใหญ่', 'กอล์ฟ': 'กอล์ฟทัวร์อาชีพ', 'สนุกเกอร์': 'สนุกเกอร์รายการอาชีพ' };
+// what a programme or a film about the sport is called
+const SPORT_WORDS = { UCL: /champions league|แชมเปียนส์|ucl/i, LaLiga: /laliga|ลา ?ลี?กา|ลา ?ลิกา/i, 'Serie A': /serie a|calcio|เซเรีย/i,
+  'Scottish Premiership': /scottish|spfl|สกอตติช/i, 'วอลเลย์บอล': /volley|วอลเลย์/i, 'มวยไทย': /มวย|muay|boxing|fight/i, 'แบดมินตัน': /badminton|แบดมินตัน|bwf/i,
+  'มอเตอร์สปอร์ต': /\bF1\b|formula|moto ?gp|racing|แข่งรถ|grand prix/i, 'เทนนิส': /tennis|เทนนิส|wta|atp/i, 'กอล์ฟ': /golf|กอล์ฟ|lpga|pga/i, 'สนุกเกอร์': /snooker|สนุกเกอร์/i };
+const RELATED_WORDS = { football: /ฟุตบอล|football|soccer|ลูกหนัง|ตะลุมบอน/i, 'มวยไทย': /มวย|muay|boxing|นักชก|ต่อยมวย|ong-bak|องค์บาก/i,
+  'มอเตอร์สปอร์ต': /\bF1\b|formula|racing|แข่งรถ|ซิ่ง|rush|ford v ferrari|drive to survive/i, 'เทนนิส': /tennis|เทนนิส/i, 'กอล์ฟ': /golf|กอล์ฟ/i,
+  'แบดมินตัน': /badminton|แบดมินตัน/i, 'วอลเลย์บอล': /volley|วอลเลย์|haikyu|ไฮคิว/i, 'สนุกเกอร์': /snooker|สนุกเกอร์/i };
+let TEAMS, CAT_LOAD = {};
+const loadCat = c => CAT_DATA[c] ? Promise.resolve(CAT_DATA[c]) : CAT_LOAD[c] || (CAT_LOAD[c] = fetch(`/api/now-home?cat=${c}`).then(r => r.json()).then(sh => (CAT_DATA[c] = sh)).catch(() => []));
+const loadChannels = () => CHANNEL_GROUPS ? Promise.resolve() : fetch('/api/now-home?channels=1').then(r => r.json()).then(g => {
+  CHANNEL_GROUPS = g; g.forEach(x => x.items.forEach(it => { const k = `${it.type}/${it.id}`; if (!TITLES.has(k)) TITLES.set(k, it); })); }).catch(() => {});
+const loadTeams = () => TEAMS ? Promise.resolve() : fetch('/now-app/teams.json').then(r => r.json()).then(t => { TEAMS = t; }).catch(() => { TEAMS = {}; });
+const allChannels = () => (CHANNEL_GROUPS || []).flatMap(g => g.items).filter((c, i, a) => a.findIndex(x => x.id === c.id) === i);
+const teamBadge = (name, cls = '') => { const t = (TEAMS || {})[name], f = FLAGS[name.toLowerCase()];
+  return t && t.badge ? `<span class="tm-badge ${cls}"><img src="/now-app/img/teams/${t.badge}" alt=""></span>`
+    : f ? `<span class="tm-badge flag ${cls}"><img src="https://flagcdn.com/w160/${f}.png" alt=""></span>` : `<span class="tm-badge ${cls}">${crest(name)}</span>`; };
+// a band in the sport's colour: logo or icon, the sport's name and line, and the channels its events are on
+function sportBand(name, evs, sub) {
+  const nums = [...new Set(evs.map(e => e.ch).filter(Boolean))].slice(0, 3), chs = allChannels();
+  const label = n => { const c = chs.find(x => String(x.ch) === String(n)); return c ? `${esc(c.t.replace(/\s*-\s*Now$/i, ''))} (${esc(n)})` : `ช่อง ${esc(n)}`; };
+  const mark = LEAGUE_LOGO[name] ? `<span class="sb-mark logo"><img src="/now-app/img/live/logos/${LEAGUE_LOGO[name]}" alt=""></span>`
+    : (TEAMS || {})[name] ? teamBadge(name, 'sb-mark') : `<span class="sb-mark">${sportIc(name)}</span>`;
+  return `<div class="sp-band" style="--tint:${LEAGUE_TINT[name] || LEAGUE_TINT[sub] || '#2a2a2e'}">${mark}<div><h2>${esc(name)}</h2>
+    <p>${esc(SPORT_DESC[name] || (sub ? `ทีมใน ${sub}` : ''))}</p>${nums.length ? `<small>ดูได้ทาง ${nums.map(label).join(' · ')}</small>` : ''}</div></div>`;
+}
+function channelsNow(name, evs) {
+  const re = SPORT_WORDS[name], nums = new Set(evs.map(e => String(e.ch))), now = Date.now();
+  const list = allChannels().filter(c => c.prog && c.ps <= now && c.pe > now && ((re && re.test(c.prog)) || (nums.has(String(c.ch)) && re && re.test(c.t))));
+  return list.length ? `<section class="shelf">${head('ช่องที่กำลังถ่ายทอด')}${row(list.slice(0, 8), tvCard)}</section>` : '';
+}
+function relatedRow(name) {
+  const re = RELATED_WORDS[LEAGUE_LOGO[name] ? 'football' : name];
+  if (!re) return '';
+  const seen = new Set(), list = ['movie', 'series'].flatMap(c => (CAT_DATA[c] || []).flatMap(s => s.items))
+    .filter(t => /^tvs-(movie|series)$/.test(t.type) && re.test(t.t) && !seen.has(t.id) && seen.add(t.id));
+  list.forEach(t => { const k = `${t.type}/${t.id}`; if (!TITLES.has(k)) TITLES.set(k, t); });
+  return list.length >= 3 ? `<section class="shelf">${head('หนังและซีรีส์ที่เกี่ยวข้อง')}${row(list.slice(0, 18), poster)}</section>` : '';
+}
+function teamsRow(name, evs) {
+  if (!LEAGUE_LOGO[name]) return '';
+  const names = [...new Set(evs.flatMap(e => matchOf(e.t).sides || []))];
+  return names.length ? `<section class="shelf">${head('ทีม')}<div class="row tm-row">${names.map(n => `<button class="tm" data-team="${esc(n)}" data-league="${esc(name)}">${teamBadge(n)}<span>${esc(n)}</span></button>`).join('')}</div></section>` : '';
+}
 function openSportHub(name) {
   const body = sportPageShell(name);
-  sportData().then(() => {
-    const evs = LIVE_FEED.filter(e => e.sport === name), vod = vodFor(name);
-    const hl = vod.filter(t => /ไฮไลท์|highlight/i.test(t.t)), full = vod.filter(t => !hl.includes(t));
-    body.innerHTML = `${evs.length ? `<section class="shelf"><h2 class="shelf-h sp-h"><span>ไลฟ์สดและที่กำลังมา</span>${fixturesBtn(name)}</h2>${row(evs, evCard)}</section>` : ''}
-      ${hl.length && full.length ? vodRow('ไฮไลท์', hl) + vodRow('ย้อนหลังเต็มแมตช์', full) : vodRow('ไฮไลท์และย้อนหลัง', vod)}
-      ${!evs.length && !vod.length ? '<p class="mp-err">ยังไม่มีรายการ</p>' : ''}`;
+  Promise.all([sportData().then(() => LEAGUE_LOGO[name] && pastData(name)), loadChannels(), loadTeams(), loadCat('movie'), loadCat('series')]).then(() => {
+    const now = Date.now(), evs = LIVE_FEED.filter(e => e.sport === name && (!e.end || e.end > now)), vod = vodFor(name);
+    const hl = vod.filter(t => /ไฮไลท์|highlight/i.test(t.t)), full = vod.filter(t => !hl.includes(t)), league = !!LEAGUE_LOGO[name];
+    // three rails: what's live and coming, then (leagues) past full matches and highlights, match by match
+    const past = league ? pastRails(name) : '';
+    body.innerHTML = `${sportBand(name, evs)}${liveRail(evs, name)}${past}${channelsNow(name, evs)}${teamsRow(name, evs)}
+      ${league ? (past ? '' : vodRow('ไฮไลท์และย้อนหลัง', vod)) : hl.length > 2 && full.length > 2 ? vodRow('ไฮไลท์', hl) + vodRow('ย้อนหลังเต็มแมตช์', full) : vodRow('ไฮไลท์และย้อนหลัง', vod)}
+      ${league ? vodRow('ฟุตบอลรายการอื่น', footballRest()) : ''}${relatedRow(name)}${!evs.length && !vod.length ? '<p class="mp-err">ยังไม่มีรายการ</p>' : ''}`;
+    body.querySelectorAll('[data-trim]').forEach(trimLogo); tvTick(body);
+  });
+}
+// Past matches: each replay series' episodes (api/now-home.js?eps=, from the NOW website, played matches only, newest
+// first) as rows: the series picture with the match date, the match, a play button, and a ไฮไลท์ button when the
+// highlights series has the same match. A league page lists its latest; a team page the ones it played in.
+const EPS = {}, PAST_EPS = new Map();
+const loadEps = id => EPS[id] ? Promise.resolve(EPS[id]) : fetch(`/api/now-home?eps=${id}`).then(r => r.json()).catch(() => []).then(l => (EPS[id] = l));
+const epMatch = t => t.replace(/\s*\(.*$/, '').trim();
+const epDay = t => (t.match(/\((\d{1,2}\s*[ก-๙.]+)\)/) || [])[1] || '';
+function pastData(name) {
+  const vod = vodFor(name), full = vod.filter(t => !/ไฮไลท์|highlight/i.test(t.t)), hl = vod.filter(t => /ไฮไลท์|highlight/i.test(t.t));
+  return Promise.all([...full, ...hl].map(t => loadEps(t.id))).then(() => ({ full, hl }));
+}
+// a past match's picture, composed like the NOW app's episode cards (the feeds carry no per-match image): the series
+// picture behind a panel with the match date, the two crests with a play button between, their names, and the
+// FULL MATCH / HIGHLIGHTS bar
+function epArt(sr, e, match, kind) {
+  const sides = match.split(/\s+พบ\s+/), day = new Date(e.at).toLocaleDateString('en-GB', { timeZone: TZ, day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase();
+  const short = n => ((TEAMS || {})[n] || {}).en || n;
+  const mid = sides.length === 2 ? `<span class="ep-vs">${teamBadge(sides[0])}<i>${playGlyph}</i>${teamBadge(sides[1])}</span>
+    <span class="ep-names"><b>${esc(short(sides[0]))}</b><b>${esc(short(sides[1]))}</b></span>` : `<b class="ep-one">${esc(match)}</b>`;
+  return `<span class="ev-pic ep-pic">${img(sr.land || sr.poster, '')}<span class="ep-box"><small>${esc(day)}</small>${mid}</span>
+    <i class="ep-tag">${kind === 'hl' ? 'HIGHLIGHTS' : 'FULL MATCH'}</i></span>`;
+}
+const playGlyph = '<svg width="14" height="14" viewBox="0 0 24 24" fill="#1d2d8f"><path d="M8 5v14l11-7z"/></svg>';
+// a rail of past matches as cards (the series picture with the match date, the competition, the match): kind 'full'
+// for the full-match series' episodes, 'hl' for the highlights'; only = a team's name
+function pastRail(name, only, kind) {
+  const vod = vodFor(name).filter(t => /ไฮไลท์|highlight/i.test(t.t) === (kind === 'hl'));
+  let list = vod.flatMap(sr => (EPS[sr.id] || []).map(e => ({ sr, e })));
+  if (only) list = list.filter(x => x.e.t.includes(only));
+  list.sort((a, b) => b.e.at - a.e.at);
+  if (!list.length) return '';
+  const cards = list.slice(0, 16).map(({ sr, e }) => {
+    const m = epMatch(e.t), key = `${sr.id}|${e.id}`;
+    PAST_EPS.set(key, { ...sr, t: kind === 'hl' ? `${m} (ไฮไลท์)` : m });
+    return `<a class="ev-card" data-past="${key}">${epArt(sr, e, m, kind)}
+      <span class="ev-comp">${kind === 'hl' ? 'ไฮไลท์' : 'เต็มแมตช์'}</span><span class="ev-t">${esc(m)}</span></a>`;
+  }).join('');
+  return `<section class="shelf">${head(kind === 'hl' ? 'ไฮไลท์' : 'ย้อนหลังเต็มแมตช์')}<div class="row">${cards}</div></section>`;
+}
+const pastRails = (name, only) => pastRail(name, only, 'full') + pastRail(name, only, 'hl');
+// ไลฟ์สดและที่กำลังมา as a rail of picture cards, the ตารางแข่งขัน pill in its header
+const liveRail = (evs, sport) => evs.length ? `<section class="shelf"><h2 class="shelf-h sp-h"><span>ไลฟ์สดและที่กำลังมา</span>${fixturesBtn(sport)}</h2>${row(evs, evCard)}</section>` : '';
+// a team's page: the band with its badge, its matches, the replays that name it
+function openTeam(team, league) {
+  const body = sportPageShell(team);
+  Promise.all([sportData().then(() => pastData(league)), loadChannels(), loadTeams()]).then(() => {
+    const now = Date.now(), en = ((TEAMS || {})[team] || {}).en || '';
+    const evs = LIVE_FEED.filter(e => (!e.end || e.end > now) && (matchOf(e.t).sides || []).includes(team));
+    const vod = vodFor(league).filter(t => t.t.includes(team) || (en && t.t.toLowerCase().includes(en.toLowerCase())));
+    body.innerHTML = `${sportBand(team, evs, league)}
+      ${liveRail(evs, league)}${pastRails(league, team)}`;
   });
 }
 function openMore(page, preset = '') {

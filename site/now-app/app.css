@@ -863,3 +863,47 @@ body:not(.look-apple) .mpage.out { transform: translateY(16px) scale(.98); opaci
 .sp-fix svg { width: 15px; height: 15px; }
 .sp-fix:active { background: rgba(255,255,255,.1); }
 .hm-shield { font-size: 0; }
+/* poster rails as in the mini app, three across with the next one peeking in: on the category and sport pages, and
+   the home's plain poster rows in the new looks (the oversized vertical series row and CP's True Exclusive keep their own cards) */
+.cat, body.look-new #screen { container-type: inline-size; }
+.cat .row:has(> .poster), body.look-new #screen .shelf:not(.hub):not(.bgh):not(.shorts):not(.tx) > .row:has(> .poster) { gap: 10px; }
+.cat .row > .poster, body.look-new #screen .shelf:not(.hub):not(.bgh):not(.shorts):not(.tx) > .row > .poster { width: calc((100cqw - 2 * var(--pad) - 20px) / 3 - 6px); border-radius: 6px; }
+.cat .row > .poster .nowb, body.look-new #screen .shelf:not(.hub):not(.bgh):not(.shorts):not(.tx) > .row > .poster .nowb { transform: scale(.85); transform-origin: top left; }
+/* the partner hub (iQIYI / WeTV / Viu) and the brand bands (Lemino, The Voice) too: their posters the same size as the
+   plain rows, so a band shows two titles beside its logo */
+body.look-new #screen .hub .row:has(> .poster) { gap: 10px; }
+body.look-new #screen .hub .row > .poster { width: calc((100cqw - 2 * var(--pad) - 20px) / 3 - 6px); border-radius: 6px; }
+
+/* a sport's / team's page: band in the sport's colour, week schedule, teams */
+.sp-band { display: flex; align-items: center; gap: 16px; margin: 0 0 24px; padding: 22px var(--pad) 22px;
+  background: linear-gradient(135deg, var(--tint), color-mix(in srgb, var(--tint) 35%, #000)); }
+.sp-band h2 { margin: 0; font-size: 24px; font-weight: 700; line-height: 1.2; }
+.sp-band p { margin: 4px 0 0; font-size: 14px; color: rgba(255,255,255,.85); }
+.sp-band small { display: block; margin-top: 8px; font-size: 12.5px; color: rgba(255,255,255,.7); }
+.sb-mark { flex: none; display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,.14); color: #fff; }
+.sb-mark svg { width: 30px; height: 30px; }
+.sb-mark.logo, .tm-badge.sb-mark { background: #fff; }
+.sb-mark.logo img { width: 72%; height: 72%; object-fit: contain; }
+.tm-row { gap: 14px; }
+.tm { flex: none; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 76px; padding: 0; border: 0; background: none;
+  color: #e5e7eb; font: inherit; font-size: 12px; text-align: center; cursor: pointer; }
+.tm > span:last-child { width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tm-badge { display: grid; place-items: center; width: 68px; height: 68px; border-radius: 50%; overflow: hidden; background: #fff; }
+.tm-badge img { width: 74%; height: 74%; object-fit: contain; }
+.tm-badge.flag img { width: 100%; height: 100%; object-fit: cover; }
+.tm-badge .hm-crest { width: 100%; height: 100%; box-shadow: none; }
+.tm-badge.sb-mark { width: 64px; height: 64px; }
+/* a past match's composed picture (epArt): the series picture dimmed, a panel with the date, two crests and a play
+   button between, the names, and the FULL MATCH / HIGHLIGHTS bar along the bottom */
+.ep-pic > img { transform: scale(1.15); filter: blur(7px) brightness(.6) saturate(1.2); }   /* the series' own lettering blurred away */
+.ep-box { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 4px;
+  width: 62%; padding: 6px 8px 7px; border-radius: 8px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.55); background: rgba(10,20,70,.3); }
+.ep-box small { font-size: 10px; font-weight: 700; letter-spacing: .04em; color: #fff; }
+.ep-vs { display: flex; align-items: center; gap: 8px; }
+.ep-vs .tm-badge { width: 38px; height: 38px; }
+.ep-vs > i { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #fff; }
+.ep-names { display: flex; justify-content: space-between; gap: 6px; width: 100%; }
+.ep-names b { flex: 1; font-size: 9px; font-weight: 700; text-align: center; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ep-one { font-size: 12px; text-align: center; }
+.ep-tag { position: absolute; left: 50%; bottom: 7px; transform: translateX(-50%); padding: 1px 10px; border: 1px solid rgba(255,255,255,.9); border-radius: 2px;
+  background: #0d1a5c; font-style: normal; font-size: 11px; font-weight: 800; letter-spacing: .02em; white-space: nowrap; }

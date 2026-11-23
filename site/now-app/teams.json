@@ -1,0 +1,374 @@
+{
+ "มอนซา": {
+  "en": "Monza",
+  "badge": "monza.png"
+ },
+ "ฟิออเรนตินา": {
+  "en": "Fiorentina",
+  "badge": "fiorentina.png"
+ },
+ "เวเนเซีย": {
+  "en": "Venezia",
+  "badge": "venezia.png"
+ },
+ "โบโลญญา": {
+  "en": "Bologna",
+  "badge": "bologna.png"
+ },
+ "โฟรซิโนเน": {
+  "en": "Frosinone",
+  "badge": "frosinone.png"
+ },
+ "ปาร์มา": {
+  "en": "Parma",
+  "badge": "parma.png"
+ },
+ "โตริโน": {
+  "en": "Torino",
+  "badge": "torino.png"
+ },
+ "ลาซิโอ": {
+  "en": "Lazio",
+  "badge": "lazio.png"
+ },
+ "อินเตอร์": {
+  "en": "Inter",
+  "badge": "inter.png"
+ },
+ "เจนัว": {
+  "en": "Genoa",
+  "badge": "genoa.png"
+ },
+ "อูดิเนเซ": {
+  "en": "Udinese",
+  "badge": "udinese.png"
+ },
+ "ซาสซูโอโล": {
+  "en": "Sassuolo",
+  "badge": "sassuolo.png"
+ },
+ "นาโปลี": {
+  "en": "Napoli",
+  "badge": "napoli.png"
+ },
+ "โรมา": {
+  "en": "Roma",
+  "badge": "roma.png"
+ },
+ "โคโม": {
+  "en": "Como",
+  "badge": "como.png"
+ },
+ "ยูเวนตุส": {
+  "en": "Juventus",
+  "badge": "juventus.png"
+ },
+ "เลชเช": {
+  "en": "Lecce",
+  "badge": "lecce.png"
+ },
+ "อตาลันตา": {
+  "en": "Atalanta",
+  "badge": "atalanta.png"
+ },
+ "กายารี": {
+  "en": "Cagliari",
+  "badge": "cagliari.png"
+ },
+ "มิลาน": {
+  "en": "Milan",
+  "badge": "milan.png"
+ },
+ "เลบันเต": {
+  "en": "Levante",
+  "badge": "levante.png"
+ },
+ "เอลเช": {
+  "en": "Elche",
+  "badge": "elche.png"
+ },
+ "ราซิง ซานตานเดร์": {
+  "en": "Racing de Santander",
+  "badge": "racing-de-santander.png"
+ },
+ "เรอัล เบติส": {
+  "en": "Real Betis",
+  "badge": "real-betis.png"
+ },
+ "ราโย บาเยกาโน": {
+  "en": "Rayo Vallecano",
+  "badge": "rayo-vallecano.png"
+ },
+ "มาลากา": {
+  "en": "Malaga",
+  "badge": "malaga.png"
+ },
+ "แอธ. บิลเบา": {
+  "en": "Athletic Bilbao",
+  "badge": "athletic-bilbao.png"
+ },
+ "โบโด กลิมท์": {
+  "en": "Bodo/Glimt",
+  "badge": "bodo-glimt.png"
+ },
+ "ลาสค์ ลินซ์": {
+  "en": "LASK",
+  "badge": "lask.png"
+ },
+ "กาลาตาซาราย": {
+  "en": "Galatasaray",
+  "badge": "galatasaray.png"
+ },
+ "แอสตัน วิลลา": {
+  "en": "Aston Villa",
+  "badge": "aston-villa.png"
+ },
+ "แอร์เบ ไลป์ซิก": {
+  "en": "Leipzig",
+  "badge": "leipzig.png"
+ },
+ "ล็องส์": {
+  "en": "Lens",
+  "badge": "lens.png"
+ },
+ "แมนฯ ซิตี": {
+  "en": "Man City",
+  "badge": "man-city.png"
+ },
+ "เออีเค เอเธนส์": {
+  "en": "AEK Athens",
+  "badge": "aek-athens.png"
+ },
+ "อาร์เซนอล": {
+  "en": "Arsenal",
+  "badge": "arsenal.png"
+ },
+ "ดอร์ทมุนด์": {
+  "en": "Dortmund",
+  "badge": "dortmund.png"
+ },
+ "เรอัล มาดริด": {
+  "en": "Real Madrid",
+  "badge": "real-madrid.png"
+ },
+ "พีเอสวี": {
+  "en": "PSV",
+  "badge": "psv.png"
+ },
+ "สโลวาน บราติสลาวา": {
+  "en": "Slovan Bratislava",
+  "badge": "slovan-bratislava.png"
+ },
+ "เฟเยนูร์ด": {
+  "en": "Feyenoord",
+  "badge": "feyenoord.png"
+ },
+ "ปอร์โต": {
+  "en": "Porto",
+  "badge": "porto.png"
+ },
+ "ซาบาห์ เอฟเค": {
+  "en": "Sabah FK",
+  "badge": "sabah-fk.png"
+ },
+ "บาร์เซโลนา": {
+  "en": "Barcelona",
+  "badge": "barcelona.png"
+ },
+ "สลาเวีย ปราก": {
+  "en": "Slavia Prague",
+  "badge": "slavia-prague.png"
+ },
+ "บียาร์เรอัล": {
+  "en": "Villarreal",
+  "badge": "villarreal.png"
+ },
+ "ชัคห์ตาร์": {
+  "en": "Shakhtar",
+  "badge": "shakhtar.png"
+ },
+ "เฟเนร์บาห์เช": {
+  "en": "Fenerbahce",
+  "badge": "fenerbahce.png"
+ },
+ "ลีลล์": {
+  "en": "Lille",
+  "badge": "lille.png"
+ },
+ "บาเยิร์น": {
+  "en": "Bayern",
+  "badge": "bayern.png"
+ },
+ "แอต. มาดริด": {
+  "en": "Atletico Madrid",
+  "badge": "atletico-madrid.png"
+ },
+ "ไวกิง เอฟเค": {
+  "en": "Viking",
+  "badge": "viking.png"
+ },
+ "เปแอสเช": {
+  "en": "PSG",
+  "badge": "psg.png"
+ },
+ "สตุตการ์ท": {
+  "en": "Stuttgart",
+  "badge": "stuttgart.png"
+ },
+ "สปอร์ติง": {
+  "en": "Sporting",
+  "badge": "sporting.png"
+ },
+ "แมนฯ ยูไนเต็ด": {
+  "en": "Man United",
+  "badge": "man-united.png"
+ },
+ "คลับ บรูจจ์": {
+  "en": "Club Brugge",
+  "badge": "club-brugge.png"
+ },
+ "ลิเวอร์พูล": {
+  "en": "Liverpool",
+  "badge": "liverpool.png"
+ },
+ "เรนเจอร์ส": {
+  "en": "Rangers",
+  "badge": "rangers.png"
+ },
+ "อเบอร์ดีน": {
+  "en": "Aberdeen",
+  "badge": "aberdeen.png"
+ },
+ "ไครัต": {
+  "en": "FC Kairat",
+  "badge": "fc-kairat.png"
+ },
+ "เลฟสกี โซเฟีย": {
+  "en": "Levski Sofia",
+  "badge": "levski-sofia.png"
+ },
+ "อูนิยง แซงต์-ชิลลวส": {
+  "en": "Union Saint-Gilloise",
+  "badge": "union-saint-gilloise.png"
+ },
+ "มิยาลบี เอไอเอฟ": {
+  "en": "Mjallby AIF",
+  "badge": "mjallby-aif.png"
+ },
+ "สตวร์ม กราซ": {
+  "en": "Sturm Graz",
+  "badge": "sturm-graz.png"
+ },
+ "ลียง": {
+  "en": "Olympique Lyon",
+  "badge": "olympique-lyon.png"
+ },
+ "สปาร์ตา ปราก": {
+  "en": "Sparta Praha",
+  "badge": "sparta-praha.png"
+ },
+ "แอลเอเอสเค ลินซ์": {
+  "en": "LASK",
+  "badge": "lask.png"
+ },
+ "อลาเบส": {
+  "en": "Alaves",
+  "badge": "alaves.png"
+ },
+ "เกตาเฟ": {
+  "en": "Getafe",
+  "badge": "getafe.png"
+ },
+ "เซบียา": {
+  "en": "Sevilla",
+  "badge": "sevilla.png"
+ },
+ "เอสปันญอล": {
+  "en": "Espanyol",
+  "badge": "espanyol.png"
+ },
+ "เซลตา บีโก": {
+  "en": "Celta Vigo",
+  "badge": "celta-vigo.png"
+ },
+ "โอซาซูนา": {
+  "en": "Osasuna",
+  "badge": "osasuna.png"
+ },
+ "เดปอร์ติโบ ลา คอรุนญา": {
+  "en": "Deportivo",
+  "badge": "deportivo.png"
+ },
+ "เรอัล โซเซียดาด": {
+  "en": "Real Sociedad",
+  "badge": "real-sociedad.png"
+ },
+ "บาเลนเซีย": {
+  "en": "Valencia",
+  "badge": "valencia.png"
+ },
+ "เคตาเฟ": {
+  "en": "Getafe",
+  "badge": "getafe.png"
+ },
+ "เดปอร์ติโบ อา กอรุนญา": {
+  "en": "Deportivo",
+  "badge": "deportivo.png"
+ },
+ "ดันดี ยูไนเต็ด": {
+  "en": "Dundee United",
+  "badge": "dundee-united.png"
+ },
+ "ฟัลเคิร์ค": {
+  "en": "Falkirk",
+  "badge": "falkirk.png"
+ },
+ "เซนต์ เมียร์เรน": {
+  "en": "St. Mirren",
+  "badge": "st-mirren.png"
+ },
+ "ฮาร์ทส์": {
+  "en": "Heart of Midlothian",
+  "badge": "heart-of-midlothian.png"
+ },
+ "เซนต์ จอห์นสโตน": {
+  "en": "St. Johnstone",
+  "badge": "st-johnstone.png"
+ },
+ "คิลมาร์น็อค": {
+  "en": "Kilmarnock",
+  "badge": "kilmarnock.png"
+ },
+ "ฮิเบอร์เนียน": {
+  "en": "Hibernian",
+  "badge": "hibernian.png"
+ },
+ "มาเธอร์เวลล์": {
+  "en": "Motherwell",
+  "badge": "motherwell.png"
+ },
+ "เซลติก": {
+  "en": "Celtic",
+  "badge": "celtic.png"
+ },
+ "ดันดี": {
+  "en": "Dundee",
+  "badge": "dundee.png"
+ },
+ "ดินาโม ซาเกร็บ": {
+  "en": "Dinamo Zagreb",
+  "badge": "dinamo-zagreb.png"
+ },
+ "เอ็นอีซี ไนจ์เมเก้น": {
+  "en": "NEC",
+  "badge": "nec.png"
+ },
+ "เอ็นเค เซลเย": {
+  "en": "Celje",
+  "badge": "celje.png"
+ },
+ "ฮาโปเอล เบียร์ เชวา": {
+  "en": "Hapoel",
+  "badge": "hapoel.png"
+ }
+}
