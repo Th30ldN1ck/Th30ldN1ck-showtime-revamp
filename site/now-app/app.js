@@ -440,8 +440,15 @@ function liveDays(events) {
 // the live page's filter bar, as in the mini app (SportFilters): a round calendar button, then the sport tabs; the
 // calendar lists the next 7 days (days with nothing on are grey) and scrolls the list to the one picked
 const calIc = '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>';
+// Sport tabs in order of how much Thai viewers watch them (an editorial order for the demo; real viewing data could
+// set it later): football's leagues first, then volleyball, Muay Thai, badminton, motorsport, entertainment, the rest;
+// anything not listed after them A–Z, the catch-all last
+const SPORT_RANK = ['UCL', 'LaLiga', 'Serie A', 'Scottish Premiership', 'วอลเลย์บอล', 'มวยไทย', 'แบดมินตัน', 'มอเตอร์สปอร์ต', 'บันเทิง',
+  'เทนนิส', 'กอล์ฟ', 'สนุกเกอร์'];
+const sportRank = n => n === 'กีฬาอื่นๆ' ? 1e3 : (SPORT_RANK.indexOf(n) + 1 || 999);
+const bySport = (a, b) => sportRank(a) - sportRank(b) || a.localeCompare(b, 'th');
 function liveFilters(events, sport) {
-  const sports = [...new Set(events.map(e => e.sport).filter(Boolean))].sort((a, b) => (b === 'บันเทิง') - (a === 'บันเทิง') || a.localeCompare(b, 'th'));
+  const sports = [...new Set(events.map(e => e.sport).filter(Boolean))].sort(bySport);
   return `<div class="mp-filters"><button class="mp-calb" aria-label="เลือกวันที่">${calIc}</button><div class="mp-chips" role="tablist">${['', ...sports]
     .map(x => `<button role="tab" data-sport="${esc(x)}" aria-selected="${x === sport}"${x === sport ? ' class="on"' : ''}>${esc(x || 'ทั้งหมด')}</button>`).join('')}</div></div>`;
 }
@@ -521,7 +528,7 @@ function openSchedule() {
   let cat = '', day = today;
   const label = k => k === today ? 'วันนี้' : `${wdOf(dayDate(k))} ${thDay(k, { day: 'numeric', month: 'short' })}`;
   const draw = () => {
-    const names = [...new Set(LIVE_FEED.map(e => e.sport || 'กีฬาอื่นๆ'))].sort((a, b) => (b === 'บันเทิง') - (a === 'บันเทิง') || (a === 'กีฬาอื่นๆ') - (b === 'กีฬาอื่นๆ') || a.localeCompare(b, 'th'));
+    const names = [...new Set(LIVE_FEED.map(e => e.sport || 'กีฬาอื่นๆ'))].sort(bySport);
     cats.innerHTML = ['', ...names].map(c => `<button role="tab" data-cat="${esc(c)}" aria-selected="${c === cat}"${c === cat ? ' class="on"' : ''}>${esc(c || 'ทั้งหมด')}</button>`).join('');
     const pool = LIVE_FEED.filter(e => !cat || (e.sport || 'กีฬาอื่นๆ') === cat);
     const keys = [...new Set(pool.map(dayOf))].sort();
@@ -1086,7 +1093,7 @@ function detailHtml(d, more) {
   const meta = [x.rate && `<i class="dt-chip">${esc(x.rate)}</i>`, x.year && `<i class="dt-chip">${esc(x.year)}</i>`,
     live ? (x.start ? `<span>${x.ch ? `ช่อง ${esc(x.ch)} · ` : ''}${esc(when(x.start))} น.</span>` : '') : x.series ? '<span>ซีรีส์</span>' : x.dur ? `<span>${hm(x.dur)}</span>` : '',
     x.res && `<i class="dt-chip line">${esc(x.res)}</i>`].filter(Boolean).join('');
-  return `<div class="dt-art">${img(x.land || x.poster, x.t)}<button class="dt-x" aria-label="ปิด">${closeIcon}</button></div>
+  return `<div class="dt-art">${img(x.land || x.poster, x.t).replace(' loading="lazy"', '')}<button class="dt-x" aria-label="ปิด">${closeIcon}</button></div>
     <div class="dt-body">
       ${live && day ? `<span class="dt-live">${onAir ? '<b>Live</b>' : ''}<i>${day}</i></span>` : ''}
       <h1>${esc(x.t)}</h1>
@@ -1155,6 +1162,47 @@ function liveTabData(d, x, repaint) {
     SPORT_VOD = v; Object.values(v).flat().forEach(t => { const k = `${t.type}/${t.id}`; if (!TITLES.has(k)) TITLES.set(k, t); }); repaint(); });
   if (tab === 'ch' && x.ch && !CH_DAY[x.ch]) fetch(`/api/now-home?ch=${encodeURIComponent(x.ch)}`).then(r => r.json()).catch(() => []).then(l => { CH_DAY[x.ch] = l; repaint(); });
 }
+// Opening a title grows its page out of the card that was tapped, as the TVS NOW mini app does (flow/motion.ts): the
+// page scales up from the card's spot with rounded corners easing square, fading in over the first part, and shrinks
+// back into the card on close. Only transform, opacity and border-radius move. The card is the last one pressed (any
+// row, hero, poster or schedule row); with none, or under reduced motion, the page fades.
+const GROW = 'cubic-bezier(0.22, 1, 0.36, 1)', GROW_RADIUS = 28;
+let LAST_PRESS = null;
+document.addEventListener('pointerdown', e => {
+  const card = e.target.closest('.hc-card, .hf, .poster, .land-card, .ev-card, .tv-card, .on-card, .sc-row, .rank, .sc, a[href*="/watch/"]');
+  LAST_PRESS = card ? { el: card.matches('.sc-row') ? card.querySelector('.sc-pic') : card.matches('.hf') ? card.querySelector('.hf-art.on') || card : card, at: Date.now() } : null;
+  // start fetching the page's wide picture as the finger lands, so it's usually in by the time the page has grown
+  const a = card && (card.matches('a[href]') ? card : card.querySelector('a[href*="/watch/"]'));
+  const key = card && (card.dataset.watch || (card.matches('.hf') && (card.querySelector('.hf-art.on') || {}).dataset.watch) || (a && watchKey(a.getAttribute('href'))));
+  const t = key && TITLES.get(key);
+  if (t && (t.land || t.poster)) new Image().src = t.land || t.poster;
+}, true);
+const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+function growFrom(layer, card) {
+  const c = card.getBoundingClientRect(), box = layer.getBoundingClientRect(), z = box.width / layer.offsetWidth || 1;   // the phone frame may be scaled
+  const scale = Math.min(0.9, Math.max(0.2, c.width / box.width));
+  return {
+    origin: `${(c.left + c.width / 2 - box.left) / z}px ${(c.top + c.height / 2 - box.top) / z}px`,
+    small: { transform: `scale(${scale})`, borderRadius: `${GROW_RADIUS}px`, opacity: 0 },
+    full: { transform: 'scale(1)', borderRadius: '16px 16px 0 0', opacity: 1 },
+  };
+}
+function animateDetailIn(el) {
+  const card = LAST_PRESS && Date.now() - LAST_PRESS.at < 1500 && LAST_PRESS.el.isConnected ? LAST_PRESS.el : null;
+  el.style.animation = 'none';
+  el.from = card;
+  if (reducedMotion() || !card) return el.animate([{ opacity: 0, transform: 'translateY(24px)' }, { opacity: 1, transform: 'none' }], { duration: 420, easing: 'cubic-bezier(.2,.8,.2,1)' });
+  const { origin, small, full } = growFrom(el, card);
+  el.style.transformOrigin = origin;
+  el.animate([small, { opacity: 1, offset: 0.4 }, full], { duration: 460, easing: GROW });
+}
+function closeDetail(el) {
+  const card = el.from && el.from.isConnected && el.from.getBoundingClientRect().width ? el.from : null;
+  if (reducedMotion() || !card) return el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 280, fill: 'forwards' }).finished.then(() => el.remove());
+  const { origin, small, full } = growFrom(el, card);
+  el.style.transformOrigin = origin;
+  el.animate([full, { opacity: 1, offset: 0.55 }, small], { duration: 320, easing: 'cubic-bezier(0.4, 0, 0.6, 1)', fill: 'forwards' }).finished.then(() => el.remove());
+}
 function openDetail(d) {
   let el = document.querySelector('.phone > .detail');
   if (!el) {
@@ -1162,7 +1210,7 @@ function openDetail(d) {
     el.className = 'detail';
     el.innerHTML = '<div class="dt-scroll"></div>';
     el.addEventListener('click', e => {
-      if (e.target.closest('.dt-x')) { el.classList.add('out'); return setTimeout(() => el.remove(), 250); }
+      if (e.target.closest('.dt-x')) { if (!el.closing) { el.closing = true; closeDetail(el); } return; }
       if (e.target.closest('[data-share]') && navigator.share) return navigator.share({ title: el.dt.t, url: `${NOW_APP}/watch/${el.dt.type}/${el.dt.id}` }).catch(() => {});
       if (e.target.closest('.dt-remind')) { REMINDERS.has(el.dt.id) ? REMINDERS.delete(el.dt.id) : REMINDERS.add(el.dt.id); syncReminders(); return paint(true); }
       if (e.target.closest('.dt-play')) { e.preventDefault(); return nowPlayer(el.dt); }   // a free user never gets here (iap.js)
@@ -1178,6 +1226,7 @@ function openDetail(d) {
       if (next) { e.preventDefault(); el.dt = next; paint(); el.firstChild.scrollTop = 0; }
     });
     document.querySelector('.phone').appendChild(el);
+    el.fresh = true;
   }
   // same title again (details arrived, My List toggled): swap the text parts only, so the art doesn't redraw
   const paint = same => {
@@ -1194,6 +1243,7 @@ function openDetail(d) {
   el.dt = d;
   paint();
   el.firstChild.scrollTop = 0;
+  if (el.fresh) { el.fresh = false; animateDetailIn(el); }
 }
 // Mock player: the watch buttons (hero, detail page) play here instead of opening the NOW web app. Like the app it
 // turns to landscape: the player is drawn a quarter turn round to fill the phone. The art stands in for the video,
