@@ -64,64 +64,76 @@ function endSplash(ready) {
   }, Math.max(0, SPLASH_MS - (performance.now() - t0))));
 }
 
-// ---- login (Figma: Fix issues, Login บน TrueID Box 1167:30596): the TrueID account already signed in on the box
-// (left card, "sign in with this account") or หรือ another TrueID by scanning a QR with the NOW app (right card, counts
-// down 05:00, then an error tile that OK refreshes); เปลี่ยนภาษา switches the copy TH/EN. ?account=none = no account on
-// the box: the left card connects one instead. The phone "scans" QR_PAID_MS after the QR card is first focused, or at
-// once with OK / a click on it / the demo bar's สแกน QR. Every launch starts signed out unless ?login=skip
+// ---- login (Figma: Fix issues, Login บน TrueID Box 1167:30596): the TrueID account already signed in on the box stays
+// at left the whole time ("sign in with this account", focused); → reaches ใช้บัญชี TrueID อื่น at right, and OK on it
+// reveals the QR to scan with the NOW app (counts down 05:00, then an error tile that OK refreshes; Back hides it again).
+// ?account=none = no account on the box: only the QR card, already showing. The phone "scans" QR_PAID_MS after the QR
+// shows, or at once with OK / a click on it / the demo bar's สแกน QR. เปลี่ยนภาษา switches the copy TH/EN. Every launch
+// starts signed out unless ?login=skip
 let LOGGED_IN = new URLSearchParams(location.search).get('login') === 'skip';
 const BOX_ACCOUNT = new URLSearchParams(location.search).get('account') !== 'none';
 const LOGIN_COPY = {
-  th: { title: BOX_ACCOUNT ? 'เลือกบัญชีเพื่อเข้าสู่ระบบ' : 'เข้าสู่ระบบด้วยบัญชี TrueID',
-    desc: BOX_ACCOUNT ? 'เราพบบัญชี TrueID ที่เข้าสู่ระบบบนกล่องนี้' : 'กรุณาเชื่อมต่อบัญชี TrueID บนกล่องนี้เพื่อเข้าสู่ระบบ',
-    btn: BOX_ACCOUNT ? 'เข้าสู่ระบบด้วยบัญชีนี้' : 'เชื่อมต่อด้วยทรูไอดี', hint: 'กด OK เพื่อดำเนินการต่อ', or: 'หรือ',
-    qr: BOX_ACCOUNT ? 'ใช้บัญชี TrueID อื่น' : 'สแกนเพื่อเข้าสู่ระบบ', qrDesc: 'สแกน QR Code ด้วยแอป TrueVisions NOW<br>(เมนูตั้งค่า > สแกน QR Code)',
+  th: { title: 'เลือกบัญชีเพื่อเข้าสู่ระบบ', desc: 'เราพบบัญชี TrueID ที่เข้าสู่ระบบบนกล่องนี้', btn: 'เข้าสู่ระบบด้วยบัญชีนี้',
+    or: 'หรือ', qr: BOX_ACCOUNT ? 'ใช้บัญชี TrueID อื่น' : 'เข้าสู่ระบบด้วย TrueID',
+    qrDesc: 'สแกน QR Code ด้วยแอป TrueVisions NOW<br>(เมนูตั้งค่า > สแกน QR Code)', show: 'กด OK เพื่อดำเนินการต่อ',
     err: 'QR Code หมดอายุ กด OK เพื่อรับใหม่', lang: 'เปลี่ยนภาษา', ok: 'เข้าสู่ระบบสำเร็จ', wait: 'กำลังเข้าสู่ระบบ…', need: 'เข้าสู่ระบบก่อนเพื่อเริ่มใช้งาน' },
-  en: { title: BOX_ACCOUNT ? 'Select an account to sign in' : 'Sign in with TrueID',
-    desc: BOX_ACCOUNT ? 'We found a TrueID account signed in on this box' : 'Connect a TrueID account on this device to sign in',
-    btn: BOX_ACCOUNT ? 'Sign in with this account' : 'Connect with TrueID', hint: 'Press OK to continue', or: 'Or',
-    qr: BOX_ACCOUNT ? 'Switch TrueID account' : 'Sign in with QR Code', qrDesc: 'Scan with your TrueVisions NOW app<br>(Settings menu > Scan QR Code)',
+  en: { title: 'Select an account to sign in', desc: 'We found a TrueID account signed in on this box', btn: 'Sign in with this account',
+    or: 'Or', qr: BOX_ACCOUNT ? 'Use another TrueID account' : 'Sign in with TrueID',
+    qrDesc: 'Scan with your TrueVisions NOW app<br>(Settings menu > Scan QR Code)', show: 'Press OK to continue',
     err: 'QR code expired. Press OK to refresh.', lang: 'Language', ok: 'Logged in', wait: 'Signing in…', need: 'Please log in to continue' },
 };
+const QR_GLYPH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/></svg>';
 let scanLogin = null;   // the open login's "phone scanned the QR" (the demo bar's สแกน QR)
+// the backdrop: two slanted rows of the trending series and movies (TRENDING: the feed's Top 10 TV and movie shelves,
+// the Trending Series / Trending Movies rails, one of each in turn), or the Figma's static image if the feed didn't load
+const LOGIN_COLS = 9;
+const loginBg = () => TRENDING.length < LOGIN_COLS * 2 ? '<img src="img/login-bg.png" alt="">'
+  : `<div class="lg-wall">${TRENDING.slice(0, LOGIN_COLS * 2).map(it => `<img src="${esc(it.poster)}" alt="">`).join('')}</div>`;
 function login() {
-  let lang = 'th', left = QR_MINUTES * 60, busy = false, scanT = 0, lastCard = 0;
-  const ov = overlay(`<div class="login"><div class="lg-bg"><img src="img/login-bg.png" alt=""></div>
+  let lang = 'th', left = QR_MINUTES * 60, busy = false, scanT = 0, shown = false, lastCard = 0;
+  const ov = overlay(`<div class="login${BOX_ACCOUNT ? '' : ' solo'}"><div class="lg-bg">${loginBg()}</div>
     <img class="lg-logo" src="img/now-logo.svg?v=2" width="158" height="90" alt="TrueVisions NOW">
     <div class="lg-cards">
-      <div class="lg-card lg-acct" data-f><div class="lg-head"><h2 data-c="title"></h2><p data-c="desc"></p></div>
-        <div class="lg-box">${BOX_ACCOUNT ? `<div class="lg-id"><img src="img/trueid.png" width="80" height="80" alt=""><div><span>TrueID</span><b>094*******</b></div></div>` : ''}
-          <span class="lg-btn" data-c="btn"></span></div>
-        <div class="lg-hint"><i>OK</i><span data-c="hint"></span></div></div>
-      <div class="lg-or"><i></i><span data-c="or"></span><i></i></div>
-      <div class="lg-card lg-qr" data-f><div class="lg-head"><h3 data-c="qr"></h3><p data-c="qrDesc"></p></div>
+      ${BOX_ACCOUNT ? `<div class="lg-card lg-acct"><div class="lg-head"><h2 data-c="title"></h2><p data-c="desc"></p></div>
+        <div class="lg-box"><div class="lg-id"><img src="img/trueid.png" width="80" height="80" alt=""><div><span>TrueID</span><b>094*******</b></div></div>
+          <span class="lg-btn" data-f data-c="btn"></span></div></div>
+      <div class="lg-or"><i></i><span data-c="or"></span><i></i></div>` : ''}
+      <div class="lg-card lg-qr" data-f><i class="lg-pick">${QR_GLYPH}</i><div class="lg-head"><h3 data-c="qr"></h3><p data-c="qrDesc"></p><p class="lg-show" data-c="show"></p></div>
         <div class="lg-code"><div class="lg-tile">${qrSvg(77)}<div class="lg-err"><img src="img/refresh.svg" width="59" height="59" alt=""><span data-c="err"></span></div>
           <i class="lg-done">${check}</i></div><span class="lg-time">05:00</span></div></div>
     </div>
     <div class="lg-lang" data-f><img src="img/language.svg" width="24" height="24" alt=""><span data-c="lang"></span></div></div>`, 'loginov', {
     ok() {
       if (busy) return;
-      if (ov.i === 2) { lang = lang === 'th' ? 'en' : 'th'; return copy(); }
-      if (ov.i === 0) { busy = true; ov.el.querySelector('.lg-btn').textContent = LOGIN_COPY[lang].wait; return setTimeout(() => finish(), 900); }
+      const f = ov.items()[ov.i];
+      if (f.matches('.lg-lang')) { lang = lang === 'th' ? 'en' : 'th'; return copy(); }
+      if (f.matches('.lg-btn')) { busy = true; f.textContent = LOGIN_COPY[lang].wait; return setTimeout(() => finish(), 900); }
+      if (!shown) return reveal(true);
       if (!left) return refresh();
       scan();
     },
-    back() { toast(LOGIN_COPY[lang].need); },
+    back() { if (shown && BOX_ACCOUNT && !busy) reveal(false); else toast(LOGIN_COPY[lang].need); },
     // the two cards side by side, the language button under them; up returns to the card you came from
     move(dx, dy) {
-      if (dy > 0) ov.i = 2; else if (dy < 0) ov.i = lastCard; else if (ov.i < 2 && dx) ov.i = dx > 0 ? 1 : 0;
+      const n = ov.items().length - 1;   // the language button is last
+      if (dy > 0) ov.i = n; else if (dy < 0) ov.i = lastCard; else if (ov.i < n && dx) ov.i = dx > 0 ? n - 1 : 0;
       ov.paint();
     },
-    onFocus(i) {
-      if (i < 2) lastCard = i;
-      if (i === 1 && !scanT && left) scanT = setTimeout(scan, QR_PAID_MS);   // the viewer picked the QR: the phone scans it
-    },
+    onFocus(i) { if (i < this.items().length - 1) lastCard = i; },
   });
+  const root = ov.el.querySelector('.login');
+  // the QR card is a menu entry until OK picks it: then a fresh code, and the phone scans it after QR_PAID_MS
+  function reveal(on) {
+    shown = on;
+    root.classList.toggle('qr', on);
+    clearTimeout(scanT); scanT = 0;
+    if (on) { refresh(); scanT = setTimeout(scan, QR_PAID_MS); }
+  }
   const copy = () => ov.el.querySelectorAll('[data-c]').forEach(e => { e.innerHTML = LOGIN_COPY[lang][e.dataset.c]; });
   const clock = () => { ov.el.querySelector('.lg-time').textContent = `${String(Math.floor(left / 60)).padStart(2, '0')}:${String(left % 60).padStart(2, '0')}`; };
   const refresh = () => { left = QR_MINUTES * 60; ov.el.querySelector('.lg-qr').classList.remove('expired'); clock(); };
   const tick = setInterval(() => {
-    if (busy || !left) return;
+    if (busy || !left || !shown) return;
     left--; clock();
     if (!left) { ov.el.querySelector('.lg-qr').classList.add('expired'); clearTimeout(scanT); scanT = 0; }
   }, 1000);
@@ -129,18 +141,31 @@ function login() {
   // the phone scans: the QR card ticks, then the app opens
   function scan() {
     if (busy || OV !== ov) return;
+    if (!shown) reveal(true);
     busy = true;
     if (!left) refresh();
-    ov.i = 1; ov.paint();
+    ov.i = ov.items().length - 2; ov.paint();
     ov.el.querySelector('.lg-qr').classList.add('ok');
     ov.el.querySelector('.lg-time').textContent = LOGIN_COPY[lang].ok;
     setTimeout(finish, 1400);
   }
   scanLogin = scan;
   copy();
+  if (!BOX_ACCOUNT) reveal(true);
 }
 
 const FREE_PLAN = { id: 'free', name: 'NOW Free', price: 0, feats: [] };   // everyone without a telco bundle starts here
+// test case: the free pack plays titles with an ad break first, or (no ads) plays nothing but free-to-air channels, so
+// watch on a title goes straight to the plans for it (the paywall)
+const ADS_CASES = { on: 'ฟรีแบบมีโฆษณา', off: 'ไม่มีโฆษณา · เจอหน้าสมัครแทน' };
+let ADS = ADS_CASES[new URLSearchParams(location.search).get('ads')] ? new URLSearchParams(location.search).get('ads') : 'on';
+function setAds(v) {
+  ADS = v;
+  const u = new URL(location.href); u.searchParams.set('ads', v); history.replaceState(null, '', u);
+  document.querySelectorAll('[data-ads]').forEach(b => b.classList.toggle('on', b.dataset.ads === v));
+  toast(`เคสทดสอบ: ผู้ใช้ฟรี${ADS_CASES[v]}`);
+}
+document.querySelectorAll('[data-ads]').forEach(b => b.classList.toggle('on', b.dataset.ads === ADS));
 
 // ---- shared purchase UI: every buy/claim screen is a pass for what you get (left) and a header, a panel and a CTA row
 // (right); every scan uses the same QR block (tile, title, three steps, waiting + expiry line)
@@ -186,7 +211,7 @@ const kindOf = pl => pl.gold ? 'max' : pl.sport ? 'sport' : 'ent';
 // popup (the telco photo at left); with more than one the widest plan is the one that counts (MAX covers everything). No
 // bundle -> no popup at all: the viewer starts on the free tier (with ads) and meets the plans when a title needs one
 function welcome() {
-  if (!TELCO.length) { SUB = FREE_PLAN; return toast('คุณกำลังดูแบบฟรี มีโฆษณาคั่น · สมัครแพ็กเกจได้ทุกเมื่อ'); }
+  if (!TELCO.length) { SUB = FREE_PLAN; return toast(ADS === 'on' ? 'คุณกำลังดูแบบฟรี มีโฆษณาคั่น · สมัครแพ็กเกจได้ทุกเมื่อ' : 'ดูช่องฟรีทีวีได้เลย · สมัครแพ็กเกจเพื่อดูหนังและซีรีส์'); }
   SUB = TELCO.map(packPlan).sort((p, q) => q.price - p.price)[0];
   // a present on first sign-in: the box wobbles, the lid pops with confetti, the plan's ticket rises out of it, then one
   // line on where it's from and one button. Several bundles: the widest plan is the gift, the rest a small "+ n" line
@@ -219,9 +244,10 @@ const isSport = it => it.type === 'tvs-live' ? (it.start && !isChannel(it) ? tru
 // the Football plan only unlocks football (Thai League, futsal...), by title
 const FOOTBALL = /football|ฟุตบอล|ฟุตซอล|futsal|ไทยลีก|thai league|premier league|\bbein\b|\bball\b|\buefa\b|คัพ ออฟ เนชันส์|cup of nations/i;
 const plansFor = it => it ? TV_PLANS.filter(p => p.gold || !!p.sport === isSport(it) && (!p.foot || FOOTBALL.test(it.t))) : TV_PLANS;
-// the viewer's pack unlocks this title; the free pack plays everything but sport and paid channels, with ads
+// the viewer's pack unlocks this title; the free pack plays everything but sport and paid channels, with ads (with
+// ?ads=off, only free-to-air channels)
 const covers = it => (it.type === 'tvs-live' && !it.pay) || !!SUB && (   // free-to-air channels need no pack
-  SUB === FREE_PLAN ? !isSport(it) && !it.pay : plansFor(it).includes(SUB));
+  SUB === FREE_PLAN ? ADS === 'on' && !isSport(it) && !it.pay : plansFor(it).includes(SUB));
 const PK_FIT = 3;      // plan cards that fit beside the poster; more scroll as a carousel
 let BUY_FOR = null;     // the title the viewer was trying to watch when the purchase flow opened
 // opened from a title, its poster stays on the left so the viewer keeps sight of what they're buying for; the plans
@@ -839,7 +865,7 @@ function player(it) {
       <div class="pl-bot"><i class="pl-live">LIVE</i><span class="pl-at"></span>
         <div class="pl-bar"><i class="pl-fill"></i><i class="pl-knob"></i></div><span class="pl-len"></span>${surfing ? '<span class="pl-hint">↑ ↓ เปลี่ยนช่อง</span>' : ''}</div>
     </div>
-    <div class="pl-lock"><i class="pl-lock-ic">${LOCK_IC}</i><b>ช่องนี้สำหรับสมาชิก</b><span class="pl-lock-for"></span>
+    <div class="pl-lock"><i class="pl-lock-ic">${LOCK_IC}</i><b></b><span class="pl-lock-for"></span>
       <div class="obtn buy" data-f>สมัครเพื่อรับชม</div></div>
     <b class="pl-num"></b></div>`, 'player', {
     ok() { if (!covers(cur)) return packages(cur); paused = !paused; show(true); },
@@ -863,6 +889,7 @@ function player(it) {
     el.classList.toggle('chan', live && isChannel(c));
     const locked = !covers(c);
     el.classList.toggle('locked', locked);
+    if (locked) el.querySelector('.pl-lock b').textContent = isChannel(c) ? 'ช่องนี้สำหรับสมาชิก' : 'รายการนี้สำหรับสมาชิก';
     if (locked) el.querySelector('.pl-lock-for').textContent = `ดูได้กับแพ็กเกจ${isSport(c) ? 'กีฬา' : 'บันเทิง'} เริ่มต้น ${cost(plansFor(c).sort((p, q) => p.price - q.price)[0])}`;
     if (surfing && zap) {   // changing channel: the number flashes top-right, like a TV
       const num = el.querySelector('.pl-num');

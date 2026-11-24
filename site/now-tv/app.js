@@ -259,6 +259,7 @@ document.addEventListener('click', e => {
   if (ck) return setCheckout(ck.dataset.checkout);
   const sm = e.target.closest('[data-summary]');
   if (sm) return setSummary(sm.dataset.summary);
+  const ad = e.target.closest('[data-ads]'); if (ad) return setAds(ad.dataset.ads);
   const ac = e.target.closest('[data-activate]');
   if (ac) return setActivate(ac.dataset.activate);
   const bd = e.target.closest('[data-bind]');
