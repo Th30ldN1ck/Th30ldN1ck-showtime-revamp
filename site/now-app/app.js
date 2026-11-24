@@ -420,7 +420,7 @@ function liveMerged(live, upcoming) {
 }
 let LIVE_EVENTS = [];
 // a row heading that opens the row's see more page (the whole heading, not only the chevron, as in the mini app)
-const moreHead = (title, page) => `<h2 class="shelf-h"><button class="more-h" data-more="${page}">${esc(title)}<span>ดูเพิ่มเติม${chev}</span></button></h2>`;
+const moreHead = (title, page) => `<h2 class="shelf-h"><button class="more-h" data-more="${page}">${esc(title)}<span aria-label="ดูเพิ่มเติม">${chev}</span></button></h2>`;
 // "competition : event" (or "competition: event", as the Thai titles write it)
 const evTitle = it => { const m = it.t.match(/^(.+?)\s?:\s(.+)$/); return m ? [m[1], m[2]] : ['', it.t]; };
 function evCard(it) {
@@ -600,7 +600,7 @@ const caret = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColo
 function catShelf(s, i) {
   if (s.kind === 'only_now_shelf') return onlyNowRow(s);
   const live = s.items.some(it => it.type === 'tvs-live');
-  const h = s.items.length > 3 ? `<h2 class="shelf-h"><button class="more-h" data-shelf="${i}">${esc(s.title)}<span>ดูเพิ่มเติม${chev}</span></button></h2>` : head(s.title);
+  const h = s.items.length > 3 ? `<h2 class="shelf-h"><button class="more-h" data-shelf="${i}">${esc(s.title)}<span aria-label="ดูเพิ่มเติม">${chev}</span></button></h2>` : head(s.title);
   return `<section class="shelf">${h}${row(s.items, live ? evCard : poster)}</section>`;
 }
 function openCategory(cat) {
