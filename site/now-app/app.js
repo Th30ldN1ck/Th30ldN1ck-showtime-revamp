@@ -337,7 +337,8 @@ function wireHeroFade(screen) {
     out.style.transition = ''; out.style.opacity = ''; out.classList.remove('on'); out.style.transform = `translateX(${-dir * 70}px)`;
     inn.style.transition = 'none'; inn.style.transform = `translateX(${dir * 70}px)`; inn.offsetWidth;
     inn.style.transition = ''; inn.style.transform = ''; inn.classList.add('on');
-    arts[cur].classList.remove('on'); arts[to].classList.add('on');
+    arts.forEach(a => a.classList.remove('was')); arts[cur].classList.replace('on', 'was'); arts[to].classList.add('on');
+    clearTimeout(sec.wasT); sec.wasT = setTimeout(() => arts.forEach(a => a.classList.remove('was')), 750);
     dots.forEach((d, j) => d.classList.toggle('on', j === to));
     if (dots[to]) { dots[to].classList.remove('on'); dots[to].offsetWidth; dots[to].classList.add('on'); }   // restart the timer pill
     cur = to;
