@@ -7,11 +7,12 @@
   <title>TrueVisions NOW TV</title>
   <link rel="icon" href="/img/tvs-logo.png">
   <link rel="preload" href="/fonts/BetterTogether-Bold.otf" as="font" type="font/otf" crossorigin>
-  <link rel="stylesheet" href="app.css?v=131">
+  <link rel="stylesheet" href="app.css?v=153">
+  <link rel="stylesheet" href="splash.css?v=6">
 </head>
 <body>
   <div id="stage">
-    <div id="splash"><img class="sp-logo now" src="img/splash-now.svg?v=2" width="216" height="74.51" alt="NOW"><img class="sp-logo full" src="img/now-logo.svg?v=2" width="216" height="123.04" alt="TrueVisions NOW"><img class="sp-load" src="img/loader.gif" width="127" height="127" alt=""></div>
+    <div id="splash" class="splash"></div><script src="splash-markup.js?v=4"></script>
     <div class="hero">
       <div class="hero-bg"><img alt=""><img alt=""><i class="scrim"></i></div>
       <div class="hero-info">
@@ -32,17 +33,19 @@
     <div class="demo">
       <div class="keys"><kbd data-key="back">Esc</kbd>ย้อนกลับ <kbd data-key="ok">Enter</kbd>เลือก
         <span class="arrows"><kbd data-key="left">←</kbd><kbd data-key="up">↑</kbd><kbd data-key="down">↓</kbd><kbd data-key="right">→</kbd></span>เลื่อน</div>
-      <div class="keys cases">สิทธิ์ทรู<button data-telco="one">1 สิทธิ์</button><button data-telco="many">2 สิทธิ์</button><button data-telco="none">ไม่มี</button>
-        <span class="cases-sep">ผู้ใช้ฟรี</span><button data-ads="on">มีโฆษณา</button><button data-ads="off">ไม่มีโฆษณา</button>
-        <span class="cases-sep">ชำระเงิน</span><button data-checkout="list">รายการ</button><button data-checkout="simple">ขั้นตอนเดียว</button><button data-checkout="pin">PIN</button><button data-checkout="approve">ยืนยันบนมือถือ</button><button data-checkout="handoff">สมัครบนมือถือ</button>
-        <span class="cases-sep">บิลทรู</span><button data-bind="yes">ผูกแล้ว</button><button data-bind="no">ยังไม่ผูก</button>
-        <span class="cases-sep">เปิดแพ็กเกจ</span><button data-activate="ok">สำเร็จ</button><button data-activate="retry">ไม่สำเร็จครั้งแรก</button><button data-activate="fail">ไม่สำเร็จ</button>
-        <span class="cases-sep">ฝั่งซ้าย</span><button data-summary="pass">บัตรแพ็กเกจ</button><button data-summary="title">เรื่องที่เลือก</button>
-        <button data-scan>สแกน QR</button><button data-restart>เริ่มใหม่</button></div>
+      <div class="keys cases"><span class="grp"><b>สิทธิ์ทรู</b><button data-telco="one">1 สิทธิ์</button><button data-telco="many">2 สิทธิ์</button><button data-telco="none">ไม่มี</button></span>
+        <span class="grp"><b>ผู้ใช้ฟรี</b><button data-ads="on">มีโฆษณา</button><button data-ads="off">ไม่มีโฆษณา</button></span>
+        <span class="grp"><b>ชำระเงิน</b><button data-checkout="list">รายการ</button><button data-checkout="simple">ขั้นตอนเดียว</button><button data-checkout="pin">PIN</button><button data-checkout="approve">ยืนยันบนมือถือ</button><button data-checkout="handoff">สมัครบนมือถือ</button></span>
+        <span class="grp"><b>บิลทรู</b><button data-bind="yes">ผูกแล้ว</button><button data-bind="no">ยังไม่ผูก</button></span>
+        <span class="grp"><b>เปิดแพ็กเกจ</b><button data-activate="ok">สำเร็จ</button><button data-activate="retry">ไม่สำเร็จครั้งแรก</button><button data-activate="fail">ไม่สำเร็จ</button></span>
+        <span class="grp"><b>ฝั่งซ้าย</b><button data-summary="pass">บัตรแพ็กเกจ</button><button data-summary="title">เรื่องที่เลือก</button></span>
+        <span class="grp"><b>สแปลช</b><button data-splash="pop">ป๊อป</button><button data-splash="tune">จูนสัญญาณ</button><button data-splash="dive">ทะลุปุ่มเล่น</button><button data-splash="prestige">พรีเมียม</button><button data-splash="flip">พลิกการ์ด</button><button data-splash="classic">เดิม</button><button data-sound>เสียงเปิด</button></span>
+        <span class="grp"><button data-scan>สแกน QR</button><button data-restart>เริ่มใหม่</button></span></div>
     </div>
   </div>
-  <script src="app.js?v=27"></script>
+  <script src="app.js?v=29"></script>
   <script src="detail.js?v=9"></script>
-  <script src="subscribe.js?v=122"></script>
+  <script src="splash.js?v=14"></script>
+  <script src="subscribe.js?v=136"></script>
 </body>
 </html>

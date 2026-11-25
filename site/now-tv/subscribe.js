@@ -2,7 +2,6 @@
 // welcome popup (join, or browse first), the package picker, and a checkout whose main source of funds is the viewer's
 // TrueOnline internet bill (or a TrueMoney QR). Shares app.js's globals; while an overlay is up, app.js hands it the
 // remote keys (`OV`).
-const SPLASH_MS = 2500;      // shortest splash, even when the feed is already in
 // the current NOW packages that play on a TV; the sport family from the clone catalog's Sport tiers. Each card reads top to
 // bottom in the same order so they compare by position: who it's for (`who`, own icon `ic` and colour `hex`), price,
 // screens (drawn as TVs), two lines on what's in it (`lines`; ENT299 starts "ทุกอย่างใน ENT199" instead of repeating
@@ -53,15 +52,18 @@ function overlay(html, cls, handlers) {
 }
 const closeAll = () => { while (OV) OV.close(); };
 
-// ---- splash: shown by index.html from the first frame; leaves once the home is drawn and SPLASH_MS has passed
+// ---- splash (splash.js): shown by index.html from the first frame; leaves once the home is drawn and the splash has
+// played through (SPLASH_GO: its length, once it starts)
 function endSplash(ready) {
-  const t0 = performance.now();
-  ready.then(() => setTimeout(() => {
-    // the login screen goes up under the splash before it fades, so the home never shows through for a frame
-    if (!LOGGED_IN) login();
-    $('#splash').classList.add('out');
-    setTimeout(() => { $('#splash').remove(); if (LOGGED_IN && !OV) welcome(); }, 400);
-  }, Math.max(0, SPLASH_MS - (performance.now() - t0))));
+  SPLASH_GO.then(ms => {
+    const t0 = performance.now();
+    ready.then(() => setTimeout(() => {
+      // the login screen goes up under the splash before it fades, so the home never shows through for a frame
+      if (!LOGGED_IN) login();
+      $('#splash').classList.add('out');
+      setTimeout(() => { $('#splash').remove(); if (LOGGED_IN && !OV) welcome(); }, 400);
+    }, Math.max(0, ms - (performance.now() - t0))));
+  });
 }
 
 // ---- login (Figma: Fix issues, Login บน TrueID Box 1167:30596): the TrueID account already signed in on the box stays
@@ -72,33 +74,38 @@ function endSplash(ready) {
 // starts signed out unless ?login=skip
 let LOGGED_IN = new URLSearchParams(location.search).get('login') === 'skip';
 const BOX_ACCOUNT = new URLSearchParams(location.search).get('account') !== 'none';
+const BOX_PHONE = '098-765-4321';   // the TrueID account signed in on the box, shown in full
 const LOGIN_COPY = {
-  th: { title: 'เลือกบัญชีเพื่อเข้าสู่ระบบ', desc: 'เราพบบัญชี TrueID ที่เข้าสู่ระบบบนกล่องนี้', btn: 'เข้าสู่ระบบด้วยบัญชีนี้',
-    or: 'หรือ', qr: BOX_ACCOUNT ? 'ใช้บัญชี TrueID อื่น' : 'เข้าสู่ระบบด้วย TrueID',
-    qrDesc: 'สแกน QR Code ด้วยแอป TrueVisions NOW<br>(เมนูตั้งค่า > สแกน QR Code)', show: 'กด OK เพื่อดำเนินการต่อ',
+  th: { title: 'เลือกบัญชีเพื่อเข้าสู่ระบบ', desc: 'เราพบบัญชี TrueID บนกล่องนี้', btn: 'กด <i class="okkey">OK</i> ครั้งเดียวก็เข้าสู่ระบบได้ทันที',
+    or: 'หรือ', qr: BOX_ACCOUNT ? 'ใช้เบอร์โทรศัพท์อื่น' : 'เข้าสู่ระบบด้วย TrueID',
+    qrDesc: 'สแกนด้วยกล้องมือถือหรือแอปใดก็ได้<br>แล้วเข้าสู่ระบบ TrueID บนมือถือ', show: 'แสดง QR Code', pick: 'สแกน QR ด้วยกล้องมือถือ<br>หรือแอปใดก็ได้',
     err: 'QR Code หมดอายุ กด OK เพื่อรับใหม่', lang: 'เปลี่ยนภาษา', ok: 'เข้าสู่ระบบสำเร็จ', wait: 'กำลังเข้าสู่ระบบ…', need: 'เข้าสู่ระบบก่อนเพื่อเริ่มใช้งาน' },
-  en: { title: 'Select an account to sign in', desc: 'We found a TrueID account signed in on this box', btn: 'Sign in with this account',
-    or: 'Or', qr: BOX_ACCOUNT ? 'Use another TrueID account' : 'Sign in with TrueID',
-    qrDesc: 'Scan with your TrueVisions NOW app<br>(Settings menu > Scan QR Code)', show: 'Press OK to continue',
+  en: { title: 'Select an account to sign in', desc: 'We found a TrueID account on this box', btn: 'One press of <i class="okkey">OK</i> and you’re in',
+    or: 'Or', qr: BOX_ACCOUNT ? 'Use another phone number' : 'Sign in with TrueID',
+    qrDesc: 'Scan with your phone camera or any app,<br>then sign in to TrueID on your phone', show: 'Show QR code', pick: 'Scan the QR code with your<br>phone camera or any app',
     err: 'QR code expired. Press OK to refresh.', lang: 'Language', ok: 'Logged in', wait: 'Signing in…', need: 'Please log in to continue' },
 };
-const QR_GLYPH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/></svg>';
 let scanLogin = null;   // the open login's "phone scanned the QR" (the demo bar's สแกน QR)
 // the backdrop: two slanted rows of the trending series and movies (TRENDING: the feed's Top 10 TV and movie shelves,
 // the Trending Series / Trending Movies rails, one of each in turn), or the Figma's static image if the feed didn't load
 const LOGIN_COLS = 9;
 const loginBg = () => TRENDING.length < LOGIN_COLS * 2 ? '<img src="img/login-bg.png" alt="">'
   : `<div class="lg-wall">${TRENDING.slice(0, LOGIN_COLS * 2).map(it => `<img src="${esc(it.poster)}" alt="">`).join('')}</div>`;
+function upgradeLoginBg() {
+  const bg = document.querySelector('.login .lg-bg');
+  if (bg && !bg.querySelector('.lg-wall') && TRENDING.length >= LOGIN_COLS * 2) bg.innerHTML = loginBg();
+}
 function login() {
   let lang = 'th', left = QR_MINUTES * 60, busy = false, scanT = 0, shown = false, lastCard = 0;
   const ov = overlay(`<div class="login${BOX_ACCOUNT ? '' : ' solo'}"><div class="lg-bg">${loginBg()}</div>
     <img class="lg-logo" src="img/now-logo.svg?v=2" width="158" height="90" alt="TrueVisions NOW">
     <div class="lg-cards">
       ${BOX_ACCOUNT ? `<div class="lg-card lg-acct"><div class="lg-head"><h2 data-c="title"></h2><p data-c="desc"></p></div>
-        <div class="lg-box"><div class="lg-id"><img src="img/trueid.png" width="80" height="80" alt=""><div><span>TrueID</span><b>094*******</b></div></div>
+        <div class="lg-box"><div class="lg-id"><img src="img/trueid.png" width="80" height="80" alt=""><div><span>TrueID</span><b>${BOX_PHONE}</b></div></div>
           <span class="lg-btn" data-f data-c="btn"></span></div></div>
       <div class="lg-or"><i></i><span data-c="or"></span><i></i></div>` : ''}
-      <div class="lg-card lg-qr" data-f><i class="lg-pick">${QR_GLYPH}</i><div class="lg-head"><h3 data-c="qr"></h3><p data-c="qrDesc"></p><p class="lg-show" data-c="show"></p></div>
+      <div class="lg-card lg-qr" data-f><div class="lg-head"><h3 data-c="qr"></h3><p data-c="qrDesc"></p><p class="lg-sub" data-c="pick"></p></div>
+        <i class="lg-pick"><i class="lg-phone"><i class="lg-finder"><svg class="lg-glyph" viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/></svg><i class="lg-scan"></i></i></i></i><span class="lg-show" data-c="show"></span>
         <div class="lg-code"><div class="lg-tile">${qrSvg(77)}<div class="lg-err"><img src="img/refresh.svg" width="59" height="59" alt=""><span data-c="err"></span></div>
           <i class="lg-done">${check}</i></div><span class="lg-time">05:00</span></div></div>
     </div>

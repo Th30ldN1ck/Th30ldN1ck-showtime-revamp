@@ -264,6 +264,8 @@ document.addEventListener('click', e => {
   if (ac) return setActivate(ac.dataset.activate);
   const bd = e.target.closest('[data-bind]');
   if (bd) return setBind(bd.dataset.bind);
+  const sp = e.target.closest('[data-splash]'); if (sp) return setSplash(sp.dataset.splash);
+  if (e.target.closest('[data-sound]')) return toggleSound();
   if (e.target.closest('[data-restart]')) return location.reload();
   if (e.target.closest('[data-scan]')) return scanLogin ? scanLogin() : toast('ไม่ได้อยู่ที่หน้าเข้าสู่ระบบ');
   if (e.target.closest('.demo')) return;
@@ -295,7 +297,10 @@ async function start() {
   fit();
   drawNav();
   $('#rows').innerHTML = '<p class="loading">กำลังโหลด…</p>';
-  const feed = await fetch('/api/now-home').then(r => r.json()).catch(() => []);
+  // the feed now and then fails or times out upstream: try once more before giving up
+  const load = () => fetch('/api/now-home').then(r => r.ok ? r.json() : []).catch(() => []);
+  let feed = await load();
+  if (!plan(feed).length) feed = await new Promise(r => setTimeout(r, 1200)).then(load);
   const shelves = plan(feed);
   if (!shelves.length) { $('#rows').innerHTML = '<p class="loading">โหลดหน้าแรกไม่สำเร็จ ลองใหม่อีกครั้ง</p>'; return; }
   FEED_ITEMS = feed.flatMap(s => s.items).filter(x => /^tvs-(series|movie)$/.test(x.type));
@@ -306,6 +311,7 @@ async function start() {
   // what's trending, for the poster stack behind a title being bought: the Top 10 TV and movie shelves, interleaved
   const tops = feed.filter(s => s.kind === 'ranking_shelf').map(s => s.items);
   TRENDING = Array.from({ length: Math.max(0, ...tops.map(t => t.length)) }, (_, i) => tops.map(t => t[i])).flat().filter(x => x && x.poster);
+  upgradeLoginBg();   // a login already up on the fallback picture gets the live posters
   drawRows(shelves);
   paint();
   DETAILS = await fetch('/api/now-home?details=1').then(r => r.json()).catch(() => ({}));
